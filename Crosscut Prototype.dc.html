@@ -23,18 +23,14 @@ a{color:#16130B}a:hover{color:#C93081}
 @keyframes ccspin{0%{transform:rotate(0deg)}100%{transform:rotate(360deg)}}
 @keyframes ccflame{0%,100%{transform:scale(1) rotate(-4deg)}30%{transform:scale(1.12) rotate(3deg)}60%{transform:scale(.95) rotate(-2deg)}80%{transform:scale(1.08) rotate(4deg)}}
 @keyframes ccflap{0%,84%,100%{transform:perspective(320px) rotateX(0deg)}89%{transform:perspective(320px) rotateX(-78deg)}95%{transform:perspective(320px) rotateX(16deg)}}
-@keyframes ccslotreel{0%,4%{transform:translateY(0)}8%{transform:translateY(-52px)}12%{transform:translateY(-104px)}16%{transform:translateY(-156px)}20%{transform:translateY(-214px)}23%{transform:translateY(-203px)}26%,100%{transform:translateY(-208px)}}
-@keyframes ccslotbank{0%,20%,34%,100%{box-shadow:0 4px 0 rgba(22,19,11,.55),inset 0 0 0 1px rgba(246,241,228,.16)}24%{box-shadow:0 4px 0 rgba(22,19,11,.55),0 0 0 4px rgba(223,169,76,.28),inset 0 0 0 2px #DFA94C}29%{box-shadow:0 4px 0 rgba(22,19,11,.55),0 0 0 2px rgba(201,48,129,.4),inset 0 0 0 1px #DFA94C}}
-.cc-slot-bank{display:flex;gap:7px;width:max-content;padding:7px;position:relative;overflow:hidden;border:2px solid #DFA94C;border-radius:15px;background:#16130B;animation:ccslotbank 5.6s ease-in-out infinite}
-.cc-slot-bank::after{content:"";position:absolute;left:5px;right:5px;top:50%;height:2px;margin-top:-1px;background:#DFA94C;opacity:.62;pointer-events:none;z-index:3}
-.cc-slot-window{border:2px solid #DFA94C;box-shadow:inset 0 8px 8px rgba(22,19,11,.28),inset 0 -8px 8px rgba(22,19,11,.28);z-index:2}
-.cc-slot-reel{display:flex;flex-direction:column;width:100%;position:absolute;top:-2px;left:0;transform:translateY(-208px);animation:ccslotreel 5.6s cubic-bezier(.08,.74,.16,1.08) infinite;animation-delay:var(--cc-slot-delay)}
+@keyframes ccslotreel{0%,7%{transform:translateY(0)}13%{transform:translateY(-52px)}18%{transform:translateY(-104px)}24%{transform:translateY(-156px)}32%{transform:translateY(-216px)}38%,100%{transform:translateY(-208px)}}
+.cc-slot-reel{display:flex;flex-direction:column;width:100%;position:absolute;top:0;left:0;transform:translateY(-208px);animation:ccslotreel 5.6s cubic-bezier(.12,.72,.18,1) infinite;animation-delay:var(--cc-slot-delay)}
 .cc-slot-reel>span{height:52px;min-height:52px;display:flex;align-items:center;justify-content:center}
 @keyframes ccfivejackpot{0%{transform:translateY(-18px) scaleY(1.18);opacity:0}42%{transform:translateY(4px) scaleY(.82);opacity:1;box-shadow:0 0 0 3px #DFA94C}68%{transform:translateY(-3px) scale(1.08);box-shadow:0 0 0 2px #DFA94C}100%{transform:translateY(0) scale(1);opacity:1;box-shadow:0 0 0 0 rgba(223,169,76,0)}}
 @keyframes ccfivejackpotcard{0%,55%,100%{outline:0 solid rgba(223,169,76,0);outline-offset:0}72%{outline:3px solid #DFA94C;outline-offset:3px}88%{outline:1px solid #DFA94C;outline-offset:1px}}
 .cc-five-card[data-jackpot="true"]{animation:ccfivejackpotcard 1.05s ease-out .28s both}
 .cc-five-card[data-jackpot="true"] .cc-five-tile{animation:ccfivejackpot .64s cubic-bezier(.18,.86,.24,1.25) both;animation-delay:var(--cc-jackpot-delay)}
-@media (prefers-reduced-motion:reduce){.cc-slot-bank,.cc-slot-reel,.cc-five-card[data-jackpot="true"],.cc-five-card[data-jackpot="true"] .cc-five-tile{animation:none}}
+@media (prefers-reduced-motion:reduce){.cc-slot-reel,.cc-five-card[data-jackpot="true"],.cc-five-card[data-jackpot="true"] .cc-five-tile{animation:none}}
 </style>
 </helmet>
 <div style="display:flex;justify-content:center;align-items:flex-start;padding:28px 20px">
@@ -241,10 +237,9 @@ a{color:#16130B}a:hover{color:#C93081}
           </div>
           <div onClick="{{ fc.open }}" style="background:{{ fc.coverBg }};padding:26px 20px;display:flex;flex-direction:column;gap:16px;cursor:pointer">
             <div style="font:800 10px 'Chivo',sans-serif;color:{{ fc.kickerColor }};text-transform:uppercase;letter-spacing:2px">{{ fc.kicker }}</div>
-            <div style="font:800 9px 'Chivo',sans-serif;color:#DFA94C;letter-spacing:1.8px;text-transform:uppercase">Reel clue · win line</div>
-            <div class="cc-slot-bank">
+            <div style="display:flex;gap:7px">
               <sc-for list="{{ fc.tiles }}" as="tl" hint-placeholder-count="5">
-                <div class="cc-slot-window" style="width:52px;height:52px;border-radius:9px;background:{{ tl.bg }};color:{{ tl.fg }};display:flex;align-items:center;justify-content:center;font:900 26px 'Chivo',sans-serif;overflow:hidden;position:relative;box-sizing:border-box">
+                <div style="width:52px;height:52px;border-radius:10px;background:{{ tl.bg }};color:{{ tl.fg }};display:flex;align-items:center;justify-content:center;font:900 26px 'Chivo',sans-serif;overflow:hidden;position:relative;box-sizing:border-box">
                   <sc-if value="{{ tl.isReel }}" hint-placeholder-val="{{ false }}">
                     <div class="cc-slot-reel" style="--cc-slot-delay:{{ tl.slotDelay }}">
                       <sc-for list="{{ tl.reel }}" as="rc" hint-placeholder-count="5"><span>{{ rc.ch }}</span></sc-for>

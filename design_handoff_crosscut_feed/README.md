@@ -166,10 +166,9 @@ Layout, top to bottom:
      `card`), 26/20 padding, 16px gap. Contains kicker, a row of five 52px letter tiles
      (revealed letters solid, one accent-coloured, unrevealed as muted `?`), the clue in
      800 20/1.25 quotes, then a footer row: clue meta + pill CTA "Solve ▸" / "Review ▸".
-     The row is a dark, gold-framed **slot bank** with inset reel bezels and a visible gold
-     win line. Four decoy letters spin vertically before each real clue letter lands with
-     an overshoot and staggered stop. The full bank flashes gold/pink at the payout moment,
-     then holds on the answer during a 5.6s cycle. Unrevealed `?` tiles remain still.
+     Revealed tiles are **slot-reel windows** — four decoy letters spin vertically before
+     landing on the real clue letter. Reels stop 0.14s apart, hold the answer, then replay
+     on a relaxed 5.6s cadence. Unrevealed `?` tiles remain still so the clue is not spoiled.
    - Action bar: heart (filled `accent` when liked) + count, bookmark + "Save", and
      right-aligned live meta ("8,412 solved · 297 solving now" — the count creeps every 3s).
 5. **Compact Daily Five posts** — The Feed keeps roughly two smaller Daily Five cards for
@@ -311,9 +310,8 @@ shadow) spins to land the real letter in `accent`, staggered 0.22s; **marquee** 
 bulbs travel the frame perimeter (alternating gold/accent, 0.9s step blink) around a
 "JACKPOT" wordmark that pops in.
 
-**Ambient motion.** Revealed letters in Feed crossword cards spin through a framed slot bank,
-overshoot the gold win line, and trigger a payout flash every 5.6s; the streak 🔥 flickers on
-a 1.6s loop; the wheel 🎰 rotates slowly; live counters
+**Ambient motion.** Revealed letters in Feed crossword cards spin as staggered slot reels
+every 5.6s; the streak 🔥 flickers on a 1.6s loop; the wheel 🎰 rotates slowly; live counters
 update every 3s; skeleton blocks shimmer at 1.4s. Compact Daily Five cards use a one-shot
 Jackpot Lock when entering view rather than a continuous reel animation.
 
