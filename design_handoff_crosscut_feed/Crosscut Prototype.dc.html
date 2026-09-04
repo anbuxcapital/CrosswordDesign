@@ -190,10 +190,6 @@ a{color:#16130B}a:hover{color:#C93081}
       </div>
     </div>
     <div onScroll="{{ feedScroll }}" style="flex:1;overflow-y:auto;min-height:0">
-      <div style="display:flex;align-items:center;gap:8px;margin:6px 18px 14px;padding:8px 13px;background:#F6F1E4;border:2px solid #16130B;border-radius:999px;overflow:hidden">
-        <span style="width:8px;height:8px;border-radius:50%;background:#2FA34F;flex:none;animation:ccblink 1.2s steps(1) infinite"></span>
-        <span style="font:600 11px 'Chivo',sans-serif;color:rgba(22,19,11,.7);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ tickerLine }}</span>
-      </div>
       <div style="margin:0 18px 18px">
         <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:9px">
           <span style="font:800 12px 'Chivo',sans-serif;letter-spacing:1.5px;color:#C93081;text-transform:uppercase">Today's drop</span>
@@ -724,7 +720,7 @@ class Component extends DCLogic {
     playPz: null, filled: null, solvedQs: [], qIndex: 0, secLeft: 300,
     error: false, usedHints: false, autocheck: false,
     hintsOpen: false, fiftyOpts: null, justLocked: [],
-    feedExtra: 0, searchExtra: 0, tickerIdx: 0, bump: 0, luckyClaims: {}, wheels: {}, wheelOpen: null, openCol: null,
+    feedExtra: 0, searchExtra: 0, bump: 0, luckyClaims: {}, wheels: {}, wheelOpen: null, openCol: null,
     // solved screen
     celebType: "coins", celebSeed: [], tokensEarned: 0, noHint: true, solveTime: 0
   };
@@ -805,7 +801,7 @@ class Component extends DCLogic {
     }, 1000);
   }
   componentDidMount() {
-    this._live = setInterval(() => this.setState(st => ({ tickerIdx: st.tickerIdx + 1, bump: st.bump + Math.floor(Math.random() * 4) })), 3000);
+    this._live = setInterval(() => this.setState(st => ({ bump: st.bump + Math.floor(Math.random() * 4) })), 3000);
   }
   componentWillUnmount() { clearInterval(this._t); clearInterval(this._live); }
 
@@ -1244,8 +1240,6 @@ class Component extends DCLogic {
       buy: () => this.setState(st => ({ tokens: st.tokens + parseInt(p[0].replace(",", "")) }))
     }));
 
-    const TICKS = ["wordwasp solved Monday Mini in 0:58 — just now", "klara.m is on a 41-day streak 🔥", (297 + s.bump * 3) + " people are solving Monday Mini right now", "setter_dan liked Studio Mini — 4m ago", "maxpow just passed you on the leaderboard", "New archive pack drops Friday"];
-    const tickerLine = TICKS[s.tickerIdx % TICKS.length];
     const trending = [["Monday Mini", "mini1", 297 + s.bump * 3], ["Weekend Grid", "cross1", 84 + s.bump], ["Studio Mini", "mini2", 41 + (s.bump % 17)]].map((t, i) => ({ rank: i + 1, title: t[0], live: t[2] + " solving now", open: () => this.nav("puzzle", { curPz: t[1] }) }));
     let contTitle = "Weekend Grid", contFrac = "4 / 10", contPct = 40, contPid = "cross1";
     if (s.playPz && !s.completedIds.includes(s.playPz) && s.solvedQs.length > 0) {
@@ -1321,7 +1315,7 @@ class Component extends DCLogic {
       dailyFiveFinished: s.dailyFiveDone, dailyFivePlaying: !s.dailyFiveDone,
       closeDailyFive: () => this.setState({ screen: ["feed", "search", "dailyFiveArchive"].includes(s.prevScreen) ? s.prevScreen : "feed" }),
       dailyFiveBackToDrop: () => this.nav("feed"), dailyFiveArchiveRows, closeDailyFiveArchive: () => this.nav("search", { openCol: null }),
-      tickerLine, trending, contTitle, contFrac, contPct, contResume,
+      trending, contTitle, contFrac, contPct, contResume,
       shelves, noCollection: !oc, inCollection: !!oc, closeCollection: () => this.setState({ openCol: null }),
       colName: oc ? oc.name : "", colEmoji: oc ? oc.emoji : "", colBlurb: oc ? oc.blurb : "", colBg: oc ? oc.bg : "#16130B", colFg: oc ? oc.fg : "#EFE9DB", colShadow: oc && oc.bg === "#16130B" ? "5px 5px 0 #C93081" : "5px 5px 0 #16130B",
       colTrack: ocDark ? "rgba(239,233,219,.18)" : "rgba(22,19,11,.12)", colBar: ocDark ? "#DFA94C" : "#C93081",

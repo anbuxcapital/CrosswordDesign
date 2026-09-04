@@ -151,17 +151,14 @@ Layout, top to bottom:
 1. **Header** (flex, 18px padding): wordmark "Crosscut" + `accent` period; three pill
    balance chips (`card`, 2px ink border, 800 12): `🔥 {streak}`, `🪙 {tokens}`,
    `⭐ {stars}`. Token and star chips open Wallet.
-2. **Live ticker** — pill (`card`, 2px ink border), 8px `success` dot blinking on a 1.2s
-   step loop, 600 11 single-line ellipsised text. Rotates every 3s through six lines
-   (fast solve, long streak, live solver count, a like, a leaderboard pass, archive teaser).
-3. **Today's drop** — one split card pairing the Mini Crossword and Daily Five. Each side
+2. **Today's drop** — one split card pairing the Mini Crossword and Daily Five. Each side
    has an independent progress/completion state and opens its own play flow. Daily Five
    uses five compact tiles, the promise "One word. Six tries.", and a Start / Continue /
    Review action derived from state.
-4. **Streak-at-risk card** (only while today is unsolved) — ink surface, `accent` shadow,
+3. **Streak-at-risk card** (only while today is unsolved) — ink surface, `accent` shadow,
    flickering 🔥 (1.6s scale+rotate loop), title "{streak}-day streak at risk", sub
    "9h 14m left today. One Mini keeps it alive.", full-width `accent` CTA "Solve today's Mini".
-5. **Puzzle post cards** — the core unit:
+4. **Puzzle post cards** — the core unit:
    - Header strip: 34px circular avatar, author 800 13, meta 500 11 @55%
      ("Mini · 5×5 · 2m ago"), optional 26px `success` ✓ when solved, difficulty badge
      (2px border in the puzzle's difficulty colour, 800 10 uppercase).
@@ -173,17 +170,17 @@ Layout, top to bottom:
      staggered 0.4s per tile.
    - Action bar: heart (filled `accent` when liked) + count, bookmark + "Save", and
      right-aligned live meta ("8,412 solved · 297 solving now" — the count creeps every 3s).
-6. **Compact Daily Five posts** — Feed rhythm is one full crossword post followed by two
+5. **Compact Daily Five posts** — Feed rhythm is one full crossword post followed by two
    smaller Daily Five cards. Each compact card is roughly 104px tall with a five-tile
    result/progress strip, a short status line and one Review / Continue action. Today's card
    resumes play; archive cards open Daily Five history. The combined Today's drop remains
    above the feed as the daily overview.
-7. **Fortune wheel card** — compact ink card, `accent` shadow: 🎰 icon rotating on a slow
+6. **Fortune wheel card** — compact ink card, `accent` shadow: 🎰 icon rotating on a slow
    loop, "Fortune wheel" / "One free spin waiting", `accent` pill "Spin ▸" that opens the
    wheel modal (see Interactions).
-8. **Mystery grid card** — ink cover, `gold` kicker "MYSTERY GRID", five `?` tiles (one
+7. **Mystery grid card** — ink cover, `gold` kicker "MYSTERY GRID", five `?` tiles (one
    gold), copy "No title. No difficulty. Dare you." and a gold "Reveal ▸" pill.
-9. **Infinite scroll** — two shimmer skeleton blocks (110px and 60px, 1.4s sweep) sit at the
+8. **Infinite scroll** — two shimmer skeleton blocks (110px and 60px, 1.4s sweep) sit at the
    bottom; nearing them appends another batch (archive posts + alternating wheel/mystery
    cards), up to 10 batches.
 
@@ -306,8 +303,8 @@ bulbs travel the frame perimeter (alternating gold/accent, 0.9s step blink) arou
 "JACKPOT" wordmark that pops in.
 
 **Ambient motion.** Feed cover letter tiles split-flap every 4.6s (0.4s stagger); the
-streak 🔥 flickers on a 1.6s loop; the wheel 🎰 rotates slowly; ticker and live counters
-update every 3s; skeleton blocks shimmer at 1.4s.
+streak 🔥 flickers on a 1.6s loop; the wheel 🎰 rotates slowly; live counters update every
+3s; skeleton blocks shimmer at 1.4s.
 
 **Likes / saves.** Local optimistic toggle per card instance; the like count increments
 immediately. Saves are icon-fill only in this design.
@@ -323,8 +320,7 @@ Single component state (map onto TanStack Query + a small store in the app):
 - Play: `playPz`, `filled[][]`, `solvedQs[]`, `qIndex`, `secLeft`, `error`, `usedHints`,
   `autocheck`, `hintsOpen`, `fiftyOpts`, `justLocked[]`.
 - Solved: `celebType`, `celebSeed[]`, `tokensEarned`, `noHint`, `solveTime`.
-- Feed: `feedExtra` (pagination batches), `tickerIdx`, `bump` (live-count drift),
-  `luckyClaims{}`.
+- Feed: `feedExtra` (pagination batches), `bump` (live-count drift), `luckyClaims{}`.
 
 Data needs: puzzle by id (grid, solution, across/down clues), a daily-drop id, per-puzzle
 social counts, the user's streak/balances/completions, and a collections manifest
