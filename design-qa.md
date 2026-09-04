@@ -28,9 +28,10 @@ No actionable P0, P1, or P2 differences remain.
   enters view: a vertical slot-stop, spring rebound, gold landing flash, and quick card
   outline pulse. It remains distinct from the crossword's continuous multi-letter reels,
   does not loop, and respects the operating system's reduced-motion preference.
-- Revealed letters in crossword Feed cards now behave as slot-reel windows: four decoy
-  letters spin past before landing on the real clue letter, with staggered stops and a long
-  readable hold. Unrevealed question-mark tiles stay fixed and never disclose extra letters.
+- Revealed letters in crossword Feed cards now sit inside a gold-framed slot bank with inset
+  bezels and a visible win line. Four decoy letters spin past, overshoot, then settle on the
+  real clue letters in staggered stops while the bank flashes at the payout moment. Unrevealed
+  question-mark tiles stay fixed and never disclose extra letters.
 - The implementation makes the entire half-card tappable, so its visually compact text CTA
   still has a target substantially larger than 44px.
 
