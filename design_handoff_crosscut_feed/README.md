@@ -170,11 +170,13 @@ Layout, top to bottom:
      staggered 0.4s per tile.
    - Action bar: heart (filled `accent` when liked) + count, bookmark + "Save", and
      right-aligned live meta ("8,412 solved · 297 solving now" — the count creeps every 3s).
-5. **Compact Daily Five posts** — Feed rhythm is one full crossword post followed by two
-   smaller Daily Five cards. Each compact card is roughly 104px tall with a five-tile
-   result/progress strip, a short status line and one Review / Continue action. Today's card
-   resumes play; archive cards open Daily Five history. The combined Today's drop remains
-   above the feed as the daily overview.
+5. **Compact Daily Five posts** — The Feed keeps roughly two smaller Daily Five cards for
+   each full crossword post, but shuffles them together with streak and reward cards on each
+   fresh visit so the sequence feels organic rather than mechanical. The shuffle stays fixed
+   while the user interacts, preventing cards from jumping around. Each compact card is
+   roughly 104px tall with a five-tile result/progress strip, a short status line and one
+   Review / Continue action. Today's card resumes play; archive cards open Daily Five
+   history. The combined Today's drop remains fixed above the feed as the daily overview.
 6. **Fortune wheel card** — compact ink card, `accent` shadow: 🎰 icon rotating on a slow
    loop, "Fortune wheel" / "One free spin waiting", `accent` pill "Spin ▸" that opens the
    wheel modal (see Interactions).
@@ -320,7 +322,8 @@ Single component state (map onto TanStack Query + a small store in the app):
 - Play: `playPz`, `filled[][]`, `solvedQs[]`, `qIndex`, `secLeft`, `error`, `usedHints`,
   `autocheck`, `hintsOpen`, `fiftyOpts`, `justLocked[]`.
 - Solved: `celebType`, `celebSeed[]`, `tokensEarned`, `noHint`, `solveTime`.
-- Feed: `feedExtra` (pagination batches), `bump` (live-count drift), `luckyClaims{}`.
+- Feed: `feedExtra` (pagination batches), `feedSeed` (session-stable card shuffle), `bump`
+  (live-count drift), `luckyClaims{}`.
 
 Data needs: puzzle by id (grid, solution, across/down clues), a daily-drop id, per-puzzle
 social counts, the user's streak/balances/completions, and a collections manifest

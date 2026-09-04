@@ -720,7 +720,7 @@ class Component extends DCLogic {
     playPz: null, filled: null, solvedQs: [], qIndex: 0, secLeft: 300,
     error: false, usedHints: false, autocheck: false,
     hintsOpen: false, fiftyOpts: null, justLocked: [],
-    feedExtra: 0, searchExtra: 0, bump: 0, luckyClaims: {}, wheels: {}, wheelOpen: null, openCol: null,
+    feedExtra: 0, searchExtra: 0, feedSeed: Math.floor(Math.random() * 2147483647), bump: 0, luckyClaims: {}, wheels: {}, wheelOpen: null, openCol: null,
     // solved screen
     celebType: "coins", celebSeed: [], tokensEarned: 0, noHint: true, solveTime: 0
   };
@@ -1110,8 +1110,17 @@ class Component extends DCLogic {
         tiles, open: () => current ? this.nav("dailyFive") : this.nav("dailyFiveArchive")
       };
     };
-    const feedCards = [mkCard("mini1", 0, { ago: "2m ago" }), mkDailyFivePost(0), mkDailyFivePost(1)];
-    if (!s.todaySolved) feedCards.push({ isPuzzle: false, isLucky: false, isMystery: false, isStreakSave: true, title: streak + "-day streak at risk", sub: "9h 14m left today. One Mini keeps it alive.", solveNow: () => this.nav("puzzle", { curPz: "mini1" }) });
+    const shuffleFeed = (items, seed) => {
+      const mixed = items.slice(); let x = seed >>> 0;
+      for (let i = mixed.length - 1; i > 0; i--) {
+        x = (Math.imul(x, 1664525) + 1013904223) >>> 0;
+        const j = x % (i + 1), hold = mixed[i]; mixed[i] = mixed[j]; mixed[j] = hold;
+      }
+      return mixed;
+    };
+    const feedCards = [];
+    const openingCards = [mkCard("mini1", 0, { ago: "2m ago" }), mkDailyFivePost(0), mkDailyFivePost(1)];
+    if (!s.todaySolved) openingCards.push({ isPuzzle: false, isLucky: false, isMystery: false, isStreakSave: true, title: streak + "-day streak at risk", sub: "9h 14m left today. One Mini keeps it alive.", solveNow: () => this.nav("puzzle", { curPz: "mini1" }) });
     const mkWheel = (kidx) => {
       const key = "wheel#" + kidx;
       const w = s.wheels[key] || { done: false, prize: null };
@@ -1122,11 +1131,14 @@ class Component extends DCLogic {
         openWheel: () => this.setState({ wheelOpen: key })
       };
     };
-    feedCards.push(mkCard("cross1", 1), mkDailyFivePost(2), mkDailyFivePost(3), mkWheel("base"), mkCard("mini2", 2), mkDailyFivePost(4), mkDailyFivePost(5));
+    openingCards.push(mkCard("cross1", 1), mkDailyFivePost(2), mkDailyFivePost(3), mkWheel("base"), mkCard("mini2", 2), mkDailyFivePost(4), mkDailyFivePost(5));
+    feedCards.push(...shuffleFeed(openingCards, s.feedSeed));
     for (let b = 0; b < s.feedExtra; b++) {
-      if (b % 2 === 0) feedCards.push(mkWheel(b));
-      else feedCards.push({ isPuzzle: false, isLucky: false, isStreakSave: false, isMystery: true, openMystery: () => this.nav("puzzle", { curPz: this.ORDER[Math.floor(Math.random() * this.ORDER.length)] }) });
-      feedCards.push(mkCard(this.ORDER[(b + 3) % 4], b * 2 + 3, { kicker: "FROM THE ARCHIVE · AUG " + (30 - b) }), mkDailyFivePost((b + 1) % 6), mkDailyFivePost((b + 3) % 6));
+      const batch = [];
+      if (b % 2 === 0) batch.push(mkWheel(b));
+      else batch.push({ isPuzzle: false, isLucky: false, isStreakSave: false, isMystery: true, openMystery: () => this.nav("puzzle", { curPz: this.ORDER[Math.floor(Math.random() * this.ORDER.length)] }) });
+      batch.push(mkCard(this.ORDER[(b + 3) % 4], b * 2 + 3, { kicker: "FROM THE ARCHIVE · AUG " + (30 - b) }), mkDailyFivePost((b + 1) % 6), mkDailyFivePost((b + 3) % 6));
+      feedCards.push(...shuffleFeed(batch, s.feedSeed + b + 1));
     }
 
     const searchChips = ["All", "Minis", "Weekend", "Art", "Spy stuff", "Travel"].map((name, i) => ({ name, pick: () => {}, bg: i === 0 ? "#16130B" : "#F6F1E4", fg: i === 0 ? "#EFE9DB" : "#16130B" }));

@@ -19,9 +19,9 @@ No actionable P0, P1, or P2 differences remain.
   reducing duplicated status information and bringing the daily games above the fold.
 - Today's Drop keeps the source's split Crossword / Daily Five decision, strong shared
   container, independent state, five-tile word preview, and magenta action emphasis.
-- The combined Today's Drop remains the feed entry point. Below it, the feed now repeats
-  a clear one-crossword / two-compact-Daily-Five rhythm, preserving the requested mix
-  without letting the word-game posts compete with full puzzle cards.
+- The combined Today's Drop remains the fixed feed entry point. Below it, full crossword,
+  compact Daily Five, streak, and reward cards use a session-stable shuffled order. The
+  content ratio is preserved without making the sequence feel mechanically repeated.
 - Compact Daily Five cards remain visually subordinate at roughly 104px tall, alternate
   paper and ink treatments from the existing palette, and keep all five tiles readable.
 - The implementation makes the entire half-card tappable, so its visually compact text CTA
@@ -49,8 +49,10 @@ No actionable P0, P1, or P2 differences remain.
 - Opened Browse and the Daily Five archive.
 - Opened the current compact Daily Five card from Feed and confirmed it resumes play.
 - Opened a completed compact Daily Five card and confirmed it routes to the archive.
-- Visually inspected the one-crossword / two-compact-card sequence at the mobile viewport;
-  no clipping, collisions, or hierarchy regressions were found.
+- Visually inspected multiple shuffled card sequences at the mobile viewport; no clipping,
+  collisions, or hierarchy regressions were found.
+- Confirmed the card sequence remains fixed through live-count updates and changes after a
+  full page reload, so the feed feels varied without visibly jumping during use.
 - Confirmed the Feed now moves directly from the header into Today's Drop, with no leftover
   weekly-strip or ticker space and no unused bindings.
 - Confirmed the crossword keyboard's edge keys now fit inside the device frame.
@@ -65,7 +67,7 @@ context remains visible on both sides, so a second crop was not needed.
 ## Comparison history
 
 - Pass 1: no P0/P1/P2 findings. The more compact implementation is an intentional
-  adaptation to the existing stories-and-feed structure, not unresolved visual drift.
+  adaptation to the existing feed structure, not unresolved visual drift.
 
 ## Follow-up polish
 
