@@ -176,7 +176,10 @@ Layout, top to bottom:
    while the user interacts, preventing cards from jumping around. Each compact card is
    roughly 104px tall with a five-tile result/progress strip, a short status line and one
    Review / Continue action. Today's card resumes play; archive cards open Daily Five
-   history. The combined Today's drop remains fixed above the feed as the daily overview.
+   history. When a compact card enters view, its tiles play a one-time **Tile Bloom**:
+   scale-in with a slight rise and overshoot, staggered by 70ms per tile. It never loops,
+   does not use the crossword split-flap rotation, and disables itself for reduced-motion
+   users. The combined Today's drop remains fixed above the feed as the daily overview.
 6. **Fortune wheel card** — compact ink card, `accent` shadow: 🎰 icon rotating on a slow
    loop, "Fortune wheel" / "One free spin waiting", `accent` pill "Spin ▸" that opens the
    wheel modal (see Interactions).
@@ -306,7 +309,8 @@ bulbs travel the frame perimeter (alternating gold/accent, 0.9s step blink) arou
 
 **Ambient motion.** Feed cover letter tiles split-flap every 4.6s (0.4s stagger); the
 streak 🔥 flickers on a 1.6s loop; the wheel 🎰 rotates slowly; live counters update every
-3s; skeleton blocks shimmer at 1.4s.
+3s; skeleton blocks shimmer at 1.4s. Compact Daily Five cards use a one-shot Tile Bloom
+when entering view rather than a continuous animation.
 
 **Likes / saves.** Local optimistic toggle per card instance; the like count increments
 immediately. Saves are icon-fill only in this design.
