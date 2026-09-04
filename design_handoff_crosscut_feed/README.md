@@ -8,6 +8,11 @@ browse → profile → wallet → paywall. It layers a light game economy (🪙 
 🔥 streak) and casino-flavoured reward moments (fortune wheel, three randomised win
 animations) on top of real crossword gameplay.
 
+The daily loop also includes **Daily Five**, a five-letter deduction game paired with the
+Mini Crossword inside one "Today's drop" module. It is deliberately treated as another
+puzzle format—not a separate product: Feed presents the current pair, Browse provides a
+format entry and archive, and both games contribute to the same account and reward loop.
+
 ## About the Design Files
 The files in this bundle are **design references created in HTML** — prototypes showing
 intended look and behaviour, not production code to copy directly. The task is to
@@ -153,10 +158,14 @@ Layout, top to bottom:
 3. **Live ticker** — pill (`card`, 2px ink border), 8px `success` dot blinking on a 1.2s
    step loop, 600 11 single-line ellipsised text. Rotates every 3s through six lines
    (fast solve, long streak, live solver count, a like, a leaderboard pass, archive teaser).
-4. **Streak-at-risk card** (only while today is unsolved) — ink surface, `accent` shadow,
+4. **Today's drop** — one split card pairing the Mini Crossword and Daily Five. Each side
+   has an independent progress/completion state and opens its own play flow. Daily Five
+   uses five compact tiles, the promise "One word. Six tries.", and a Start / Continue /
+   Review action derived from state.
+5. **Streak-at-risk card** (only while today is unsolved) — ink surface, `accent` shadow,
    flickering 🔥 (1.6s scale+rotate loop), title "{streak}-day streak at risk", sub
    "9h 14m left today. One Mini keeps it alive.", full-width `accent` CTA "Solve today's Mini".
-5. **Puzzle post cards** — the core unit:
+6. **Puzzle post cards** — the core unit:
    - Header strip: 34px circular avatar, author 800 13, meta 500 11 @55%
      ("Mini · 5×5 · 2m ago"), optional 26px `success` ✓ when solved, difficulty badge
      (2px border in the puzzle's difficulty colour, 800 10 uppercase).
@@ -168,18 +177,21 @@ Layout, top to bottom:
      staggered 0.4s per tile.
    - Action bar: heart (filled `accent` when liked) + count, bookmark + "Save", and
      right-aligned live meta ("8,412 solved · 297 solving now" — the count creeps every 3s).
-6. **Fortune wheel card** — compact ink card, `accent` shadow: 🎰 icon rotating on a slow
+7. **Fortune wheel card** — compact ink card, `accent` shadow: 🎰 icon rotating on a slow
    loop, "Fortune wheel" / "One free spin waiting", `accent` pill "Spin ▸" that opens the
    wheel modal (see Interactions).
-7. **Mystery grid card** — ink cover, `gold` kicker "MYSTERY GRID", five `?` tiles (one
+8. **Mystery grid card** — ink cover, `gold` kicker "MYSTERY GRID", five `?` tiles (one
    gold), copy "No title. No difficulty. Dare you." and a gold "Reveal ▸" pill.
-8. **Infinite scroll** — two shimmer skeleton blocks (110px and 60px, 1.4s sweep) sit at the
+9. **Infinite scroll** — two shimmer skeleton blocks (110px and 60px, 1.4s sweep) sit at the
    bottom; nearing them appends another batch (archive posts + alternating wheel/mystery
    cards), up to 10 batches.
 
 ### 9. Browse (collections) — replaces a keyword-search screen
 Purpose: find puzzles by theme, size, setter or month. **No horizontal scrolling anywhere.**
 - Search affordance: pill field, "Search collections, setters…".
+- "Choose your game" gives Crosswords and Daily Five equal, explicit entry points without
+  adding a fourth tab. Daily Five opens its archive; an in-progress game gets a dedicated
+  resume row above the crossword resume card.
 - "Continue solving" card: ink surface, gold kicker, title, 5px `accent` progress bar,
   right-side clue fraction, `accent` chevron. Resumes the in-progress puzzle.
 - Four shelves, each = section header (800 16 title + 600 11 @50% count) then a **2-column
@@ -223,13 +235,25 @@ tiles, title, "Mini · 5×5 · ~2 min · by Crosscut Daily"). Three stat cards: 
   0.35s pop. Tapping a cell cycles between the unsolved across/down words through it.
 - **Keyboard**: QWERTY, 3 rows, 5px gaps, 44px tall keys, radius 8, `card` on 2px ink
   border, 800 15; row 3 is a `gold` "HINT" key (52 wide), Z–M, then an ink "⌫" (52 wide).
-  Keys translate 2px down on press.
+  Keys use border-box sizing so all edge keys remain inside the 390px frame, and translate
+  2px down on press.
 - **Hint sheet** (bottom sheet, rises 0.25s): title "Stuck?" + token chip; four rows —
   50/50 (🪙 20, shows two candidate answers as tappable cards), Reveal one letter (🪙 40),
   Solve this word (🪙 100), and a free ink row toggling autocheck. Footnote: "Hints pause
   your no-hint ⭐ bonus for this puzzle". Insufficient tokens routes to Wallet.
 
-### 13. Solved
+### 13. Daily Five
+Purpose: a fast daily deduction puzzle that complements rather than replaces crosswords.
+- Header: back control, "Daily Five." and kicker "ONE WORD · SIX TRIES".
+- Board: six rows × five 48px tiles. Active letters use `accent-tint`; submitted tiles use
+  `success` for exact, `gold` for present elsewhere, and `ink-tile` for absent.
+- Keyboard: responsive three-row QWERTY layout with submitted-letter state carried onto
+  keys. Enter rejects incomplete rows with a short shake; backspace edits the active row.
+- Success awards 15 stars and 25 tokens in the prototype and offers a direct return to
+  Today's drop. Six failed guesses reveal the word.
+- Browse archive: today/resume first, followed by compact solved and missed history rows.
+
+### 14. Solved
 Celebration overlay (see Interactions) plus: "Solved!" 900 34 with `accent` "!", subline
 "{title} · 2:31 · under par". Earnings card: ⭐ Solve +10, ⭐ No hints used +2 (only when
 no hints), 🪙 "Time bonus — {n}s left ÷ 5" with the accent-coloured amount. Streak card
@@ -237,13 +261,13 @@ no hints), 🪙 "Time bonus — {n}s left ÷ 5" with the accent-coloured amount.
 ✓ for past days, dashed for the missed Friday). Buttons: "Next puzzle ▸" (advances through
 mini1 → cross1 → mini2 → mini3) and "Back to feed". Cards rise in at 0.3/0.45/0.6/0.7s.
 
-### 14. Wallet
+### 15. Wallet
 Two balance cards side by side (tokens on `card`, stars on ink with gold numeral).
 Explainer: "Tokens: earned from time left against par (1 per 5s), spent on hints. Stars:
 earned only by solving — they can never be bought or spent." Token packs: 120 / $0.99,
 550 / $3.99 "Popular", 1,400 / $8.99 "Best value". Hint-cost reference list (20 / 40 / 100).
 
-### 15. Tab bar
+### 16. Tab bar
 Three tabs, ink top border, `card` fill, 10px top / 20px bottom padding: Feed (house),
 Browse (magnifier), You (person). Active tab full opacity, inactive 0.35. Hidden on Play,
 Solved, Puzzle, Wallet and the whole funnel.

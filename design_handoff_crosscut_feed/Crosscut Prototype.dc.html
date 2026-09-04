@@ -26,7 +26,7 @@ a{color:#16130B}a:hover{color:#C93081}
 </style>
 </helmet>
 <div style="display:flex;justify-content:center;align-items:flex-start;padding:28px 20px">
-<div style="width:390px;height:844px;background:#EFE9DB;color:#16130B;border:3px solid #16130B;border-radius:44px;box-shadow:8px 8px 0 rgba(22,19,11,.85);overflow:hidden;display:flex;flex-direction:column;position:relative;font-family:'Chivo',sans-serif">
+<div data-testid="phone-frame" data-phone-screen style="width:390px;height:844px;background:#EFE9DB;color:#16130B;border:3px solid #16130B;border-radius:44px;box-shadow:8px 8px 0 rgba(22,19,11,.85);overflow:hidden;display:flex;flex-direction:column;position:relative;font-family:'Chivo',sans-serif">
   <div style="display:flex;justify-content:space-between;align-items:center;padding:16px 28px 4px;font:600 14px 'Chivo',sans-serif;flex:none"><span>9:41</span><span style="display:flex;gap:5px;align-items:center"><span style="width:16px;height:9px;border:1.5px solid #16130B;border-radius:2px;display:inline-block"></span><span style="width:3px;height:5px;background:#16130B;border-radius:1px;display:inline-block"></span></span></div>
 
   <!-- WELCOME -->
@@ -202,6 +202,34 @@ a{color:#16130B}a:hover{color:#C93081}
         <span style="width:8px;height:8px;border-radius:50%;background:#2FA34F;flex:none;animation:ccblink 1.2s steps(1) infinite"></span>
         <span style="font:600 11px 'Chivo',sans-serif;color:rgba(22,19,11,.7);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ tickerLine }}</span>
       </div>
+      <div style="margin:0 18px 18px">
+        <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:9px">
+          <span style="font:800 12px 'Chivo',sans-serif;letter-spacing:1.5px;color:#C93081;text-transform:uppercase">Today's drop</span>
+          <span style="font:600 11px 'Chivo',sans-serif;color:rgba(22,19,11,.5)">{{ dailyDropStatus }}</span>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;background:#F6F1E4;border:2px solid #16130B;border-radius:20px;box-shadow:5px 5px 0 #16130B;overflow:hidden">
+          <div onClick="{{ openTodayMini }}" style="padding:16px 14px;display:flex;flex-direction:column;gap:10px;cursor:pointer;border-right:1.5px solid rgba(22,19,11,.18);min-width:0">
+            <div style="font:800 10px 'Chivo',sans-serif;color:rgba(22,19,11,.5);letter-spacing:1px;text-transform:uppercase">Mini crossword</div>
+            <div style="font:900 19px/1.05 'Chivo',sans-serif">A quick grid<br>to start the day.</div>
+            <div style="display:grid;grid-template-columns:repeat(3,24px);gap:3px" aria-label="Crossword grid preview">
+              <span style="width:24px;height:24px;border:1.5px solid #16130B;background:#F6F1E4"></span><span style="width:24px;height:24px;border:1.5px solid #16130B;background:#16130B"></span><span style="width:24px;height:24px;border:1.5px solid #16130B;background:#F6F1E4"></span>
+              <span style="width:24px;height:24px;border:1.5px solid #16130B;background:#F6F1E4"></span><span style="width:24px;height:24px;border:1.5px solid #16130B;background:#F6F1E4"></span><span style="width:24px;height:24px;border:1.5px solid #16130B;background:#F6F1E4"></span>
+              <span style="width:24px;height:24px;border:1.5px solid #16130B;background:#16130B"></span><span style="width:24px;height:24px;border:1.5px solid #16130B;background:#F6F1E4"></span><span style="width:24px;height:24px;border:1.5px solid #16130B;background:#16130B"></span>
+            </div>
+            <span style="font:800 12px 'Chivo',sans-serif;color:#C93081">{{ miniDropAction }} ▸</span>
+          </div>
+          <div onClick="{{ openDailyFive }}" style="padding:16px 14px;display:flex;flex-direction:column;gap:10px;cursor:pointer;min-width:0;background:{{ dailyFiveDropBg }}">
+            <div style="font:800 10px 'Chivo',sans-serif;color:{{ dailyFiveDropKicker }};letter-spacing:1px;text-transform:uppercase">Daily Five</div>
+            <div style="font:900 19px/1.05 'Chivo',sans-serif;color:{{ dailyFiveDropFg }}">One word.<br>Six tries.</div>
+            <div style="display:flex;gap:3px" aria-label="Daily Five progress preview">
+              <sc-for list="{{ dailyFivePreview }}" as="dfp" hint-placeholder-count="5">
+                <span style="width:24px;height:24px;border:1.5px solid #16130B;border-radius:5px;background:{{ dfp.bg }};color:{{ dfp.fg }};display:flex;align-items:center;justify-content:center;font:900 11px 'Chivo',sans-serif;box-sizing:border-box">{{ dfp.ch }}</span>
+              </sc-for>
+            </div>
+            <span style="font:800 12px 'Chivo',sans-serif;color:{{ dailyFiveDropAction }}">{{ dailyFiveAction }} ▸</span>
+          </div>
+        </div>
+      </div>
       <sc-for list="{{ feedCards }}" as="fc" hint-placeholder-count="2">
         <sc-if value="{{ fc.isPuzzle }}" hint-placeholder-val="{{ true }}">
         <div style="margin:0 18px 18px;background:#F6F1E4;border:2px solid #16130B;border-radius:20px;box-shadow:{{ fc.cardShadow }};overflow:hidden">
@@ -313,6 +341,25 @@ a{color:#16130B}a:hover{color:#C93081}
       </div>
     </div>
     <div style="flex:1;overflow-y:auto;min-height:0;padding:12px 0 20px">
+      <div style="padding:0 18px;margin-bottom:18px">
+        <div style="font:800 12px 'Chivo',sans-serif;color:rgba(22,19,11,.5);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:9px">Choose your game</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+          <div onClick="{{ browseCrosswords }}" style="background:#16130B;color:#EFE9DB;border:2px solid #16130B;border-radius:16px;box-shadow:4px 4px 0 #C93081;padding:14px;cursor:pointer;min-height:92px;display:flex;flex-direction:column;justify-content:space-between">
+            <div style="font:900 17px 'Chivo',sans-serif">Crosswords</div>
+            <div style="font:600 11px 'Chivo',sans-serif;color:rgba(239,233,219,.6)">Minis, grids & themes</div>
+          </div>
+          <div onClick="{{ openDailyFiveArchive }}" style="background:#F6F1E4;color:#16130B;border:2px solid #16130B;border-radius:16px;box-shadow:4px 4px 0 #16130B;padding:14px;cursor:pointer;min-height:92px;display:flex;flex-direction:column;justify-content:space-between">
+            <div style="display:flex;gap:3px"><sc-for list="{{ browseFiveTiles }}" as="bft" hint-placeholder-count="5"><span style="width:18px;height:18px;border:1.5px solid #16130B;border-radius:4px;background:{{ bft.bg }};color:{{ bft.fg }};display:flex;align-items:center;justify-content:center;font:900 9px 'Chivo',sans-serif;box-sizing:border-box">{{ bft.ch }}</span></sc-for></div>
+            <div><div style="font:900 17px 'Chivo',sans-serif">Daily Five</div><div style="font:600 11px 'Chivo',sans-serif;color:rgba(22,19,11,.55)">Today + archive</div></div>
+          </div>
+        </div>
+      </div>
+      <sc-if value="{{ showDailyFiveContinue }}" hint-placeholder-val="{{ true }}">
+      <div onClick="{{ openDailyFive }}" style="display:flex;align-items:center;gap:12px;background:#EEDCE6;color:#16130B;border:2px solid #16130B;border-radius:16px;padding:13px 15px;margin:0 18px 12px;cursor:pointer;box-shadow:4px 4px 0 #16130B">
+        <div style="flex:1"><div style="font:800 10px 'Chivo',sans-serif;color:#C93081;letter-spacing:1.5px;margin-bottom:4px">CONTINUE DAILY FIVE</div><div style="font:800 15px 'Chivo',sans-serif">One word. Six tries.</div></div>
+        <div style="font:900 13px 'Chivo',sans-serif">{{ dailyFiveProgress }}</div><span style="font:800 18px 'Chivo',sans-serif;color:#C93081">▸</span>
+      </div>
+      </sc-if>
       <div onClick="{{ contResume }}" style="display:flex;align-items:center;gap:12px;background:#16130B;color:#EFE9DB;border:2px solid #16130B;border-radius:16px;padding:14px 15px;margin:0 18px 20px;cursor:pointer;box-shadow:4px 4px 0 rgba(22,19,11,.35)">
         <div style="flex:1"><div style="font:800 10px 'Chivo',sans-serif;color:#DFA94C;letter-spacing:1.5px;margin-bottom:4px">CONTINUE SOLVING</div><div style="font:800 15px 'Chivo',sans-serif">{{ contTitle }}</div><div style="height:5px;border-radius:3px;background:rgba(239,233,219,.15);margin-top:8px;overflow:hidden"><div style="height:100%;width:{{ contPct }}%;background:#C93081;border-radius:3px"></div></div></div>
         <div style="text-align:center;flex:none"><div style="font:900 16px 'Chivo',sans-serif">{{ contFrac }}</div><div style="font:600 9px 'Chivo',sans-serif;color:rgba(239,233,219,.5)">CLUES</div></div>
@@ -370,6 +417,60 @@ a{color:#16130B}a:hover{color:#C93081}
       </div>
     </div>
     </sc-if>
+  </div>
+  </sc-if>
+
+  <!-- DAILY FIVE -->
+  <sc-if value="{{ isDailyFive }}" hint-placeholder-val="{{ false }}">
+  <div data-screen-label="Daily Five" style="flex:1;display:flex;flex-direction:column;min-height:0">
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:6px 18px;flex:none">
+      <div onClick="{{ closeDailyFive }}" style="width:36px;height:36px;border:2px solid #16130B;border-radius:50%;background:#F6F1E4;display:flex;align-items:center;justify-content:center;font:800 18px 'Chivo',sans-serif;cursor:pointer">‹</div>
+      <div style="text-align:center"><div style="font:900 20px 'Chivo',sans-serif">Daily Five<span style="color:#C93081">.</span></div><div style="font:700 9px 'Chivo',sans-serif;letter-spacing:1.2px;color:rgba(22,19,11,.45)">ONE WORD · SIX TRIES</div></div>
+      <div style="width:36px;height:36px"></div>
+    </div>
+    <div style="flex:1;min-height:0;display:flex;flex-direction:column;align-items:center;padding:8px 18px 10px">
+      <div style="font:600 12px/1.4 'Chivo',sans-serif;color:rgba(22,19,11,.55);text-align:center;margin-bottom:10px">A new five-letter word joins today's drop.</div>
+      <div style="display:flex;flex-direction:column;gap:6px;animation:{{ dailyFiveBoardAnim }}">
+        <sc-for list="{{ dailyFiveRows }}" as="dfr" hint-placeholder-count="6">
+          <div style="display:flex;gap:6px">
+            <sc-for list="{{ dfr.cells }}" as="dfc" hint-placeholder-count="5">
+              <div style="width:48px;height:48px;border:{{ dfc.border }};border-radius:9px;background:{{ dfc.bg }};color:{{ dfc.fg }};display:flex;align-items:center;justify-content:center;font:900 23px 'Chivo',sans-serif;box-sizing:border-box;animation:{{ dfc.anim }}">{{ dfc.ch }}</div>
+            </sc-for>
+          </div>
+        </sc-for>
+      </div>
+      <div style="min-height:20px;padding-top:9px;font:800 12px 'Chivo',sans-serif;color:{{ dailyFiveMessageColor }};text-align:center">{{ dailyFiveMessage }}</div>
+      <sc-if value="{{ dailyFiveFinished }}" hint-placeholder-val="{{ false }}"><div onClick="{{ dailyFiveBackToDrop }}" style="margin-top:4px;background:#C93081;color:#F6F1E4;border:2px solid #16130B;border-radius:999px;padding:11px 28px;font:800 13px 'Chivo',sans-serif;box-shadow:3px 3px 0 #16130B;cursor:pointer">Back to today's drop</div></sc-if>
+    </div>
+    <sc-if value="{{ dailyFivePlaying }}" hint-placeholder-val="{{ true }}">
+    <div style="flex:none;padding:8px 8px 24px;background:#E4DECF;border-top:2px solid #16130B;box-sizing:border-box;overflow:hidden">
+      <sc-for list="{{ dailyFiveKeys }}" as="dkr" hint-placeholder-count="3">
+        <div style="display:flex;gap:4px;justify-content:center;margin-bottom:6px;width:100%">
+          <sc-for list="{{ dkr.keys }}" as="dk" hint-placeholder-count="10">
+            <div onClick="{{ dk.tap }}" style="flex:{{ dk.flex }};min-width:0;height:42px;background:{{ dk.bg }};color:{{ dk.fg }};border:2px solid #16130B;border-radius:7px;display:flex;align-items:center;justify-content:center;font:800 {{ dk.font }}px 'Chivo',sans-serif;cursor:pointer;box-sizing:border-box" style-active="transform:translateY(2px)">{{ dk.label }}</div>
+          </sc-for>
+        </div>
+      </sc-for>
+    </div>
+    </sc-if>
+  </div>
+  </sc-if>
+
+  <!-- DAILY FIVE ARCHIVE -->
+  <sc-if value="{{ isDailyFiveArchive }}" hint-placeholder-val="{{ false }}">
+  <div data-screen-label="Daily Five Archive" style="flex:1;display:flex;flex-direction:column;min-height:0">
+    <div style="display:flex;align-items:center;gap:12px;padding:8px 18px;flex:none"><div onClick="{{ closeDailyFiveArchive }}" style="width:36px;height:36px;border:2px solid #16130B;border-radius:50%;background:#F6F1E4;display:flex;align-items:center;justify-content:center;font:800 18px 'Chivo',sans-serif;cursor:pointer">‹</div><span style="font:900 20px 'Chivo',sans-serif">Daily Five archive</span></div>
+    <div style="flex:1;overflow-y:auto;min-height:0;padding:8px 18px 24px">
+      <div style="background:#16130B;color:#EFE9DB;border:2px solid #16130B;border-radius:20px;box-shadow:5px 5px 0 #C93081;padding:20px;margin-bottom:18px"><div style="font:800 10px 'Chivo',sans-serif;color:#DFA94C;letter-spacing:1.5px;text-transform:uppercase">A word a day</div><div style="font:900 27px/1.05 'Chivo',sans-serif;margin-top:7px">Short enough for coffee.<br>Sharp enough for a streak.</div></div>
+      <div style="display:flex;flex-direction:column;gap:10px">
+        <sc-for list="{{ dailyFiveArchiveRows }}" as="dfa" hint-placeholder-count="5">
+          <div onClick="{{ dfa.open }}" style="display:flex;align-items:center;gap:12px;background:{{ dfa.bg }};color:{{ dfa.fg }};border:2px solid #16130B;border-radius:14px;padding:12px 14px;cursor:pointer;opacity:{{ dfa.op }}">
+            <div style="width:44px;height:44px;border-radius:10px;background:{{ dfa.tileBg }};color:{{ dfa.tileFg }};display:flex;align-items:center;justify-content:center;font:900 15px 'Chivo',sans-serif;flex:none">{{ dfa.mark }}</div>
+            <div style="flex:1"><div style="font:800 14px 'Chivo',sans-serif">{{ dfa.title }}</div><div style="font:500 11px 'Chivo',sans-serif;opacity:.6">{{ dfa.meta }}</div></div><span style="font:800 16px 'Chivo',sans-serif;color:#C93081">{{ dfa.action }}</span>
+          </div>
+        </sc-for>
+      </div>
+    </div>
   </div>
   </sc-if>
 
@@ -487,7 +588,7 @@ a{color:#16130B}a:hover{color:#C93081}
       <sc-for list="{{ kbRows }}" as="kr" hint-placeholder-count="3">
         <div style="display:flex;gap:5px;justify-content:center;margin-bottom:7px">
           <sc-for list="{{ kr.keys }}" as="k" hint-placeholder-count="10">
-            <div onClick="{{ k.tap }}" style="min-width:{{ k.w }}px;height:44px;background:{{ k.bg }};color:{{ k.fg }};border:2px solid #16130B;border-radius:8px;display:flex;align-items:center;justify-content:center;font:800 15px 'Chivo',sans-serif;cursor:pointer;padding:0 4px" style-active="transform:translateY(2px)">{{ k.label }}</div>
+            <div onClick="{{ k.tap }}" style="min-width:{{ k.w }}px;height:44px;background:{{ k.bg }};color:{{ k.fg }};border:2px solid #16130B;border-radius:8px;display:flex;align-items:center;justify-content:center;font:800 15px 'Chivo',sans-serif;cursor:pointer;padding:0 3px;box-sizing:border-box" style-active="transform:translateY(2px)">{{ k.label }}</div>
           </sc-for>
         </div>
       </sc-for>
@@ -607,6 +708,9 @@ class Component extends DCLogic {
     likes: {}, saves: {},
     completedIds: [],
     curPz: "mini1",
+    // Daily Five state starts mid-session so Feed and Browse can demonstrate resume behavior
+    dailyFiveGuesses: ["CLOUD", "CHOMP"], dailyFiveCurrent: "", dailyFiveDone: false, dailyFiveWon: false,
+    dailyFiveMessage: "", dailyFiveBoardAnim: "none",
     // play state
     playPz: null, filled: null, solvedQs: [], qIndex: 0, secLeft: 300,
     error: false, usedHints: false, autocheck: false,
@@ -779,6 +883,42 @@ class Component extends DCLogic {
     const own = q.cells.filter(cl => !this.isFixed(qs, s.solvedQs, cl[0], cl[1]) && filled[cl[0]][cl[1]]);
     if (own.length) { const last = own[own.length - 1]; filled[last[0]][last[1]] = ""; this.setState({ filled, error: false }); }
   }
+  dailyFiveScore(word) {
+    const target = "CROSS", result = Array(5).fill("absent"), remaining = target.split("");
+    word.split("").forEach((ch, i) => { if (ch === target[i]) { result[i] = "exact"; remaining[i] = null; } });
+    word.split("").forEach((ch, i) => {
+      if (result[i] === "exact") return;
+      const found = remaining.indexOf(ch);
+      if (found >= 0) { result[i] = "present"; remaining[found] = null; }
+    });
+    return result;
+  }
+  dailyFiveInput(ch) {
+    const s = this.state;
+    if (s.dailyFiveDone || s.dailyFiveCurrent.length >= 5) return;
+    this.setState({ dailyFiveCurrent: s.dailyFiveCurrent + ch, dailyFiveMessage: "", dailyFiveBoardAnim: "none" });
+  }
+  dailyFiveBackspace() {
+    const s = this.state;
+    if (s.dailyFiveDone || !s.dailyFiveCurrent.length) return;
+    this.setState({ dailyFiveCurrent: s.dailyFiveCurrent.slice(0, -1), dailyFiveMessage: "", dailyFiveBoardAnim: "none" });
+  }
+  dailyFiveSubmit() {
+    const s = this.state;
+    if (s.dailyFiveDone) return;
+    if (s.dailyFiveCurrent.length !== 5) {
+      this.setState({ dailyFiveMessage: "Enter five letters", dailyFiveBoardAnim: "ccshake .3s ease-in-out" });
+      setTimeout(() => this.setState({ dailyFiveBoardAnim: "none" }), 350);
+      return;
+    }
+    const guess = s.dailyFiveCurrent.toUpperCase(), guesses = s.dailyFiveGuesses.concat(guess);
+    const won = guess === "CROSS", done = won || guesses.length >= 6;
+    this.setState(st => ({
+      dailyFiveGuesses: guesses, dailyFiveCurrent: "", dailyFiveDone: done, dailyFiveWon: won,
+      dailyFiveMessage: won ? "Sharp work — solved in " + guesses.length + "/6" : done ? "The word was CROSS" : (6 - guesses.length) + " tries left",
+      stars: st.stars + (won ? 15 : 0), tokens: st.tokens + (won ? 25 : 0)
+    }));
+  }
   spinWheel(key) {
     if (!key) return;
     const PR = [50, 10, 0, 25, 5, 15];
@@ -827,7 +967,9 @@ class Component extends DCLogic {
 
   renderVals() {
     const s = this.state, P = this.PUZZLES;
-    const screen = s.screen ?? ((this.props.startScreen ?? "onboarding") === "feed" ? "feed" : "welcome");
+    const requestedScreen = new URLSearchParams(window.location.search).get("screen");
+    const deepLinkScreens = ["welcome", "feed", "search", "profile", "dailyFive", "dailyFiveArchive"];
+    const screen = s.screen ?? (deepLinkScreens.includes(requestedScreen) ? requestedScreen : ((this.props.startScreen ?? "onboarding") === "feed" ? "feed" : "welcome"));
     if (s.screen === null && screen !== this.__initLogged) { this.__initLogged = screen; }
     const set = (o) => () => this.setState(o);
     const streak = s.baseStreak + (s.todaySolved ? 1 : 0);
@@ -856,6 +998,55 @@ class Component extends DCLogic {
       dot: s.plan === p[0] ? "#C93081" : "#F6F1E4"
     }));
     const paywallCta = s.plan === "lite" ? "Continue with Lite — free" : s.plan === "month" ? "Remove ads — $3.99 / month" : "Remove ads — $23.99 / year";
+
+    // Daily Five
+    const dailyFiveColors = {
+      exact: { bg: "#2FA34F", fg: "#F6F1E4", border: "2px solid #16130B" },
+      present: { bg: "#DFA94C", fg: "#16130B", border: "2px solid #16130B" },
+      absent: { bg: "#2B2618", fg: "#EFE9DB", border: "2px solid #16130B" }
+    };
+    const dailyFiveRows = Array.from({ length: 6 }, (_, row) => {
+      const committed = s.dailyFiveGuesses[row];
+      const active = row === s.dailyFiveGuesses.length && !s.dailyFiveDone;
+      const word = committed || (active ? s.dailyFiveCurrent : "");
+      const scored = committed ? this.dailyFiveScore(committed) : [];
+      return { cells: Array.from({ length: 5 }, (_, col) => {
+        if (committed) {
+          const style = dailyFiveColors[scored[col]];
+          return { ch: word[col], bg: style.bg, fg: style.fg, border: style.border, anim: "ccflap .42s ease-out " + (col * .07).toFixed(2) + "s both" };
+        }
+        const ch = word[col] || "";
+        return { ch, bg: ch ? "#EEDCE6" : "#F6F1E4", fg: "#16130B", border: ch ? "2px solid #C93081" : "2px solid rgba(22,19,11,.35)", anim: "none" };
+      }) };
+    });
+    const keyPriority = { exact: 3, present: 2, absent: 1 };
+    const keyStates = {};
+    s.dailyFiveGuesses.forEach(word => this.dailyFiveScore(word).forEach((score, i) => {
+      const ch = word[i];
+      if (!keyStates[ch] || keyPriority[score] > keyPriority[keyStates[ch]]) keyStates[ch] = score;
+    }));
+    const dailyFiveKey = (label, flex, action) => {
+      const state = keyStates[label], style = state ? dailyFiveColors[state] : { bg: "#F6F1E4", fg: "#16130B" };
+      return { label, flex: flex || 1, font: label.length > 1 ? 9 : 13, bg: style.bg, fg: style.fg, tap: action || (() => this.dailyFiveInput(label)) };
+    };
+    const dailyFiveKeys = [
+      { keys: "QWERTYUIOP".split("").map(ch => dailyFiveKey(ch)) },
+      { keys: "ASDFGHJKL".split("").map(ch => dailyFiveKey(ch)) },
+      { keys: [dailyFiveKey("ENTER", 1.6, () => this.dailyFiveSubmit())].concat("ZXCVBNM".split("").map(ch => dailyFiveKey(ch))).concat([dailyFiveKey("⌫", 1.35, () => this.dailyFiveBackspace())]) }
+    ];
+    const previewWord = s.dailyFiveDone && s.dailyFiveWon ? "CROSS" : (s.dailyFiveCurrent || s.dailyFiveGuesses[s.dailyFiveGuesses.length - 1] || "");
+    const previewScore = previewWord.length === 5 && !s.dailyFiveCurrent ? this.dailyFiveScore(previewWord) : [];
+    const dailyFivePreview = Array.from({ length: 5 }, (_, i) => {
+      const style = previewScore[i] ? dailyFiveColors[previewScore[i]] : { bg: previewWord[i] ? "#EEDCE6" : "#F6F1E4", fg: "#16130B" };
+      return { ch: previewWord[i] || "", bg: style.bg, fg: style.fg };
+    });
+    const dailyFiveArchiveRows = [
+      { title: "Today", meta: s.dailyFiveDone ? (s.dailyFiveWon ? "Solved in " + s.dailyFiveGuesses.length + "/6" : "Complete") : s.dailyFiveGuesses.length + "/6 guesses", mark: s.dailyFiveDone ? "✓" : "NOW", bg: "#EEDCE6", fg: "#16130B", tileBg: s.dailyFiveDone ? "#2FA34F" : "#C93081", tileFg: "#F6F1E4", action: "PLAY", op: 1, open: () => this.nav("dailyFive") },
+      { title: "Yesterday", meta: "Solved in 4/6", mark: "✓", bg: "#F6F1E4", fg: "#16130B", tileBg: "#16130B", tileFg: "#DFA94C", action: "REVIEW", op: .7, open: () => {} },
+      { title: "Two days ago", meta: "Solved in 3/6", mark: "✓", bg: "#F6F1E4", fg: "#16130B", tileBg: "#16130B", tileFg: "#DFA94C", action: "REVIEW", op: .7, open: () => {} },
+      { title: "Three days ago", meta: "Missed", mark: "—", bg: "#F6F1E4", fg: "#16130B", tileBg: "#E4DECF", tileFg: "rgba(22,19,11,.45)", action: "VIEW", op: .55, open: () => {} },
+      { title: "Four days ago", meta: "Solved in 5/6", mark: "✓", bg: "#F6F1E4", fg: "#16130B", tileBg: "#16130B", tileFg: "#DFA94C", action: "REVIEW", op: .7, open: () => {} }
+    ];
 
     // stories
     const stories = [
@@ -1082,7 +1273,8 @@ class Component extends DCLogic {
       isQuizLang: screen === "quizLang", isPlanReady: screen === "planReady", isNotifs: screen === "notifs",
       isPaywall: screen === "paywall", isFeed: screen === "feed", isSearch: screen === "search",
       isProfile: screen === "profile", isPuzzle: screen === "puzzle", isPlay: screen === "play",
-      isSolved: screen === "solved", isWallet: screen === "wallet",
+      isSolved: screen === "solved", isWallet: screen === "wallet", isDailyFive: screen === "dailyFive",
+      isDailyFiveArchive: screen === "dailyFiveArchive",
       showTabBar: inTabs,
       tabFeedOp: screen === "feed" ? 1 : 0.35, tabSearchOp: screen === "search" ? 1 : 0.35, tabProfileOp: screen === "profile" ? 1 : 0.35,
       tabFeed: () => this.nav("feed"), tabSearch: () => this.nav("search", { openCol: null }), tabProfile: () => this.nav("profile"),
@@ -1097,6 +1289,20 @@ class Component extends DCLogic {
       planTopics: topicsPicked, planLang: ({ en: "English", uk: "Українська", ru: "Русский" })[s.lang],
       streak, tokens: s.tokens.toLocaleString("en-US"), stars: s.stars.toLocaleString("en-US"),
       stories, feedCards, searchChips, searchTiles, langChips, completedTiles,
+      dailyDropStatus: (s.todaySolved ? 1 : 0) + (s.dailyFiveDone ? 1 : 0) + " of 2 complete",
+      miniDropAction: s.todaySolved ? "Review" : "Play Mini",
+      dailyFiveAction: s.dailyFiveDone ? "Review result" : s.dailyFiveGuesses.length ? "Continue" : "Start Daily Five",
+      dailyFiveDropBg: s.dailyFiveDone ? "#16130B" : "#F6F1E4", dailyFiveDropFg: s.dailyFiveDone ? "#EFE9DB" : "#16130B",
+      dailyFiveDropKicker: s.dailyFiveDone ? "#DFA94C" : "#C93081", dailyFiveDropAction: s.dailyFiveDone ? "#DFA94C" : "#C93081",
+      dailyFivePreview, browseFiveTiles: dailyFivePreview,
+      openTodayMini: () => this.nav("puzzle", { curPz: "mini1" }), openDailyFive: () => this.nav("dailyFive"),
+      openDailyFiveArchive: () => this.nav("dailyFiveArchive"), browseCrosswords: () => this.setState({ openCol: "minis" }),
+      showDailyFiveContinue: s.dailyFiveGuesses.length > 0 && !s.dailyFiveDone, dailyFiveProgress: s.dailyFiveGuesses.length + " / 6",
+      dailyFiveRows, dailyFiveKeys, dailyFiveBoardAnim: s.dailyFiveBoardAnim,
+      dailyFiveMessage: s.dailyFiveMessage, dailyFiveMessageColor: s.dailyFiveWon ? "#2FA34F" : s.dailyFiveDone ? "#16130B" : "#C93081",
+      dailyFiveFinished: s.dailyFiveDone, dailyFivePlaying: !s.dailyFiveDone,
+      closeDailyFive: () => this.setState({ screen: ["feed", "search", "dailyFiveArchive"].includes(s.prevScreen) ? s.prevScreen : "feed" }),
+      dailyFiveBackToDrop: () => this.nav("feed"), dailyFiveArchiveRows, closeDailyFiveArchive: () => this.nav("search", { openCol: null }),
       tickerLine, trending, contTitle, contFrac, contPct, contResume,
       shelves, noCollection: !oc, inCollection: !!oc, closeCollection: () => this.setState({ openCol: null }),
       colName: oc ? oc.name : "", colEmoji: oc ? oc.emoji : "", colBlurb: oc ? oc.blurb : "", colBg: oc ? oc.bg : "#16130B", colFg: oc ? oc.fg : "#EFE9DB", colShadow: oc && oc.bg === "#16130B" ? "5px 5px 0 #C93081" : "5px 5px 0 #16130B",
