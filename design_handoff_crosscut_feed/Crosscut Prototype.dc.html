@@ -265,6 +265,23 @@ a{color:#16130B}a:hover{color:#C93081}
           </div>
         </div>
         </sc-if>
+        <sc-if value="{{ fc.isDailyFivePost }}" hint-placeholder-val="{{ false }}">
+        <div onClick="{{ fc.open }}" style="margin:0 18px 18px;background:{{ fc.cardBg }};color:{{ fc.cardFg }};border:2px solid #16130B;border-radius:18px;box-shadow:{{ fc.cardShadow }};padding:14px 15px;display:flex;align-items:center;gap:13px;cursor:pointer;min-height:104px;box-sizing:border-box">
+          <div style="display:flex;flex-direction:column;gap:4px;flex:1;min-width:0">
+            <div style="font:800 9px 'Chivo',sans-serif;color:{{ fc.kickerColor }};letter-spacing:1.4px;text-transform:uppercase">{{ fc.kicker }}</div>
+            <div style="font:900 17px/1.1 'Chivo',sans-serif">{{ fc.title }}</div>
+            <div style="font:600 10px 'Chivo',sans-serif;color:{{ fc.metaColor }}">{{ fc.meta }}</div>
+          </div>
+          <div style="display:flex;flex-direction:column;align-items:flex-end;gap:9px;flex:none">
+            <div style="display:flex;gap:3px" aria-label="{{ fc.tileLabel }}">
+              <sc-for list="{{ fc.tiles }}" as="dft" hint-placeholder-count="5">
+                <span style="width:27px;height:27px;border:1.5px solid #16130B;border-radius:5px;background:{{ dft.bg }};color:{{ dft.fg }};display:flex;align-items:center;justify-content:center;font:900 11px 'Chivo',sans-serif;box-sizing:border-box">{{ dft.ch }}</span>
+              </sc-for>
+            </div>
+            <span style="font:800 11px 'Chivo',sans-serif;color:{{ fc.actionColor }}">{{ fc.action }} ▸</span>
+          </div>
+        </div>
+        </sc-if>
         <sc-if value="{{ fc.isStreakSave }}" hint-placeholder-val="{{ false }}">
         <div style="margin:0 18px 18px;background:#16130B;color:#EFE9DB;border:2px solid #16130B;border-radius:20px;box-shadow:5px 5px 0 rgba(201,48,129,.9);padding:18px;display:flex;flex-direction:column;gap:12px">
           <div style="display:flex;align-items:center;gap:11px"><span style="font:400 26px sans-serif;display:inline-block;animation:ccflame 1.6s ease-in-out infinite">🔥</span><div style="flex:1"><div style="font:800 16px 'Chivo',sans-serif">{{ fc.title }}</div><div style="font:500 12px 'Chivo',sans-serif;color:rgba(239,233,219,.6)">{{ fc.sub }}</div></div></div>
@@ -1096,7 +1113,27 @@ class Component extends DCLogic {
         save: () => this.setState(st => ({ saves: Object.assign({}, st.saves, { [key]: !st.saves[key] }) }))
       };
     };
-    const feedCards = [mkCard("mini1", 0, { ago: "2m ago" })];
+    const compactFiveWords = ["BRAIN", "PLANT", "SWEET", "WORLD", "LIGHT", "SMILE"];
+    const compactFiveDays = ["Today", "Yesterday", "Two days ago", "Three days ago", "Four days ago", "Five days ago"];
+    const compactFiveTries = [null, 4, 3, 5, 4, 6];
+    const mkDailyFivePost = (dayIndex) => {
+      const current = dayIndex === 0, dark = dayIndex % 2 === 1;
+      const word = current ? "" : compactFiveWords[(dayIndex - 1) % compactFiveWords.length];
+      const tiles = current ? dailyFivePreview : word.split("").map(ch => ({ ch, bg: "#2FA34F", fg: "#F6F1E4" }));
+      return {
+        isPuzzle: false, isDailyFivePost: true, isLucky: false, isMystery: false, isStreakSave: false, isWheel: false,
+        kicker: "Daily Five · " + compactFiveDays[dayIndex % compactFiveDays.length],
+        title: current ? "One word. Six tries." : word,
+        meta: current ? (s.dailyFiveDone ? (s.dailyFiveWon ? "Solved in " + s.dailyFiveGuesses.length + "/6" : "Complete") : s.dailyFiveGuesses.length + "/6 guesses · in progress") : "Solved in " + compactFiveTries[dayIndex % compactFiveTries.length] + "/6",
+        cardBg: dark ? "#16130B" : "#F6F1E4", cardFg: dark ? "#EFE9DB" : "#16130B",
+        cardShadow: dark ? "4px 4px 0 #C93081" : "4px 4px 0 #16130B",
+        kickerColor: dark ? "#DFA94C" : "#C93081", metaColor: dark ? "rgba(239,233,219,.6)" : "rgba(22,19,11,.55)",
+        actionColor: dark ? "#DFA94C" : "#C93081", action: current ? (s.dailyFiveDone ? "Review" : "Continue") : "Review",
+        tileLabel: current ? "Current Daily Five progress" : compactFiveDays[dayIndex % compactFiveDays.length] + " Daily Five result",
+        tiles, open: () => current ? this.nav("dailyFive") : this.nav("dailyFiveArchive")
+      };
+    };
+    const feedCards = [mkCard("mini1", 0, { ago: "2m ago" }), mkDailyFivePost(0), mkDailyFivePost(1)];
     if (!s.todaySolved) feedCards.push({ isPuzzle: false, isLucky: false, isMystery: false, isStreakSave: true, title: streak + "-day streak at risk", sub: "9h 14m left today. One Mini keeps it alive.", solveNow: () => this.nav("puzzle", { curPz: "mini1" }) });
     const mkWheel = (kidx) => {
       const key = "wheel#" + kidx;
@@ -1108,11 +1145,11 @@ class Component extends DCLogic {
         openWheel: () => this.setState({ wheelOpen: key })
       };
     };
-    feedCards.push(mkCard("cross1", 1), mkWheel("base"), mkCard("mini2", 2));
+    feedCards.push(mkCard("cross1", 1), mkDailyFivePost(2), mkDailyFivePost(3), mkWheel("base"), mkCard("mini2", 2), mkDailyFivePost(4), mkDailyFivePost(5));
     for (let b = 0; b < s.feedExtra; b++) {
       if (b % 2 === 0) feedCards.push(mkWheel(b));
       else feedCards.push({ isPuzzle: false, isLucky: false, isStreakSave: false, isMystery: true, openMystery: () => this.nav("puzzle", { curPz: this.ORDER[Math.floor(Math.random() * this.ORDER.length)] }) });
-      feedCards.push(mkCard(this.ORDER[(b + 3) % 4], b * 2 + 3, { kicker: "FROM THE ARCHIVE · AUG " + (30 - b) }), mkCard(this.ORDER[(b + 1) % 4], b * 2 + 4, { kicker: "FROM THE ARCHIVE · AUG " + (29 - b) }));
+      feedCards.push(mkCard(this.ORDER[(b + 3) % 4], b * 2 + 3, { kicker: "FROM THE ARCHIVE · AUG " + (30 - b) }), mkDailyFivePost((b + 1) % 6), mkDailyFivePost((b + 3) % 6));
     }
 
     const searchChips = ["All", "Minis", "Weekend", "Art", "Spy stuff", "Travel"].map((name, i) => ({ name, pick: () => {}, bg: i === 0 ? "#16130B" : "#F6F1E4", fg: i === 0 ? "#EFE9DB" : "#16130B" }));

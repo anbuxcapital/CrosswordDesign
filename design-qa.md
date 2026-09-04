@@ -20,6 +20,11 @@ No actionable P0, P1, or P2 differences remain.
   regression in the established product flow.
 - Today's Drop keeps the source's split Crossword / Daily Five decision, strong shared
   container, independent state, five-tile word preview, and magenta action emphasis.
+- The combined Today's Drop remains the feed entry point. Below it, the feed now repeats
+  a clear one-crossword / two-compact-Daily-Five rhythm, preserving the requested mix
+  without letting the word-game posts compete with full puzzle cards.
+- Compact Daily Five cards remain visually subordinate at roughly 104px tall, alternate
+  paper and ink treatments from the existing palette, and keep all five tiles readable.
 - The implementation makes the entire half-card tappable, so its visually compact text CTA
   still has a target substantially larger than 44px.
 
@@ -43,6 +48,10 @@ No actionable P0, P1, or P2 differences remain.
 - Entered CROSS using the on-screen keyboard and submitted it.
 - Confirmed exact-letter colors, completion copy, reward balance changes, and return path.
 - Opened Browse and the Daily Five archive.
+- Opened the current compact Daily Five card from Feed and confirmed it resumes play.
+- Opened a completed compact Daily Five card and confirmed it routes to the archive.
+- Visually inspected the one-crossword / two-compact-card sequence at the mobile viewport;
+  no clipping, collisions, or hierarchy regressions were found.
 - Confirmed the crossword keyboard's edge keys now fit inside the device frame.
 - Checked the prototype console: no warnings or errors.
 

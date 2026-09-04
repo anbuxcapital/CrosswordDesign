@@ -177,12 +177,17 @@ Layout, top to bottom:
      staggered 0.4s per tile.
    - Action bar: heart (filled `accent` when liked) + count, bookmark + "Save", and
      right-aligned live meta ("8,412 solved · 297 solving now" — the count creeps every 3s).
-7. **Fortune wheel card** — compact ink card, `accent` shadow: 🎰 icon rotating on a slow
+7. **Compact Daily Five posts** — Feed rhythm is one full crossword post followed by two
+   smaller Daily Five cards. Each compact card is roughly 104px tall with a five-tile
+   result/progress strip, a short status line and one Review / Continue action. Today's card
+   resumes play; archive cards open Daily Five history. The combined Today's drop remains
+   above the feed as the daily overview.
+8. **Fortune wheel card** — compact ink card, `accent` shadow: 🎰 icon rotating on a slow
    loop, "Fortune wheel" / "One free spin waiting", `accent` pill "Spin ▸" that opens the
    wheel modal (see Interactions).
-8. **Mystery grid card** — ink cover, `gold` kicker "MYSTERY GRID", five `?` tiles (one
+9. **Mystery grid card** — ink cover, `gold` kicker "MYSTERY GRID", five `?` tiles (one
    gold), copy "No title. No difficulty. Dare you." and a gold "Reveal ▸" pill.
-9. **Infinite scroll** — two shimmer skeleton blocks (110px and 60px, 1.4s sweep) sit at the
+10. **Infinite scroll** — two shimmer skeleton blocks (110px and 60px, 1.4s sweep) sit at the
    bottom; nearing them appends another batch (archive posts + alternating wheel/mystery
    cards), up to 10 batches.
 
