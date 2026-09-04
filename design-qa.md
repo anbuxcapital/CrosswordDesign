@@ -26,8 +26,11 @@ No actionable P0, P1, or P2 differences remain.
   paper and ink treatments from the existing palette, and keep all five tiles readable.
 - Compact Daily Five tiles use a one-shot Jackpot Lock with an 85ms cascade when their card
   enters view: a vertical slot-stop, spring rebound, gold landing flash, and quick card
-  outline pulse. It is visibly distinct from the crossword's rotating split-flap, does not
-  loop, and respects the operating system's reduced-motion preference.
+  outline pulse. It remains distinct from the crossword's continuous multi-letter reels,
+  does not loop, and respects the operating system's reduced-motion preference.
+- Revealed letters in crossword Feed cards now behave as slot-reel windows: four decoy
+  letters spin past before landing on the real clue letter, with staggered stops and a long
+  readable hold. Unrevealed question-mark tiles stay fixed and never disclose extra letters.
 - The implementation makes the entire half-card tappable, so its visually compact text CTA
   still has a target substantially larger than 44px.
 
@@ -59,6 +62,9 @@ No actionable P0, P1, or P2 differences remain.
   full page reload, so the feed feels varied without visibly jumping during use.
 - Scrolled compact Daily Five cards into view and confirmed Jackpot Lock triggers once,
   settles cleanly at full size, and does not disturb card dimensions or tap targets.
+- Watched multiple crossword reel cycles and confirmed each revealed tile returns to the
+  correct clue letter, unrevealed tiles remain static, and the animation stays clipped within
+  the existing 52px tile windows.
 - Confirmed the Feed now moves directly from the header into Today's Drop, with no leftover
   weekly-strip or ticker space and no unused bindings.
 - Confirmed the crossword keyboard's edge keys now fit inside the device frame.

@@ -23,11 +23,14 @@ a{color:#16130B}a:hover{color:#C93081}
 @keyframes ccspin{0%{transform:rotate(0deg)}100%{transform:rotate(360deg)}}
 @keyframes ccflame{0%,100%{transform:scale(1) rotate(-4deg)}30%{transform:scale(1.12) rotate(3deg)}60%{transform:scale(.95) rotate(-2deg)}80%{transform:scale(1.08) rotate(4deg)}}
 @keyframes ccflap{0%,84%,100%{transform:perspective(320px) rotateX(0deg)}89%{transform:perspective(320px) rotateX(-78deg)}95%{transform:perspective(320px) rotateX(16deg)}}
+@keyframes ccslotreel{0%,7%{transform:translateY(0)}13%{transform:translateY(-52px)}18%{transform:translateY(-104px)}24%{transform:translateY(-156px)}32%{transform:translateY(-216px)}38%,100%{transform:translateY(-208px)}}
+.cc-slot-reel{display:flex;flex-direction:column;width:100%;position:absolute;top:0;left:0;transform:translateY(-208px);animation:ccslotreel 5.6s cubic-bezier(.12,.72,.18,1) infinite;animation-delay:var(--cc-slot-delay)}
+.cc-slot-reel>span{height:52px;min-height:52px;display:flex;align-items:center;justify-content:center}
 @keyframes ccfivejackpot{0%{transform:translateY(-18px) scaleY(1.18);opacity:0}42%{transform:translateY(4px) scaleY(.82);opacity:1;box-shadow:0 0 0 3px #DFA94C}68%{transform:translateY(-3px) scale(1.08);box-shadow:0 0 0 2px #DFA94C}100%{transform:translateY(0) scale(1);opacity:1;box-shadow:0 0 0 0 rgba(223,169,76,0)}}
 @keyframes ccfivejackpotcard{0%,55%,100%{outline:0 solid rgba(223,169,76,0);outline-offset:0}72%{outline:3px solid #DFA94C;outline-offset:3px}88%{outline:1px solid #DFA94C;outline-offset:1px}}
 .cc-five-card[data-jackpot="true"]{animation:ccfivejackpotcard 1.05s ease-out .28s both}
 .cc-five-card[data-jackpot="true"] .cc-five-tile{animation:ccfivejackpot .64s cubic-bezier(.18,.86,.24,1.25) both;animation-delay:var(--cc-jackpot-delay)}
-@media (prefers-reduced-motion:reduce){.cc-five-card[data-jackpot="true"],.cc-five-card[data-jackpot="true"] .cc-five-tile{animation:none}}
+@media (prefers-reduced-motion:reduce){.cc-slot-reel,.cc-five-card[data-jackpot="true"],.cc-five-card[data-jackpot="true"] .cc-five-tile{animation:none}}
 </style>
 </helmet>
 <div style="display:flex;justify-content:center;align-items:flex-start;padding:28px 20px">
@@ -236,7 +239,14 @@ a{color:#16130B}a:hover{color:#C93081}
             <div style="font:800 10px 'Chivo',sans-serif;color:{{ fc.kickerColor }};text-transform:uppercase;letter-spacing:2px">{{ fc.kicker }}</div>
             <div style="display:flex;gap:7px">
               <sc-for list="{{ fc.tiles }}" as="tl" hint-placeholder-count="5">
-                <div style="width:52px;height:52px;border-radius:10px;background:{{ tl.bg }};color:{{ tl.fg }};display:flex;align-items:center;justify-content:center;font:900 26px 'Chivo',sans-serif;animation:{{ tl.anim }}">{{ tl.ch }}</div>
+                <div style="width:52px;height:52px;border-radius:10px;background:{{ tl.bg }};color:{{ tl.fg }};display:flex;align-items:center;justify-content:center;font:900 26px 'Chivo',sans-serif;overflow:hidden;position:relative;box-sizing:border-box">
+                  <sc-if value="{{ tl.isReel }}" hint-placeholder-val="{{ false }}">
+                    <div class="cc-slot-reel" style="--cc-slot-delay:{{ tl.slotDelay }}">
+                      <sc-for list="{{ tl.reel }}" as="rc" hint-placeholder-count="5"><span>{{ rc.ch }}</span></sc-for>
+                    </div>
+                  </sc-if>
+                  <sc-if value="{{ tl.isStatic }}" hint-placeholder-val="{{ true }}"><span>{{ tl.ch }}</span></sc-if>
+                </div>
               </sc-for>
             </div>
             <div style="font:800 20px/1.25 'Chivo',sans-serif;color:{{ fc.clueColor }}">“{{ fc.clue }}”</div>
@@ -1079,16 +1089,20 @@ class Component extends DCLogic {
       { title: "Four days ago", meta: "Solved in 5/6", mark: "✓", bg: "#F6F1E4", fg: "#16130B", tileBg: "#16130B", tileFg: "#DFA94C", action: "REVIEW", op: .7, open: () => {} }
     ];
 
-    const mkTiles = (p, big) => {
+    const mkTiles = (p, mode) => {
       const w = p.themeWord.split("");
       return w.map((ch, i) => {
         const anim = "ccflap 4.6s ease-in-out " + (0.4 * i).toFixed(1) + "s infinite";
-        const shown = p.completed || p.reveal.includes(i);
-        if (!p.reveal.includes(i)) return { ch: "?", anim: "none", bg: p.coverBg === "#F6F1E4" ? "rgba(22,19,11,.08)" : "rgba(255,255,255,.12)", fg: p.coverBg === "#F6F1E4" ? "rgba(22,19,11,.25)" : "rgba(255,255,255,.25)" };
+        if (!p.reveal.includes(i)) return { ch: "?", isReel: false, isStatic: true, anim: "none", bg: p.coverBg === "#F6F1E4" ? "rgba(22,19,11,.08)" : "rgba(255,255,255,.12)", fg: p.coverBg === "#F6F1E4" ? "rgba(22,19,11,.25)" : "rgba(255,255,255,.25)" };
         const accent = i === p.reveal[Math.floor(p.reveal.length / 2)];
-        if (p.coverBg === "#F6F1E4") return { ch, anim, bg: accent ? "#C93081" : "#16130B", fg: "#F6F1E4" };
-        if (p.coverBg === "#C93081") return { ch, anim, bg: accent ? "#16130B" : "#F6F1E4", fg: accent ? "#F6F1E4" : "#16130B" };
-        return { ch, anim, bg: accent ? "#C93081" : "#F6F1E4", fg: accent ? "#F6F1E4" : "#16130B" };
+        let style;
+        if (p.coverBg === "#F6F1E4") style = { bg: accent ? "#C93081" : "#16130B", fg: "#F6F1E4" };
+        else if (p.coverBg === "#C93081") style = { bg: accent ? "#16130B" : "#F6F1E4", fg: accent ? "#F6F1E4" : "#16130B" };
+        else style = { bg: accent ? "#C93081" : "#F6F1E4", fg: accent ? "#F6F1E4" : "#16130B" };
+        if (mode !== "slot") return Object.assign({ ch, isReel: false, isStatic: true, anim }, style);
+        const alpha = "ABCDEFGHIJKLMNOPQRSTUVWXYZ", base = ch.charCodeAt(0) - 65;
+        const reel = [1, 2, 3, 4].map(n => ({ ch: alpha[(base + n * 7 + i * 3) % 26] })).concat([{ ch }]);
+        return Object.assign({ ch, isReel: true, isStatic: false, reel, slotDelay: (i * .14).toFixed(2) + "s", anim: "none" }, style);
       });
     };
     const AGO = ["2m ago", "28m ago", "1h ago", "3h ago", "yesterday", "2d ago", "3d ago", "4d ago"];
@@ -1107,7 +1121,7 @@ class Component extends DCLogic {
         clueMeta: (id === "mini2" ? "7-Across" : id === "cross1" ? "2-Across" : "1-Across") + " of 10 clues",
         cta: done ? "Review" : "Solve", ctaBg: p.ctaBg, ctaFg: p.ctaFg,
         cardShadow: p.coverBg === "#16130B" ? "5px 5px 0 #C93081" : "5px 5px 0 #16130B",
-        tiles: mkTiles(p), done,
+        tiles: mkTiles(p, "slot"), done,
         liked, notLiked: !liked, saved, notSaved: !saved,
         likeCount: (p.likes + (idx * 37) % 400 + (liked ? 1 : 0)).toLocaleString("en-US"),
         solvedCount: daily ? (8412 + s.bump).toLocaleString("en-US") + " solved · " + (297 + s.bump * 3) + " solving now" : p.solvedCount,

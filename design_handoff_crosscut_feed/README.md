@@ -166,8 +166,9 @@ Layout, top to bottom:
      `card`), 26/20 padding, 16px gap. Contains kicker, a row of five 52px letter tiles
      (revealed letters solid, one accent-coloured, unrevealed as muted `?`), the clue in
      800 20/1.25 quotes, then a footer row: clue meta + pill CTA "Solve ▸" / "Review ▸".
-     Revealed tiles **flap** — a 4.6s infinite `rotateX(-78°→16°→0)` split-flap tick,
-     staggered 0.4s per tile.
+     Revealed tiles are **slot-reel windows** — four decoy letters spin vertically before
+     landing on the real clue letter. Reels stop 0.14s apart, hold the answer, then replay
+     on a relaxed 5.6s cadence. Unrevealed `?` tiles remain still so the clue is not spoiled.
    - Action bar: heart (filled `accent` when liked) + count, bookmark + "Save", and
      right-aligned live meta ("8,412 solved · 297 solving now" — the count creeps every 3s).
 5. **Compact Daily Five posts** — The Feed keeps roughly two smaller Daily Five cards for
@@ -178,9 +179,10 @@ Layout, top to bottom:
    Review / Continue action. Today's card resumes play; archive cards open Daily Five
    history. When a compact card enters view, its tiles play a one-time **Jackpot Lock**:
    a vertical slot-stop drop, spring rebound and gold landing flash, staggered by 85ms per
-   tile, followed by one quick gold outline pulse around the card. It never loops, does not
-   use the crossword split-flap rotation, and disables itself for reduced-motion users. The
-   combined Today's drop remains fixed above the feed as the daily overview.
+   tile, followed by one quick gold outline pulse around the card. It never loops and remains
+   distinct from the crossword's continuous multi-letter reels. Both effects disable
+   themselves for reduced-motion users. The combined Today's drop remains fixed above the
+   feed as the daily overview.
 6. **Fortune wheel card** — compact ink card, `accent` shadow: 🎰 icon rotating on a slow
    loop, "Fortune wheel" / "One free spin waiting", `accent` pill "Spin ▸" that opens the
    wheel modal (see Interactions).
@@ -308,10 +310,10 @@ shadow) spins to land the real letter in `accent`, staggered 0.22s; **marquee** 
 bulbs travel the frame perimeter (alternating gold/accent, 0.9s step blink) around a
 "JACKPOT" wordmark that pops in.
 
-**Ambient motion.** Feed cover letter tiles split-flap every 4.6s (0.4s stagger); the
-streak 🔥 flickers on a 1.6s loop; the wheel 🎰 rotates slowly; live counters update every
-3s; skeleton blocks shimmer at 1.4s. Compact Daily Five cards use a one-shot Jackpot Lock
-when entering view rather than a continuous animation.
+**Ambient motion.** Revealed letters in Feed crossword cards spin as staggered slot reels
+every 5.6s; the streak 🔥 flickers on a 1.6s loop; the wheel 🎰 rotates slowly; live counters
+update every 3s; skeleton blocks shimmer at 1.4s. Compact Daily Five cards use a one-shot
+Jackpot Lock when entering view rather than a continuous reel animation.
 
 **Likes / saves.** Local optimistic toggle per card instance; the like count increments
 immediately. Saves are icon-fill only in this design.
