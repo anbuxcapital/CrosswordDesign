@@ -23,9 +23,11 @@ a{color:#16130B}a:hover{color:#C93081}
 @keyframes ccspin{0%{transform:rotate(0deg)}100%{transform:rotate(360deg)}}
 @keyframes ccflame{0%,100%{transform:scale(1) rotate(-4deg)}30%{transform:scale(1.12) rotate(3deg)}60%{transform:scale(.95) rotate(-2deg)}80%{transform:scale(1.08) rotate(4deg)}}
 @keyframes ccflap{0%,84%,100%{transform:perspective(320px) rotateX(0deg)}89%{transform:perspective(320px) rotateX(-78deg)}95%{transform:perspective(320px) rotateX(16deg)}}
-@keyframes ccfivebloom{0%{transform:translateY(5px) scale(.76);opacity:.25}64%{transform:translateY(-1px) scale(1.1);opacity:1}100%{transform:translateY(0) scale(1);opacity:1}}
-.cc-five-card[data-bloomed="true"] .cc-five-tile{animation:ccfivebloom .52s cubic-bezier(.2,.85,.25,1.25) both;animation-delay:var(--cc-bloom-delay)}
-@media (prefers-reduced-motion:reduce){.cc-five-card[data-bloomed="true"] .cc-five-tile{animation:none}}
+@keyframes ccfivejackpot{0%{transform:translateY(-18px) scaleY(1.18);opacity:0}42%{transform:translateY(4px) scaleY(.82);opacity:1;box-shadow:0 0 0 3px #DFA94C}68%{transform:translateY(-3px) scale(1.08);box-shadow:0 0 0 2px #DFA94C}100%{transform:translateY(0) scale(1);opacity:1;box-shadow:0 0 0 0 rgba(223,169,76,0)}}
+@keyframes ccfivejackpotcard{0%,55%,100%{outline:0 solid rgba(223,169,76,0);outline-offset:0}72%{outline:3px solid #DFA94C;outline-offset:3px}88%{outline:1px solid #DFA94C;outline-offset:1px}}
+.cc-five-card[data-jackpot="true"]{animation:ccfivejackpotcard 1.05s ease-out .28s both}
+.cc-five-card[data-jackpot="true"] .cc-five-tile{animation:ccfivejackpot .64s cubic-bezier(.18,.86,.24,1.25) both;animation-delay:var(--cc-jackpot-delay)}
+@media (prefers-reduced-motion:reduce){.cc-five-card[data-jackpot="true"],.cc-five-card[data-jackpot="true"] .cc-five-tile{animation:none}}
 </style>
 </helmet>
 <div style="display:flex;justify-content:center;align-items:flex-start;padding:28px 20px">
@@ -266,7 +268,7 @@ a{color:#16130B}a:hover{color:#C93081}
           <div style="display:flex;flex-direction:column;align-items:flex-end;gap:9px;flex:none">
             <div style="display:flex;gap:3px" aria-label="{{ fc.tileLabel }}">
               <sc-for list="{{ fc.tiles }}" as="dft" hint-placeholder-count="5">
-                <span class="cc-five-tile" style="--cc-bloom-delay:{{ dft.bloomDelay }};width:27px;height:27px;border:1.5px solid #16130B;border-radius:5px;background:{{ dft.bg }};color:{{ dft.fg }};display:flex;align-items:center;justify-content:center;font:900 11px 'Chivo',sans-serif;box-sizing:border-box">{{ dft.ch }}</span>
+                <span class="cc-five-tile" style="--cc-jackpot-delay:{{ dft.jackpotDelay }};width:27px;height:27px;border:1.5px solid #16130B;border-radius:5px;background:{{ dft.bg }};color:{{ dft.fg }};display:flex;align-items:center;justify-content:center;font:900 11px 'Chivo',sans-serif;box-sizing:border-box">{{ dft.ch }}</span>
               </sc-for>
             </div>
             <span style="font:800 11px 'Chivo',sans-serif;color:{{ fc.actionColor }}">{{ fc.action }} ▸</span>
@@ -805,26 +807,26 @@ class Component extends DCLogic {
   }
   componentDidMount() {
     this._live = setInterval(() => this.setState(st => ({ bump: st.bump + Math.floor(Math.random() * 4) })), 3000);
-    this.armFiveBloom();
+    this.armFiveJackpot();
   }
-  componentDidUpdate() { this.armFiveBloom(); }
-  componentWillUnmount() { clearInterval(this._t); clearInterval(this._live); cancelAnimationFrame(this._fiveBloomFrame); if (this._fiveBloomObserver) this._fiveBloomObserver.disconnect(); }
+  componentDidUpdate() { this.armFiveJackpot(); }
+  componentWillUnmount() { clearInterval(this._t); clearInterval(this._live); cancelAnimationFrame(this._fiveJackpotFrame); if (this._fiveJackpotObserver) this._fiveJackpotObserver.disconnect(); }
 
-  armFiveBloom() {
-    cancelAnimationFrame(this._fiveBloomFrame);
-    this._fiveBloomFrame = requestAnimationFrame(() => {
-      if (!this._fiveBloomObserver) {
-        this._fiveBloomObserver = new IntersectionObserver(entries => {
+  armFiveJackpot() {
+    cancelAnimationFrame(this._fiveJackpotFrame);
+    this._fiveJackpotFrame = requestAnimationFrame(() => {
+      if (!this._fiveJackpotObserver) {
+        this._fiveJackpotObserver = new IntersectionObserver(entries => {
           entries.forEach(entry => {
             if (!entry.isIntersecting || entry.intersectionRatio < .35) return;
-            entry.target.setAttribute("data-bloomed", "true");
-            this._fiveBloomObserver.unobserve(entry.target);
+            entry.target.setAttribute("data-jackpot", "true");
+            this._fiveJackpotObserver.unobserve(entry.target);
           });
         }, { threshold: [.35] });
       }
-      document.querySelectorAll(".cc-five-card:not([data-bloom-watched])").forEach(card => {
-        card.setAttribute("data-bloom-watched", "true");
-        this._fiveBloomObserver.observe(card);
+      document.querySelectorAll(".cc-five-card:not([data-jackpot-watched])").forEach(card => {
+        card.setAttribute("data-jackpot-watched", "true");
+        this._fiveJackpotObserver.observe(card);
       });
     });
   }
@@ -1121,7 +1123,7 @@ class Component extends DCLogic {
       const current = dayIndex === 0, dark = dayIndex % 2 === 1;
       const word = current ? "" : compactFiveWords[(dayIndex - 1) % compactFiveWords.length];
       const sourceTiles = current ? dailyFivePreview : word.split("").map(ch => ({ ch, bg: "#2FA34F", fg: "#F6F1E4" }));
-      const tiles = sourceTiles.map((tile, i) => Object.assign({}, tile, { bloomDelay: (i * 70) + "ms" }));
+      const tiles = sourceTiles.map((tile, i) => Object.assign({}, tile, { jackpotDelay: (i * 85) + "ms" }));
       return {
         isPuzzle: false, isDailyFivePost: true, isLucky: false, isMystery: false, isStreakSave: false, isWheel: false,
         kicker: "Daily Five · " + compactFiveDays[dayIndex % compactFiveDays.length],
