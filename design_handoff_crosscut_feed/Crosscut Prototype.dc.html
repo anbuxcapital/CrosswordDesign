@@ -190,15 +190,7 @@ a{color:#16130B}a:hover{color:#C93081}
       </div>
     </div>
     <div onScroll="{{ feedScroll }}" style="flex:1;overflow-y:auto;min-height:0">
-      <div style="display:flex;gap:14px;padding:6px 18px 16px;overflow-x:auto">
-        <sc-for list="{{ stories }}" as="st" hint-placeholder-count="5">
-          <div style="display:flex;flex-direction:column;align-items:center;gap:5px;flex:none">
-            <div style="width:58px;height:58px;border-radius:50%;border:{{ st.ring }};display:flex;align-items:center;justify-content:center;background:{{ st.bg }};color:{{ st.fg }};font:900 14px 'Chivo',sans-serif">{{ st.label }}</div>
-            <span style="font:600 10px 'Chivo',sans-serif;color:{{ st.subColor }}">{{ st.sub }}</span>
-          </div>
-        </sc-for>
-      </div>
-      <div style="display:flex;align-items:center;gap:8px;margin:0 18px 14px;padding:8px 13px;background:#F6F1E4;border:2px solid #16130B;border-radius:999px;overflow:hidden">
+      <div style="display:flex;align-items:center;gap:8px;margin:6px 18px 14px;padding:8px 13px;background:#F6F1E4;border:2px solid #16130B;border-radius:999px;overflow:hidden">
         <span style="width:8px;height:8px;border-radius:50%;background:#2FA34F;flex:none;animation:ccblink 1.2s steps(1) infinite"></span>
         <span style="font:600 11px 'Chivo',sans-serif;color:rgba(22,19,11,.7);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ tickerLine }}</span>
       </div>
@@ -1065,17 +1057,6 @@ class Component extends DCLogic {
       { title: "Four days ago", meta: "Solved in 5/6", mark: "✓", bg: "#F6F1E4", fg: "#16130B", tileBg: "#16130B", tileFg: "#DFA94C", action: "REVIEW", op: .7, open: () => {} }
     ];
 
-    // stories
-    const stories = [
-      { label: "MON", sub: "Today", ring: s.todaySolved ? "3px solid #16130B" : "3px solid #C93081", bg: s.todaySolved ? "#16130B" : "#F6F1E4", fg: s.todaySolved ? "#EFE9DB" : "#16130B", subColor: "#16130B" },
-      { label: "✓", sub: "Sun", ring: "2px solid #16130B", bg: "#16130B", fg: "#EFE9DB", subColor: "rgba(22,19,11,.5)" },
-      { label: "✓", sub: "Sat", ring: "2px solid #16130B", bg: "#16130B", fg: "#EFE9DB", subColor: "rgba(22,19,11,.5)" },
-      { label: "FRI", sub: "Missed", ring: "2px dashed rgba(22,19,11,.35)", bg: "#EFE9DB", fg: "rgba(22,19,11,.35)", subColor: "rgba(22,19,11,.5)" },
-      { label: "✓", sub: "Thu", ring: "2px solid #16130B", bg: "#16130B", fg: "#EFE9DB", subColor: "rgba(22,19,11,.5)" },
-      { label: "✓", sub: "Wed", ring: "2px solid #16130B", bg: "#16130B", fg: "#EFE9DB", subColor: "rgba(22,19,11,.5)" }
-    ];
-    if (s.todaySolved) stories[0].label = "✓";
-
     const mkTiles = (p, big) => {
       const w = p.themeWord.split("");
       return w.map((ch, i) => {
@@ -1325,7 +1306,7 @@ class Component extends DCLogic {
       planLevel: ({ newbie: "First timer", casual: "Casual solver", shark: "Word shark" })[s.level],
       planTopics: topicsPicked, planLang: ({ en: "English", uk: "Українська", ru: "Русский" })[s.lang],
       streak, tokens: s.tokens.toLocaleString("en-US"), stars: s.stars.toLocaleString("en-US"),
-      stories, feedCards, searchChips, searchTiles, langChips, completedTiles,
+      feedCards, searchChips, searchTiles, langChips, completedTiles,
       dailyDropStatus: (s.todaySolved ? 1 : 0) + (s.dailyFiveDone ? 1 : 0) + " of 2 complete",
       miniDropAction: s.todaySolved ? "Review" : "Play Mini",
       dailyFiveAction: s.dailyFiveDone ? "Review result" : s.dailyFiveGuesses.length ? "Continue" : "Start Daily Five",

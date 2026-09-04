@@ -14,10 +14,9 @@
 
 No actionable P0, P1, or P2 differences remain.
 
-- The implementation intentionally retains Crosscut's existing stories row, live ticker,
-  account balances, and social feed card below Today's Drop. The selected source direction
-  simplified these surrounding regions to isolate the concept; preserving them prevents a
-  regression in the established product flow.
+- The implementation retains Crosscut's live ticker, account balances, and social feed card
+  below Today's Drop. The weekly story strip was removed from Feed at the user's direction,
+  reducing duplicated streak information and bringing the daily games above the fold.
 - Today's Drop keeps the source's split Crossword / Daily Five decision, strong shared
   container, independent state, five-tile word preview, and magenta action emphasis.
 - The combined Today's Drop remains the feed entry point. Below it, the feed now repeats
@@ -52,6 +51,8 @@ No actionable P0, P1, or P2 differences remain.
 - Opened a completed compact Daily Five card and confirmed it routes to the archive.
 - Visually inspected the one-crossword / two-compact-card sequence at the mobile viewport;
   no clipping, collisions, or hierarchy regressions were found.
+- Confirmed the Feed now moves cleanly from the header into the live ticker and Today's Drop,
+  with no leftover weekly-strip space or bindings.
 - Confirmed the crossword keyboard's edge keys now fit inside the device frame.
 - Checked the prototype console: no warnings or errors.
 

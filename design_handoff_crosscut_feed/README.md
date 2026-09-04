@@ -151,21 +151,17 @@ Layout, top to bottom:
 1. **Header** (flex, 18px padding): wordmark "Crosscut" + `accent` period; three pill
    balance chips (`card`, 2px ink border, 800 12): `🔥 {streak}`, `🪙 {tokens}`,
    `⭐ {stars}`. Token and star chips open Wallet.
-2. **Stories row** — horizontal scroll, 14px gap. Each item = 58px circle + 600 10 caption.
-   Today: 3px `accent` ring, `card` fill, "MON" label, caption "Today"; becomes an ink-filled
-   ✓ once solved. Solved past days: ink fill, `paper` ✓. Missed: 2px dashed ink @35%, muted
-   label, caption "Missed". Six items (Mon…Wed).
-3. **Live ticker** — pill (`card`, 2px ink border), 8px `success` dot blinking on a 1.2s
+2. **Live ticker** — pill (`card`, 2px ink border), 8px `success` dot blinking on a 1.2s
    step loop, 600 11 single-line ellipsised text. Rotates every 3s through six lines
    (fast solve, long streak, live solver count, a like, a leaderboard pass, archive teaser).
-4. **Today's drop** — one split card pairing the Mini Crossword and Daily Five. Each side
+3. **Today's drop** — one split card pairing the Mini Crossword and Daily Five. Each side
    has an independent progress/completion state and opens its own play flow. Daily Five
    uses five compact tiles, the promise "One word. Six tries.", and a Start / Continue /
    Review action derived from state.
-5. **Streak-at-risk card** (only while today is unsolved) — ink surface, `accent` shadow,
+4. **Streak-at-risk card** (only while today is unsolved) — ink surface, `accent` shadow,
    flickering 🔥 (1.6s scale+rotate loop), title "{streak}-day streak at risk", sub
    "9h 14m left today. One Mini keeps it alive.", full-width `accent` CTA "Solve today's Mini".
-6. **Puzzle post cards** — the core unit:
+5. **Puzzle post cards** — the core unit:
    - Header strip: 34px circular avatar, author 800 13, meta 500 11 @55%
      ("Mini · 5×5 · 2m ago"), optional 26px `success` ✓ when solved, difficulty badge
      (2px border in the puzzle's difficulty colour, 800 10 uppercase).
@@ -177,17 +173,17 @@ Layout, top to bottom:
      staggered 0.4s per tile.
    - Action bar: heart (filled `accent` when liked) + count, bookmark + "Save", and
      right-aligned live meta ("8,412 solved · 297 solving now" — the count creeps every 3s).
-7. **Compact Daily Five posts** — Feed rhythm is one full crossword post followed by two
+6. **Compact Daily Five posts** — Feed rhythm is one full crossword post followed by two
    smaller Daily Five cards. Each compact card is roughly 104px tall with a five-tile
    result/progress strip, a short status line and one Review / Continue action. Today's card
    resumes play; archive cards open Daily Five history. The combined Today's drop remains
    above the feed as the daily overview.
-8. **Fortune wheel card** — compact ink card, `accent` shadow: 🎰 icon rotating on a slow
+7. **Fortune wheel card** — compact ink card, `accent` shadow: 🎰 icon rotating on a slow
    loop, "Fortune wheel" / "One free spin waiting", `accent` pill "Spin ▸" that opens the
    wheel modal (see Interactions).
-9. **Mystery grid card** — ink cover, `gold` kicker "MYSTERY GRID", five `?` tiles (one
+8. **Mystery grid card** — ink cover, `gold` kicker "MYSTERY GRID", five `?` tiles (one
    gold), copy "No title. No difficulty. Dare you." and a gold "Reveal ▸" pill.
-10. **Infinite scroll** — two shimmer skeleton blocks (110px and 60px, 1.4s sweep) sit at the
+9. **Infinite scroll** — two shimmer skeleton blocks (110px and 60px, 1.4s sweep) sit at the
    bottom; nearing them appends another batch (archive posts + alternating wheel/mystery
    cards), up to 10 batches.
 
