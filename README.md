@@ -17,12 +17,14 @@ root, run `python3 -m http.server 4173`, then open
 
 ## Admin console
 
+- [Interactive prototype](admin-console/CrosscutAdminConsole.html)
 - [Overview](admin-console/README.md)
+- [Console design guidelines](admin-console/CONSOLE-DESIGN-GUIDELINES.md)
 - [Research and proposed scope](admin-console/ADMIN-CONSOLE-RESEARCH.md)
-- [Publishing calendar with metrics](admin-console/publishing-calendar-metrics-concept.png)
+- [Design QA](admin-console/design-qa.md)
+- [Earlier publishing-calendar concept](admin-console/references/publishing-calendar-metrics-concept.png)
 
-The admin console is currently a design concept using demo data, not a connected
-administration service.
+The admin console is an interactive design prototype using demo data, not a connected administration service.
 
 ## Organization
 

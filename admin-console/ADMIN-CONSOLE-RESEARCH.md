@@ -29,6 +29,7 @@ These are interaction references, not recommendations to adopt their services. V
 | Players | ID/name lookup, profile, progress, streak, sessions and ledger history | First version design; new admin queries required |
 | Leaderboards | Puzzle/week scope, suspicious solve evidence, review decisions and reason history | First version design; new admin review commands required |
 | Economy | Inspect token/star ledger; proposed adjustment flow records reason, operator and resulting balance | Design now; enable only with an authoritative audited command |
+| Ads | Placement enablement, frequency caps, rewarded grants, first-session grace, fill-rate health and AdMob handoff | First version design; network campaign configuration remains in AdMob |
 | Operations | Content-pool depth, drop generation status, leaderboard freshness, failed jobs and retry result | First version design; status/recovery contract required |
 | Access & history | Operator identity, roles, environment label and audit history for mutations | Required before production use |
 | Engagement & revenue | Notification campaigns, offers, purchase support and deeper retention analytics | Later integration; not represented as currently working |
@@ -39,6 +40,7 @@ These are interaction references, not recommendations to adopt their services. V
 2. Open a missing date → choose approved crossword and Daily Five → preview combined drop → schedule with explicit UTC time and local-time explanation.
 3. Search player → inspect solve/session/ledger timeline → select a permitted support action → enter reason → review before/after → confirm → view audit entry.
 4. Open flagged leaderboard result → inspect evidence → record decision → see updated board eligibility. Keep reward decisions separate from board eligibility.
+5. Review an ad placement → change an app-owned cap or reward rule → record the operator and effective time. Keep campaigns, targeting and revenue reporting in the ad network.
 
 Crossword validation should identify grid/answer mismatch, clue numbering, missing clues and invalid entries. Daily Five should identify answer length, dictionary membership, invalid characters and answer reuse according to an explicitly chosen editorial rule. These are proposed requirements, not claims that validators are already implemented.
 
@@ -59,3 +61,13 @@ A visual authoring console also needs a decision on how approved edits return to
 Desktop, 1440 × 1024. Cream #EFE9DB / #F6F1E4, ink #16130B, pink #C93081, restrained gold #DFA94C. Bold Chivo-like headings, readable 14–16px controls, quiet dividers and sparse shadows. Preserve Crosscut identity while prioritizing long editing sessions. Current date: Tuesday, September 8, 2026; containing week: September 7–13.
 
 Explore three independently reviewable structures: a daily publishing desk, a library with an editing inspector, and a weekly release planner. Use illustrative data labeled Demo. The chosen structure will ground an interactive prototype; research and images alone do not constitute implemented admin functionality.
+
+## Selected prototype
+
+The implemented prototype selects the daily publishing desk as its primary workspace and expands it into a complete console shell. It retains the paired-drop readiness model from the earlier metrics concept, then adds calendar/list scheduling, multi-puzzle days, player-local publish times, a player record, Ads, Leaderboards, Economy, and Operations.
+
+The live prototype intentionally distinguishes three kinds of controls:
+
+- Core demo interactions work: navigation, calendar/list switching, day selection, content filtering, row selection, player tabs and edit states, ad toggles, publish-time modes, and schedule-ahead selection.
+- Confirmation actions model required safeguards but do not persist data.
+- External or backend-dependent actions are visually present only when needed to explain the workflow.
