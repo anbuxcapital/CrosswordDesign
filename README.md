@@ -21,6 +21,7 @@ root, run `python3 -m http.server 4173`, then open
 - [Overview](admin-console/README.md)
 - [Console design guidelines](admin-console/CONSOLE-DESIGN-GUIDELINES.md)
 - [Research and proposed scope](admin-console/ADMIN-CONSOLE-RESEARCH.md)
+- [Actors, use cases and happy paths](admin-console/USE-CASES.md)
 - [Design QA](admin-console/design-qa.md)
 - [Earlier publishing-calendar concept](admin-console/references/publishing-calendar-metrics-concept.png)
 

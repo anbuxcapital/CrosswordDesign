@@ -13,6 +13,7 @@ The prototype is a self-contained bundle, so it does not need a separate `suppor
 - `CrosscutAdminConsole.html` — current interactive prototype and source of truth for the selected UI direction.
 - `CONSOLE-DESIGN-GUIDELINES.md` — product and interaction rules for extending the console.
 - `ADMIN-CONSOLE-RESEARCH.md` — reference patterns, proposed workflows, backend boundaries, and coverage decisions.
+- `USE-CASES.md` — operator roles, the 26 use cases, each happy path with its screens, and the plan for the clickable prototype.
 - `design-qa.md` — latest browser review, interaction coverage, and known prototype limits.
 - `references/publishing-calendar-metrics-concept.png` — earlier selected publishing-calendar concept retained for visual lineage, not as the current UI.
 
