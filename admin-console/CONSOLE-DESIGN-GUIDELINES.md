@@ -5,7 +5,7 @@ These rules define how to extend the selected admin-console direction without tu
 ## Product structure
 
 1. Lead with work, not reporting. The default screen should answer what needs attention today and provide the shortest safe path to resolve it.
-2. Keep the daily drop as the publishing unit. A valid drop has at least one crossword and one Daily Five; additional puzzles are ordered explicitly.
+2. Keep the Daily challenge as the publishing unit. A Daily challenge is exactly one crossword and one Daily Five per language per day; there is nothing else to order.
 3. Separate editorial, support, commercial, and operational concerns in navigation, while keeping operator identity and audit behavior global.
 4. Search players instead of exposing an unrestricted player directory. Show only the records needed for the current support task.
 5. Keep third-party campaign management and revenue reporting in the ad network. The Crosscut console owns app placement rules, caps, rewards, consent visibility, and grant health.
@@ -41,7 +41,7 @@ These rules define how to extend the selected admin-console direction without tu
 
 ## Content language
 
-- Prefer concrete labels: `No Daily Five assigned`, `Retry generation`, `6 days of Daily Five remaining`.
+- Prefer concrete labels: `No Daily Five assigned`, `Retry generation`, `6 days of Daily Five remaining`. The two games are `crossword` and `Daily Five`; the generic noun is `game`, never `puzzle`. The daily pair is the `Daily challenge`.
 - Avoid vague labels such as `Issue`, `Error`, or `Manage` when a specific action is known.
 - Label demo data and simulation boundaries clearly.
 - Use sentence case for screen titles, controls, and status messages.

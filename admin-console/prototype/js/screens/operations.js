@@ -52,8 +52,9 @@
     var day = dayOf(sig);
     if (day) {
       var derived = C.deriveDay(day);
+      // A drop is exactly two slots: one crossword, one Daily Five.
       return ['cw', 'd5'].map(function (kind) {
-        var item = derived.items.filter(function (i) { return i.kind === kind; })[0];
+        var item = derived.slots[kind];
         if (!item) {
           return {
             label: day.label + ' ' + KIND_INLINE[kind], outcome: 'failed',
@@ -68,7 +69,7 @@
         }
         return {
           label: day.label + ' ' + KIND_INLINE[kind] + ' ' + item.id, outcome: 'ok',
-          detail: item.title + ' queued for the drop'
+          detail: item.title + ' queued in the ' + KIND[kind] + ' slot'
         };
       });
     }
@@ -79,7 +80,7 @@
 
   function successDetail(sig, items) {
     var day = dayOf(sig);
-    if (day) return 'Generated for ' + day.label + ' · ' + items.length + ' games queued';
+    if (day) return 'Generated for ' + day.label + ' · Crossword queued · Daily Five queued';
     if (sig.id === 'sig_reward_grants') {
       return '0 of 812 grants failed · Post-solve rewarded · 7 days (under the 1% alert floor)';
     }
@@ -97,7 +98,8 @@
     var body = el('div');
 
     var kv = el('dl', 'kv-grid');
-    [['Job', sig.job], ['Affected object', sig.object], ['Items to run', String(items.length)], ['Effective', 'Now · Sep 8']]
+    [['Job', sig.job], ['Affected object', sig.object],
+      [dayOf(sig) ? 'Slots to run' : 'Items to run', String(items.length)], ['Effective', 'Now · Sep 8']]
       .forEach(function (r) {
         kv.appendChild(el('dt', null, r[0]));
         kv.appendChild(el('dd', 'mono', r[1]));
@@ -106,13 +108,14 @@
 
     var note = el('div', 'notice');
     note.style.marginTop = '12px';
-    note.textContent = 'The retry re-reads the current content and reports one outcome per item. It does not edit games, days or player records.';
+    note.textContent = 'The retry re-reads the current content and reports one outcome per ' +
+      (dayOf(sig) ? 'slot' : 'item') + '. It does not edit games, days or player records.';
     body.appendChild(note);
 
     var reason = C.ui.reasonField({
       required: false,
       label: 'Reason (optional)',
-      placeholder: 'e.g. Daily Five assigned on the drop desk, re-running generation',
+      placeholder: 'e.g. Daily Five assigned in Daily challenge, re-running generation',
       help: 'A job retry does not require a reason. Anything you write is stored in the audit log with the result.'
     });
     body.appendChild(reason);
@@ -130,7 +133,7 @@
             action: 'Retry job',
             object: sig.object || sig.id,
             reason: reason.value(),
-            result: 'Ran ' + sig.job + ' · ' + okCount + ' of ' + items.length + ' items ok · signal ' +
+            result: 'Ran ' + sig.job + ' · ' + okCount + ' of ' + items.length + (dayOf(sig) ? ' slots' : ' items') + ' ok · signal ' +
               (allOk ? 'cleared' : 'still failing: ' + items.filter(function (i) { return i.outcome !== 'ok'; })[0].label),
             apply: function () {
               var s = signalById(sig.id);
@@ -159,7 +162,7 @@
     var allOk = items.every(function (i) { return i.outcome === 'ok'; });
     var body = el('div');
     body.appendChild(el('div', 'panel-note',
-      sig.job + ' · ' + sig.object + ' · ' + items.length + ' items · run at 12:31 UTC'));
+      sig.job + ' · ' + sig.object + ' · ' + items.length + (dayOf(sig) ? ' slots' : ' items') + ' · run at 12:31 UTC'));
     body.lastChild.style.marginBottom = '10px';
     body.appendChild(C.ui.results(items.map(function (i) {
       return { label: i.label, outcome: i.outcome, detail: i.detail, outcomeLabel: i.outcome === 'ok' ? 'OK' : 'Failed' };
@@ -174,7 +177,7 @@
       var day = dayOf(sig);
       note.textContent = sig.name + ' still fails: ' + first.label + ' — ' + first.detail + '. ' +
         (day
-          ? 'Assign a ' + (/Daily Five/.test(first.label) ? 'Daily Five' : 'crossword') + ' to ' + day.longLabel + ' on the drop desk, then retry.'
+          ? 'Assign a ' + (/Daily Five/.test(first.label) ? 'Daily Five' : 'crossword') + ' to ' + day.longLabel + ' in Daily challenge, then retry.'
           : 'Fix the item above, then retry.');
     }
     body.appendChild(note);
@@ -185,7 +188,7 @@
       body: body,
       wide: true,
       secondary: (!allOk && day && C.canSee('desk')) ? {
-        label: 'Open ' + day.label + ' in the drop desk',
+        label: 'Open ' + day.label + ' in Daily challenge',
         onClick: function () { C.ui.closeModal(); goToDay(day); }
       } : null,
       primary: { label: 'Done', onClick: function () { C.ui.closeModal(); } }
@@ -269,7 +272,7 @@
     }
     n.textContent = sig.name + ' failed on ' + sig.object + ' at ' + sig.lastRun + '. ' +
       (day
-        ? 'The drop for ' + day.longLabel + ' will not publish until the missing item is assigned. Fix it on the drop desk, then retry the job.'
+        ? 'The Daily challenge for ' + day.longLabel + ' will not publish until the missing item is assigned. Fix it in Daily challenge, then retry the job.'
         : 'Retry the job below; every item reports its own outcome.');
     return n;
   }
@@ -331,7 +334,7 @@
       }));
     }
     if (day && C.canSee('desk')) {
-      foot.appendChild(C.ui.button('Open ' + day.label + ' in the drop desk', {
+      foot.appendChild(C.ui.button('Open ' + day.label + ' in Daily challenge', {
         onClick: function () { goToDay(day); }
       }));
     }
@@ -514,7 +517,7 @@
     b.appendChild(el('span', 'banner-dot'));
     b.appendChild(el('div', 'banner-text', bad.name + ' · ' + bad.detail));
     b.appendChild(el('div', 'banner-detail', day
-      ? 'Blocks the ' + day.longLabel + ' drop. Retry the job, or assign the missing game first.'
+      ? 'Blocks the ' + day.longLabel + ' Daily challenge. Retry the job, or assign the missing game first.'
       : 'Retry the job to get a per-item outcome.'));
     b.appendChild(el('div', 'spacer'));
     b.appendChild(C.ui.button('Triage', {

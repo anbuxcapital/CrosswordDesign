@@ -1,7 +1,8 @@
 /* Drop desk — the publisher's default screen.
    OWNER: publishing builder.
-   P1 fill a missing slot · P2 schedule a day · P3 schedule ahead in bulk ·
-   P4 reorder, replace or unschedule. Collections (P5) live in collections.js. */
+   A drop is exactly one crossword and one Daily Five — two fixed slots per day.
+   P1 fill an empty slot · P2 schedule a day · P3 schedule ahead in bulk ·
+   P4 replace a slot or unschedule the day. Collections (P5) live in collections.js. */
 (function (C) {
   'use strict';
 
@@ -40,6 +41,15 @@
   function modeWord(mode) { return mode === 'local' ? 'player-local time' : 'UTC'; }
   function langWord(lang) { return lang === 'uk' ? 'Ukrainian' : 'English'; }
 
+  /* Index inside day.items of the game filling one slot, or -1. */
+  function slotIndex(day, kind) {
+    for (var i = 0; i < day.items.length; i++) {
+      var p = C.find.puzzle(day.items[i]);
+      if (p && p.kind === kind) return i;
+    }
+    return -1;
+  }
+
   function dayLang(day) {
     for (var i = 0; i < day.items.length; i++) {
       var p = C.find.puzzle(day.items[i]);
@@ -55,7 +65,8 @@
     if (day.scheduled) return 'Already queued at ' + day.publishTime + ' ' + modeWord(day.publishMode);
     if (dd.empty) return 'No games planned';
     if (dd.missing.length) return 'No ' + kindWord(dd.missing[0]) + ' assigned';
-    if (dd.blocked) return 'One or more games are not approved yet';
+    if (dd.extra.length) return 'This day has ' + dd.extra[0];
+    if (dd.blocked) return 'One or both games are not approved yet';
     return '';
   }
 
@@ -81,25 +92,24 @@
 
   function consequenceText(day, time, mode) {
     return mode === 'local'
-      ? 'Every player gets the ' + day.longLabel + ' drop at ' + time + ' on their own clock. It rolls across time zones over 26 hours, starting in UTC+14. Nothing publishes before then and you can unschedule until the first zone goes live.'
-      : 'The ' + day.longLabel + ' drop goes live at one instant worldwide, ' + time + ' UTC. Players see it at the local times listed above. Nothing publishes before then and you can unschedule until it goes live.';
+      ? 'Every player gets the ' + day.longLabel + ' Daily challenge at ' + time + ' on their own clock. It rolls across time zones over 26 hours, starting in UTC+14. Nothing publishes before then and you can unschedule until the first zone goes live.'
+      : 'The ' + day.longLabel + ' Daily challenge goes live at one instant worldwide, ' + time + ' UTC. Players see it at the local times listed above. Nothing publishes before then and you can unschedule until it goes live.';
   }
 
-  /* A table of the puzzles in a drop, used inside review dialogs. */
+  /* The two fixed slots of a drop, used inside review dialogs. */
+  function slotSummary(item) {
+    return item ? item.id + ' ' + item.title : 'Empty';
+  }
+
   function itemTable(day) {
     var dd = C.deriveDay(day);
-    var seen = { cw: 0, d5: 0 };
-    var totals = {
-      cw: dd.items.filter(function (i) { return i.kind === 'cw'; }).length,
-      d5: dd.items.filter(function (i) { return i.kind === 'd5'; }).length
-    };
-    var rows = dd.items.map(function (it) {
-      var n = ++seen[it.kind];
+    var rows = ['cw', 'd5'].map(function (kind) {
+      var it = dd.slots[kind];
       return {
-        id: it.id,
-        slot: kindLabel(it.kind) + (totals[it.kind] > 1 ? ' ' + n + ' of ' + totals[it.kind] : ''),
-        title: it.title,
-        state: it.status
+        id: it ? it.id : '—',
+        slot: kindLabel(kind),
+        title: it ? it.title : 'No ' + kindWord(kind) + ' chosen',
+        state: it ? it.status : 'empty'
       };
     });
     return C.ui.table({
@@ -125,47 +135,45 @@
   // ------------------------------------------------------------------
 
   function openPicker(day, kind) {
-    var dd = C.deriveDay(day);
-    var missing = dd.missing.indexOf(kind) >= 0;
     var lang = dayLang(day);
 
     var body = el('div');
     body.appendChild(el('div', 'help', 'Approved ' + kindPlural(kind) + ' in ' + langWord(lang) +
-      '. Picking one assigns it to the ' + day.longLabel + ' drop straight away; the day is not scheduled until you confirm the schedule.'));
+      '. Picking one fills the ' + kindLabel(kind) + ' slot of the ' + day.longLabel + ' Daily challenge straight away; the day is not scheduled until you confirm the schedule.'));
     body.appendChild(C.ui.puzzlePicker({
       kind: kind, lang: lang,
-      onPick: function (p) { assignPuzzle(day, kind, p, missing); }
+      onPick: function (p) { assignPuzzle(day, kind, p); }
     }));
 
     C.ui.modal({
-      title: (missing ? 'Choose a ' : 'Add another ') + kindWord(kind) + ' for ' + day.longLabel,
+      title: 'Choose a ' + kindWord(kind) + ' for ' + day.longLabel,
       wide: true,
       body: body,
       secondary: { label: 'Cancel' }
     });
   }
 
-  function assignPuzzle(day, kind, puzzle, missing) {
+  function assignPuzzle(day, kind, puzzle) {
     if (day.items.indexOf(puzzle.id) >= 0) {
-      C.toast(puzzle.id + ' is already in this drop.');
+      C.toast(puzzle.id + ' is already in this Daily challenge.');
       return;
     }
     day.items.push(puzzle.id);
     var after = C.deriveDay(day);
     day.items.pop();
     var readyText = after.blocked
-      ? 'Day is still blocked: ' + (after.missing.length ? 'no ' + kindWord(after.missing[0]) + ' assigned' : 'one or more games are not approved yet')
+      ? 'Day is still blocked: ' + (after.missing.length ? 'no ' + kindWord(after.missing[0]) + ' assigned' : 'one or both games are not approved yet')
       : 'Day is ready to schedule';
 
     C.ui.closeModal();
     C.commit({
-      action: missing ? 'Assign ' + kindWord(kind) + ' to slot' : 'Add ' + kindWord(kind) + ' to drop',
+      action: 'Assign ' + kindWord(kind) + ' to slot',
       object: 'day ' + day.iso,
       reason: '',
       result: puzzle.id + ' ' + puzzle.title + ' → ' + kindLabel(kind) + ' slot. ' + readyText + '.',
       apply: function () { day.items.push(puzzle.id); }
     });
-    C.toast(puzzle.id + ' assigned to ' + day.longLabel + '.');
+    C.toast(puzzle.id + ' fills the ' + kindWord(kind) + ' slot on ' + day.longLabel + '.');
   }
 
   // ------------------------------------------------------------------
@@ -180,21 +188,23 @@
 
     var body = el('div');
     body.appendChild(C.ui.reviewPanel({
-      title: 'Review the ' + day.longLabel + ' drop',
+      title: 'Review the ' + day.longLabel + ' Daily challenge',
       before: [
         ['Status', 'Ready'],
         ['Publish time', 'Not scheduled'],
-        ['Games', dd.items.length + ' paired']
+        ['Crossword', slotSummary(dd.slots.cw)],
+        ['Daily Five', slotSummary(dd.slots.d5)]
       ],
       after: [
         ['Status', 'Queued'],
         ['Publish time', time + ' ' + modeWord(mode)],
-        ['Games', dd.items.length + ' queued']
+        ['Crossword', slotSummary(dd.slots.cw)],
+        ['Daily Five', slotSummary(dd.slots.d5)]
       ],
       consequence: consequenceText(day, time, mode)
     }));
 
-    body.appendChild(sectionLabel('Items in this drop'));
+    body.appendChild(sectionLabel('Slots in this Daily challenge'));
     body.appendChild(itemTable(day));
 
     body.appendChild(sectionLabel(mode === 'local' ? 'Representative UTC instants' : 'Representative local times'));
@@ -219,10 +229,10 @@
         onClick: function () {
           C.ui.closeModal();
           C.commit({
-            action: 'Schedule drop',
+            action: 'Schedule Daily challenge',
             object: 'day ' + day.iso,
             reason: reason.value(),
-            result: 'Queued for ' + day.longLabel + ' at ' + time + ' ' + modeWord(mode) + ' · ' + dd.items.length + ' games',
+            result: 'Queued for ' + day.longLabel + ' at ' + time + ' ' + modeWord(mode) + ' · crossword + Daily Five',
             apply: function () {
               day.scheduled = true;
               day.publishTime = time;
@@ -243,18 +253,20 @@
     var dd = C.deriveDay(day);
     var body = el('div');
     body.appendChild(C.ui.reviewPanel({
-      title: 'Unschedule the ' + day.longLabel + ' drop',
+      title: 'Unschedule the ' + day.longLabel + ' Daily challenge',
       before: [
         ['Status', 'Queued'],
         ['Publish time', day.publishTime + ' ' + modeWord(day.publishMode)],
-        ['Games', dd.items.length + ' queued']
+        ['Crossword', slotSummary(dd.slots.cw)],
+        ['Daily Five', slotSummary(dd.slots.d5)]
       ],
       after: [
         ['Status', 'Ready'],
         ['Publish time', 'Not scheduled'],
-        ['Games', dd.items.length + ' paired']
+        ['Crossword', slotSummary(dd.slots.cw)],
+        ['Daily Five', slotSummary(dd.slots.d5)]
       ],
-      consequence: 'The drop stops being queued and returns to Ready. No game is removed from the day and nothing has reached players yet, so you can schedule it again at any time before ' + day.publishTime + '.'
+      consequence: 'The Daily challenge stops being queued and returns to Ready. Neither slot is emptied and nothing has reached players yet, so you can schedule it again at any time before ' + day.publishTime + '.'
     }));
     var reason = C.ui.reasonField({
       required: true,
@@ -264,20 +276,20 @@
     body.appendChild(reason);
 
     C.ui.modal({
-      title: 'Unschedule drop',
+      title: 'Unschedule Daily challenge',
       wide: true,
       body: body,
       secondary: { label: 'Keep it queued' },
       primary: {
-        label: 'Unschedule drop',
+        label: 'Unschedule Daily challenge',
         destructive: true,
         onClick: function () {
           C.ui.closeModal();
           C.commit({
-            action: 'Unschedule drop',
+            action: 'Unschedule Daily challenge',
             object: 'day ' + day.iso,
             reason: reason.value(),
-            result: day.longLabel + ' returned to Ready · ' + dd.items.length + ' games kept',
+            result: day.longLabel + ' returned to Ready · both slots kept',
             apply: function () { day.scheduled = false; }
           });
           C.toast(day.longLabel + ' is Ready again.');
@@ -286,17 +298,18 @@
     });
   }
 
-  function openReplace(day, index) {
-    var current = C.find.puzzle(day.items[index]);
+  function openReplace(day, kind) {
+    var index = slotIndex(day, kind);
+    var current = index < 0 ? null : C.find.puzzle(day.items[index]);
     if (!current) return;
     var body = el('div');
-    body.appendChild(el('div', 'help', 'Replacing ' + current.id + ' ' + current.title + ' in the ' + day.longLabel + ' drop.' +
+    body.appendChild(el('div', 'help', 'Replacing ' + current.id + ' ' + current.title + ' in the ' + day.longLabel + ' Daily challenge.' +
       (day.scheduled ? ' The day is queued, so replacing returns it to Ready and you will need to confirm the schedule again.' : '')));
     body.appendChild(C.ui.puzzlePicker({
       kind: current.kind, lang: current.lang,
       onPick: function (p) {
         if (p.id === current.id) { C.toast(p.id + ' is already in this slot.'); return; }
-        if (day.items.indexOf(p.id) >= 0) { C.toast(p.id + ' is already in this drop.'); return; }
+        if (day.items.indexOf(p.id) >= 0) { C.toast(p.id + ' is already in this Daily challenge.'); return; }
         if (day.scheduled) confirmReplace(day, index, current, p);
         else commitReplace(day, index, current, p, '');
       }
@@ -349,7 +362,7 @@
     var wasScheduled = day.scheduled;
     C.ui.closeModal();
     C.commit({
-      action: 'Replace ' + kindWord(current.kind) + ' in drop',
+      action: 'Replace ' + kindWord(current.kind) + ' in Daily challenge',
       object: 'day ' + day.iso,
       reason: reason,
       result: current.id + ' replaced with ' + next.id + ' ' + next.title +
@@ -362,43 +375,6 @@
     C.toast(next.id + ' now fills the ' + kindWord(next.kind) + ' slot.');
   }
 
-  /* Explicit ordering: a puzzle only moves past another puzzle of the same kind. */
-  function siblingIndex(day, index, dir) {
-    var p = C.find.puzzle(day.items[index]);
-    if (!p) return -1;
-    for (var j = index + dir; j >= 0 && j < day.items.length; j += dir) {
-      var q = C.find.puzzle(day.items[j]);
-      if (q && q.kind === p.kind) return j;
-    }
-    return -1;
-  }
-
-  function moveItem(day, index, dir) {
-    var j = siblingIndex(day, index, dir);
-    if (j < 0) return;
-    var p = C.find.puzzle(day.items[index]);
-    var kind = p.kind;
-
-    var order = day.items.slice();
-    var tmp = order[index]; order[index] = order[j]; order[j] = tmp;
-    var position = 0, total = 0;
-    order.forEach(function (id, k) {
-      var q = C.find.puzzle(id);
-      if (!q || q.kind !== kind) return;
-      total++;
-      if (k === j) position = total;
-    });
-
-    C.commit({
-      action: 'Reorder drop',
-      object: 'day ' + day.iso,
-      reason: '',
-      result: p.id + ' ' + p.title + ' moved to ' + kindWord(kind) + ' ' + position + ' of ' + total + ' in the ' + day.longLabel + ' drop',
-      apply: function () { day.items = order; }
-    });
-    C.toast(p.id + ' moved to position ' + position + '.');
-  }
-
   // ------------------------------------------------------------------
   // P3 — schedule ahead in bulk
   // ------------------------------------------------------------------
@@ -407,7 +383,12 @@
     return st().marked.slice().sort(function (a, b) { return a - b; }).map(function (i) {
       var d = days()[i];
       var why = blockReason(d);
-      return { day: d, date: d.longLabel, why: why, ok: !why, count: C.deriveDay(d).items.length };
+      var dd = C.deriveDay(d);
+      return {
+        day: d, date: d.longLabel, why: why, ok: !why,
+        cw: dd.slots.cw ? dd.slots.cw.id : '—',
+        d5: dd.slots.d5 ? dd.slots.d5.id : '—'
+      };
     });
   }
 
@@ -429,7 +410,8 @@
     body.appendChild(C.ui.table({
       cols: [
         { key: 'date', label: 'Date', cls: 'cell-title' },
-        { key: 'count', label: 'Games' },
+        { key: 'cw', label: 'Crossword', cls: 'cell-id' },
+        { key: 'd5', label: 'Daily Five', cls: 'cell-id' },
         { key: 'time', label: 'Publish time', render: function () { return time + ' ' + modeWord(mode); } },
         {
           key: 'why', label: 'Outcome', align: 'right',
@@ -445,7 +427,7 @@
 
     var conseq = el('div', 'review-consequence');
     conseq.style.marginTop = '12px';
-    conseq.textContent = ready.length + ' drops publish on their own date at ' + time + ' ' + modeWord(mode) +
+    conseq.textContent = ready.length + ' Daily challenges publish on their own date at ' + time + ' ' + modeWord(mode) +
       '. Skipped dates are left untouched and stay in the desk. Each date is written to the audit log separately, and every queued day can still be unscheduled until it goes live.';
     body.appendChild(conseq);
 
@@ -459,12 +441,12 @@
     body.appendChild(reason);
 
     C.ui.modal({
-      title: 'Schedule ' + rows.length + ' drops',
+      title: 'Schedule ' + rows.length + ' Daily challenges',
       wide: true,
       body: body,
       secondary: { label: 'Cancel' },
       primary: {
-        label: ready.length ? 'Schedule ' + ready.length + ' drops' : 'Nothing can be queued',
+        label: ready.length ? 'Schedule ' + ready.length + ' Daily challenges' : 'Nothing can be queued',
         disabled: function () { return !ready.length; },
         onClick: function () { runBulk(rows, time, mode, reason.value()); }
       }
@@ -476,10 +458,10 @@
     rows.forEach(function (r) {
       if (r.ok) {
         C.commit({
-          action: 'Schedule drop',
+          action: 'Schedule Daily challenge',
           object: 'day ' + r.day.iso,
           reason: reason,
-          result: 'Queued for ' + r.day.longLabel + ' at ' + time + ' ' + modeWord(mode) + ' · ' + r.count + ' games',
+          result: 'Queued for ' + r.day.longLabel + ' at ' + time + ' ' + modeWord(mode) + ' · crossword + Daily Five',
           silent: true,
           apply: function () {
             r.day.scheduled = true;
@@ -490,7 +472,7 @@
         results.push({ label: r.day.longLabel, outcome: 'ok', detail: 'Queued ' + time + ' ' + modeWord(mode) });
       } else {
         C.commit({
-          action: 'Schedule drop',
+          action: 'Schedule Daily challenge',
           object: 'day ' + r.day.iso,
           reason: reason,
           result: 'Skipped — ' + r.why,
@@ -518,7 +500,7 @@
       body: body,
       primary: { label: 'Done', onClick: function () { C.ui.closeModal(); } }
     });
-    C.toast(queued + ' drops queued.');
+    C.toast(queued + ' Daily challenges queued.');
   }
 
   // ------------------------------------------------------------------
@@ -601,7 +583,7 @@
     bar.appendChild(el('span', 'bulk-label', marked.length ? marked.length + ' dates selected' : 'Schedule ahead'));
     bar.appendChild(el('span', 'bulk-hint', marked.length
       ? 'All ready. Publishing at ' + timeString() + (st().mode === 'local' ? ' player-local time' : ' UTC') + ' each day.'
-      : 'Tick dates in the list to schedule several drops in one release.'));
+      : 'Tick dates in the list to schedule several Daily challenges in one release.'));
     bar.appendChild(el('div', 'spacer'));
     bar.appendChild(C.ui.button('Select all ready ahead', {
       small: true,
@@ -613,7 +595,7 @@
         repaint(mount);
       }
     }));
-    bar.appendChild(C.ui.button(marked.length ? 'Schedule ' + marked.length + ' drops' : 'Nothing selected', {
+    bar.appendChild(C.ui.button(marked.length ? 'Schedule ' + marked.length + ' Daily challenges' : 'Nothing selected', {
       variant: 'pink', small: true, disabled: !marked.length,
       onClick: function () { openBulkReview(); }   // P3 bulk review + per-item results
     }));
@@ -629,7 +611,7 @@
 
     var head = el('div', 'cal-head');
     head.appendChild(el('span', 'cal-month', 'September 2026'));
-    head.appendChild(el('span', 'cal-note', 'Each day is one drop. Add crosswords and Daily Five games to it independently.'));
+    head.appendChild(el('span', 'cal-note', 'Each day is one Daily challenge: exactly one crossword and one Daily Five.'));
     wrap.appendChild(head);
 
     var dows = el('div', 'cal-dows');
@@ -667,32 +649,34 @@
     if (tag) top.appendChild(el('span', 'cal-tag ' + tag.toLowerCase(), tag));
     cell.appendChild(top);
 
+    // Two fixed slots, in order: crossword then Daily Five.
     var chips = el('div', 'cal-chips');
-    dd.items.forEach(function (it) {
-      var chip = el('div', 'cal-chip');
-      var dot = el('span', 'c-dot');
-      dot.style.background = toneColor(it.status);
-      chip.appendChild(dot);
-      chip.appendChild(el('span', 'c-tag', it.kind === 'cw' ? 'CW' : 'D5'));
-      chip.appendChild(el('span', 'c-title', it.title));
-      chips.appendChild(chip);
-    });
-    if (!day.past && !dd.empty) {
-      dd.missing.forEach(function (m) {
-        var chip = el('div', 'cal-chip is-missing');
+    ['cw', 'd5'].forEach(function (kind) {
+      var it = dd.slots[kind];
+      if (it) {
+        var chip = el('div', 'cal-chip');
         var dot = el('span', 'c-dot');
-        dot.style.background = 'var(--pink)';
+        dot.style.background = toneColor(it.status);
         chip.appendChild(dot);
-        chip.appendChild(el('span', 'c-tag', m === 'cw' ? 'CW' : 'D5'));
-        chip.appendChild(el('span', 'c-title', m === 'cw' ? 'No crossword' : 'No Daily Five'));
+        chip.appendChild(el('span', 'c-tag', kind === 'cw' ? 'CW' : 'D5'));
+        chip.appendChild(el('span', 'c-title', it.title));
         chips.appendChild(chip);
-      });
-    }
+      } else if (!day.past && !dd.empty) {
+        var miss = el('div', 'cal-chip is-missing');
+        var md = el('span', 'c-dot');
+        md.style.background = 'var(--pink)';
+        miss.appendChild(md);
+        miss.appendChild(el('span', 'c-tag', kind === 'cw' ? 'CW' : 'D5'));
+        miss.appendChild(el('span', 'c-title', kind === 'cw' ? 'No crossword' : 'No Daily Five'));
+        chips.appendChild(miss);
+      }
+    });
     cell.appendChild(chips);
 
-    if (!day.past && !dd.live) {
+    // A slot can only be filled once, so the affordance is offered per empty slot.
+    if (!day.past && !dd.live && dd.missing.length) {
       var adds = el('div', 'cal-adds');
-      ['cw', 'd5'].forEach(function (kind) {
+      dd.missing.forEach(function (kind) {
         var b = el('span', 'cal-add', kind === 'cw' ? '+ CW' : '+ D5');
         b.setAttribute('role', 'button');
         b.tabIndex = 0;
@@ -700,7 +684,7 @@
           e.stopPropagation();
           st().day = day.index;
           repaint(mount);
-          openPicker(day, kind); // P1 puzzle picker
+          openPicker(day, kind); // P1 slot picker
         });
         adds.appendChild(b);
       });
@@ -760,16 +744,6 @@
       row.appendChild(date);
 
       var lines = el('div', 'daylist-lines');
-      dd.items.forEach(function (it) {
-        var line = el('div', 'daylist-line');
-        var dot = el('span', 'l-dot');
-        dot.style.background = toneColor(it.status);
-        line.appendChild(dot);
-        line.appendChild(el('span', 'l-tag', it.kind === 'cw' ? 'CW' : 'D5'));
-        line.appendChild(el('span', 'l-title', it.title));
-        line.appendChild(el('span', 'l-status', (C.ui.STATUS[it.status] || {}).label || it.status));
-        lines.appendChild(line);
-      });
       if (dd.empty) {
         var un = el('div', 'daylist-line');
         var d0 = el('span', 'l-dot');
@@ -781,16 +755,18 @@
         un.appendChild(t0);
         lines.appendChild(un);
       } else {
-        dd.missing.forEach(function (m) {
-          var miss = el('div', 'daylist-line');
-          var dm = el('span', 'l-dot');
-          dm.style.background = 'var(--pink)';
-          miss.appendChild(dm);
-          miss.appendChild(el('span', 'l-tag', m === 'cw' ? 'CW' : 'D5'));
-          var tm = el('span', 'l-title', m === 'cw' ? 'No crossword' : 'No Daily Five');
-          tm.style.color = 'var(--pink)';
-          miss.appendChild(tm);
-          lines.appendChild(miss);
+        ['cw', 'd5'].forEach(function (kind) {
+          var it = dd.slots[kind];
+          var line = el('div', 'daylist-line');
+          var dot = el('span', 'l-dot');
+          dot.style.background = it ? toneColor(it.status) : 'var(--pink)';
+          line.appendChild(dot);
+          line.appendChild(el('span', 'l-tag', kind === 'cw' ? 'CW' : 'D5'));
+          var title = el('span', 'l-title', it ? it.title : (kind === 'cw' ? 'No crossword' : 'No Daily Five'));
+          if (!it) title.style.color = 'var(--pink)';
+          line.appendChild(title);
+          if (it) line.appendChild(el('span', 'l-status', (C.ui.STATUS[it.status] || {}).label || it.status));
+          lines.appendChild(line);
         });
       }
       row.appendChild(lines);
@@ -818,7 +794,7 @@
     var head = el('div', 'inspector-head');
     var titles = el('div');
     titles.style.minWidth = '0';
-    titles.appendChild(el('div', 'inspector-title', day.longLabel + ' drop'));
+    titles.appendChild(el('div', 'inspector-title', day.longLabel + ' Daily challenge'));
     titles.appendChild(el('div', 'inspector-sub', subline(day, dd)));
     head.appendChild(titles);
     head.appendChild(el('div', 'spacer'));
@@ -828,29 +804,12 @@
 
     var body = el('div', 'inspector-body');
 
-    var cw = 0, d5 = 0;
-    var cwTotal = dd.items.filter(function (i) { return i.kind === 'cw'; }).length;
-    var d5Total = dd.items.filter(function (i) { return i.kind === 'd5'; }).length;
-    dd.items.forEach(function (it, i) {
-      var n = it.kind === 'cw' ? ++cw : ++d5;
-      var total = it.kind === 'cw' ? cwTotal : d5Total;
-      body.appendChild(slotPanel(it, n, total, day, i));
+    // Two fixed slots, always in the same order, filled or empty.
+    ['cw', 'd5'].forEach(function (kind) {
+      var it = dd.slots[kind];
+      body.appendChild(it ? slotPanel(kind, it, day) : emptySlotPanel(kind, day));
     });
-    dd.missing.forEach(function (m) {
-      body.appendChild(emptySlotPanel(m, day));
-    });
-
-    if (!day.past && !dd.live) {
-      var adds = el('div', 'btn-row');
-      ['cw', 'd5'].forEach(function (kind) {
-        var b = el('button', 'slot-add', kind === 'cw' ? '+ Add crossword' : '+ Add Daily Five');
-        b.type = 'button';
-        b.addEventListener('click', function () { openPicker(day, kind); }); // P1 puzzle picker
-        adds.appendChild(b);
-      });
-      body.appendChild(adds);
-    }
-    body.appendChild(el('div', 'panel-note', 'A day needs at least one crossword and one Daily Five. Extra games appear in the feed after the lead pair, in the order listed here.'));
+    body.appendChild(el('div', 'panel-note', 'A Daily challenge is one crossword and one Daily Five. Replace a slot to swap the game in it; a day never carries more than one of each.'));
     wrap.appendChild(body);
 
     wrap.appendChild(publishPanel(day, dd, mount));
@@ -859,19 +818,20 @@
   }
 
   function subline(day, dd) {
-    if (dd.empty) return 'Nothing planned yet. Add a crossword and a Daily Five to open this drop.';
-    if (dd.missing.length) return 'A required slot is unfilled. Publishing is blocked until the day has at least one crossword and one Daily Five.';
-    if (dd.live) return 'Serving now. ' + dd.items.length + ' games live. 68% completion, target 65%.';
-    if (day.scheduled) return dd.items.length + ' games queued at ' + day.publishTime + ' ' + (day.publishMode === 'local' ? 'player-local time' : 'UTC') + '.';
-    return dd.items.length + ' games paired and validated.';
+    if (dd.empty) return 'Nothing planned yet. Choose a crossword and a Daily Five to open this Daily challenge.';
+    if (dd.missing.length) return 'A required slot is unfilled. Publishing is blocked until the day has one crossword and one Daily Five.';
+    if (dd.extra.length) return 'This day has ' + dd.extra[0] + '. A Daily challenge is one crossword and one Daily Five.';
+    if (dd.live) return 'Serving now. Crossword and Daily Five live. 68% completion, target 65%.';
+    if (day.scheduled) return 'Crossword and Daily Five queued at ' + day.publishTime + ' ' + (day.publishMode === 'local' ? 'player-local time' : 'UTC') + '.';
+    return 'Crossword and Daily Five paired and validated.';
   }
 
-  function slotPanel(item, n, total, day, index) {
+  function slotPanel(kind, item, day) {
     var p = C.find.puzzle(item.id);
     var editable = !day.past && !C.deriveDay(day).live;
     var panel = el('div', 'panel');
     var head = el('div', 'panel-head');
-    head.appendChild(el('span', 'panel-kind', (item.kind === 'cw' ? 'Crossword' : 'Daily Five') + (total > 1 ? ' ' + n : '')));
+    head.appendChild(el('span', 'panel-kind', kindLabel(kind)));
     head.appendChild(el('span', 'panel-title', item.title));
     head.appendChild(el('span', 'panel-id', item.id));
     head.appendChild(el('div', 'spacer'));
@@ -886,24 +846,12 @@
       onClick: function () { C.go('#/library/' + item.id); }
     }));
     if (editable) {
-      foot.appendChild(C.ui.button('Replace', { small: true, onClick: function () { openReplace(day, index); } }));
-      if (total > 1) {
-        foot.appendChild(C.ui.button('Move up', {
-          small: true,
-          disabled: siblingIndex(day, index, -1) < 0,
-          onClick: function () { moveItem(day, index, -1); }
-        }));
-        foot.appendChild(C.ui.button('Move down', {
-          small: true,
-          disabled: siblingIndex(day, index, 1) < 0,
-          onClick: function () { moveItem(day, index, 1); }
-        }));
+      foot.appendChild(C.ui.button('Replace', { small: true, onClick: function () { openReplace(day, kind); } })); // P4 replace
+      if (day.scheduled) {
+        foot.appendChild(C.ui.button('Unschedule', { small: true, onClick: function () { openUnschedule(day); } })); // P4 day level
       }
     }
     foot.appendChild(el('div', 'spacer'));
-    if (total > 1) {
-      foot.appendChild(el('span', 'panel-id', kindLabel(item.kind) + ' ' + n + ' of ' + total));
-    }
     foot.appendChild(el('span', 'panel-id', 'Updated ' + (p ? p.updatedAt : '—') + ' · v' + (p ? p.version : 1)));
     panel.appendChild(foot);
     return panel;
@@ -913,7 +861,7 @@
     var panel = el('div', 'panel');
     var head = el('div', 'panel-head');
     head.appendChild(el('span', 'panel-kind', kind === 'cw' ? 'Crossword' : 'Daily Five'));
-    var t = el('span', 'panel-title', 'No ' + kindWord(kind) + ' selected');
+    var t = el('span', 'panel-title', 'No ' + kindWord(kind) + ' chosen');
     t.style.color = 'var(--pink)';
     head.appendChild(t);
     head.appendChild(el('div', 'spacer'));
@@ -997,7 +945,7 @@
 
     var right = el('div', 'localtimes');
     right.appendChild(el('div', 'mode-note', isLocal
-      ? 'Every player gets the drop at ' + timeString() + ' on their own clock. It rolls across time zones over 26 hours, starting in UTC+14.'
+      ? 'Every player gets the Daily challenge at ' + timeString() + ' on their own clock. It rolls across time zones over 26 hours, starting in UTC+14.'
       : 'One instant worldwide. Players see it at the local times below.'));
     CITIES.forEach(function (c) {
       var line = el('div', 'localtime');
@@ -1033,17 +981,19 @@
       var queued = el('div', 'notice');
       queued.style.flexBasis = '100%';
       queued.textContent = 'Queued for ' + day.longLabel + ' at ' + day.publishTime + ' ' + modeWord(day.publishMode) +
-        '. Unschedule to change the time, or replace a game to return the day to Ready.';
+        '. Unschedule to change the time, or replace a slot to return the day to Ready.';
       wrap.appendChild(queued);
     }
     if (blocked && !day.scheduled) {
       var why = el('div', 'notice blocked');
       why.style.flexBasis = '100%';
       why.textContent = dd.empty
-        ? 'Blocked: this day has no crossword and no Daily Five yet. Add at least one of each.'
+        ? 'Blocked: this day has no crossword and no Daily Five yet. Choose one of each.'
         : dd.missing.length
           ? 'Blocked: the day is missing a ' + (dd.missing.indexOf('cw') >= 0 ? 'crossword' : 'Daily Five') + '.'
-          : day.past ? 'This day has already published.' : 'Blocked: one or more games are not approved yet.';
+          : dd.extra.length
+            ? 'Blocked: this day has ' + dd.extra[0] + '.'
+            : day.past ? 'This day has already published.' : 'Blocked: one or both games are not approved yet.';
       wrap.appendChild(why);
     }
     return wrap;
@@ -1087,12 +1037,12 @@
   }
 
   C.registerScreen('#/desk', {
-    title: 'Drop desk',
+    title: 'Daily challenge',
     subline: function () { return C.store.todayLabel + ' · demo data'; },
     actions: function () {
       var row = el('div', 'btn-row');
       row.appendChild(C.ui.densitySwitch());
-      row.appendChild(C.ui.button('Schedule drop', {
+      row.appendChild(C.ui.button('Schedule Daily challenge', {
         variant: 'pink',
         onClick: function () {
           var day = days()[st().day];

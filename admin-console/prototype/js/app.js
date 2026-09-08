@@ -134,7 +134,7 @@ window.Console = window.Console || {};
   // ---------------------------------------------------------------------
 
   C.nav = [
-    { area: 'desk', route: '#/desk', label: 'Drop desk', roles: ['publisher'], badge: function () { return blockedDays(); } },
+    { area: 'desk', route: '#/desk', label: 'Daily challenge', roles: ['publisher'], badge: function () { return blockedDays(); } },
     { area: 'library', route: '#/library', label: 'Library', roles: ['content_editor'], badge: function () { return C.store.puzzles.length; } },
     { area: 'collections', route: '#/collections', label: 'Collections', roles: ['publisher'], badge: function () { return C.store.collections.length; } },
     { area: 'players', route: '#/players', label: 'Players', roles: ['support'], badge: function () { return ''; } },
@@ -174,6 +174,7 @@ window.Console = window.Console || {};
   };
 
   // Derived readiness for a day. Shared by the desk and by publishing screens.
+  // A drop is exactly one crossword and one Daily Five — never more, never fewer.
   C.deriveDay = function (day) {
     var items = day.items.map(function (id) {
       var p = C.find.puzzle(id);
@@ -181,19 +182,26 @@ window.Console = window.Console || {};
     }).filter(Boolean);
     var cw = items.filter(function (i) { return i.kind === 'cw'; });
     var d5 = items.filter(function (i) { return i.kind === 'd5'; });
+    var slots = { cw: cw[0] || null, d5: d5[0] || null };
     var missing = [];
     if (!cw.length) missing.push('cw');
     if (!d5.length) missing.push('d5');
+    // Should never happen: the day model holds one game per kind.
+    var extra = [];
+    if (cw.length > 1) extra.push('more than one crossword');
+    if (d5.length > 1) extra.push('more than one Daily Five');
     var okStates = ['published', 'live', 'scheduled', 'approved'];
-    var okCount = items.filter(function (i) { return okStates.indexOf(i.status) >= 0; }).length;
+    function slotOk(it) { return !!it && okStates.indexOf(it.status) >= 0; }
+    var okCount = (slotOk(slots.cw) ? 1 : 0) + (slotOk(slots.d5) ? 1 : 0);
     var live = items.some(function (i) { return i.status === 'live'; });
     var done = items.length > 0 && items.every(function (i) { return i.status === 'published'; });
     var empty = items.length === 0;
-    var blocked = missing.length > 0 || okCount < items.length;
+    var blocked = missing.length > 0 || extra.length > 0 || okCount < items.length;
     return {
-      items: items, missing: missing, blocked: blocked, live: live, done: done, empty: empty,
+      items: items, slots: slots, missing: missing, extra: extra,
+      blocked: blocked, live: live, done: done, empty: empty,
       readiness: day.scheduled ? 'Queued' : live ? 'Live' : done ? 'Done' : empty ? 'Unplanned'
-        : okCount + ' / ' + (items.length + missing.length)
+        : okCount + ' / 2'
     };
   };
 

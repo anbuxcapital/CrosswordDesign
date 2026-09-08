@@ -17,8 +17,8 @@
   ];
 
   var ROLE_NOTE = {
-    content_editor: 'Creates, edits, validates and approves games. Never schedules a drop and never sees player data.',
-    publisher: 'Fills daily slots, sets the publish time and curates collections. Never edits game content.',
+    content_editor: 'Creates, edits, validates and approves games. Never schedules a Daily challenge and never sees player data.',
+    publisher: 'Fills the two slots of each Daily challenge, sets the publish time and curates collections. Never edits game content.',
     support: 'Looks up one player at a time, edits profile fields and runs support actions, always with a reason.',
     integrity: 'Decides flagged solves and board eligibility. Reward decisions stay with the economy admin.',
     economy: 'Inspects the ledger and purchases and appends compensating entries. Never overwrites a balance.',

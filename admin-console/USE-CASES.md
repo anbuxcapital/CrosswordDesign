@@ -12,8 +12,8 @@ Crosscut has two games, named as the player app names them. The generic noun is 
 |---|---|
 | Crossword | The grid game. A Mini is 5 × 5 with par 5:00; a weekend grid is 9 × 9. |
 | Daily Five | The five-letter deduction game, "One word. Six tries." Wordle-style, but that word never appears in the product. |
-| Today's drop | The daily pair shown at the top of the feed: one Mini crossword and one Daily Five per language. |
-| Drop | One day's set of games for one language. A valid drop has at least one crossword and one Daily Five. |
+| Daily challenge | The daily pair: exactly one crossword and one Daily Five per language per day. The player app shows it as "Today's drop" at the top of the feed. |
+| Drop | The moment a Daily challenge is published, at a UTC or player-local time. |
 | Collection | A themed, sized, setter or archive shelf in Browse, with a lock rule and a reward. |
 | Tokens 🪙 | Earned from time left against par and from rewards; spent on hints. Can be bought. |
 | Stars ⭐ | Earned only by solving. Never bought or spent. |
@@ -26,7 +26,7 @@ Read from the player prototype (`user-app/Crosscut Prototype.dc.html`) and its h
 | ID | Player use case | Where in the player app |
 |---|---|---|
 | U1 | Onboard: pick level, topics and language; answer the notification prompt; pick a plan (Lite with ads, month, year) | Welcome, Quiz, Plan ready, Notifications, Paywall |
-| U2 | Open the feed and see Today's drop with each game's Start / Continue / Review state | Feed |
+| U2 | Open the feed and see the Daily challenge (shown as Today's drop) with each game's Start / Continue / Review state | Feed |
 | U3 | Solve a crossword against par with autocheck and the timer | Play |
 | U4 | Play Daily Five in six tries | Daily Five |
 | U5 | Use a hint: 50/50, reveal a letter, solve the word; go to Wallet when tokens run out | Hint sheet |
@@ -50,7 +50,7 @@ The backend design names only "editors" and a shared admin token. The console ne
 | Actor | Owns | Never does |
 |---|---|---|
 | Content editor | Library, crossword and Daily Five editors, validation, preview, approval | Scheduling, player data |
-| Publisher | Drop desk, daily slots, publish time, schedule-ahead, collections | Editing game content |
+| Publisher | Daily challenge desk, the two daily slots, publish time, schedule-ahead, collections | Editing game content |
 | Support agent | Player lookup, profile fields, streak, session and token support actions, account safeguards, notes | Leaderboard or ledger decisions |
 | Integrity reviewer | Flagged solves, board eligibility decisions, shadow status | Reward decisions, which stay with economy |
 | Economy admin | Ledger inspection, compensating entries, purchase lookup | Editing balances directly |
@@ -69,7 +69,7 @@ flowchart LR
   subgraph Player["Player use cases"]
     direction TB
     U1(U1 Onboard: level, topics, language, notifications, plan)
-    U2(U2 See Today's drop)
+    U2(U2 See the Daily challenge)
     U3(U3 Solve a crossword)
     U4(U4 Play Daily Five)
     U5(U5 Use a hint)
@@ -104,7 +104,7 @@ flowchart LR
     P1(P1 Fill a missing slot)
     P2(P2 Schedule a day)
     P3(P3 Schedule ahead in bulk)
-    P4(P4 Reorder, replace, unschedule)
+    P4(P4 Replace or unschedule)
     P5(P5 Manage a collection)
   end
   subgraph Support["Support · Support agent"]
@@ -179,7 +179,7 @@ flowchart LR
 | Player use case | Covered by | Coverage |
 |---|---|---|
 | U1 Onboard | M3 for the chosen plan | Partial. Notification prompts and level or topic defaults have no admin control. |
-| U2 See Today's drop | P1–P4 fill and schedule the drop; O1 retries a failed drop generation | Full |
+| U2 See the Daily challenge | P1–P4 fill and schedule the Daily challenge; O1 retries a failed generation | Full |
 | U3 Solve a crossword | E3–E7 create, validate, preview, approve and correct the crossword | Full |
 | U4 Play Daily Five | E3–E7, with Daily Five validation: answer length, dictionary membership, invalid characters, answer reuse | Full |
 | U5 Use a hint | M1 shows hint spend in the ledger | Full for inspection. Hint prices are not editable in the console by design. |
@@ -224,10 +224,10 @@ Each path is the single unbroken route from intent to confirmed result. Error br
 
 | ID | Happy path | Screens and dialogs |
 |---|---|---|
-| P1 Fill a missing slot | Drop desk → blocked day → Choose crossword or Choose Daily Five → picker filtered to Approved of that kind and language → pick → day becomes Ready | Drop desk, Day inspector, Picker |
+| P1 Fill a missing slot | Daily challenge → blocked day → Choose a crossword or Choose a Daily Five → picker filtered to Approved of that kind and language → pick → day becomes Ready | Daily challenge desk, Day inspector, Picker |
 | P2 Schedule a day | Day inspector (Ready) → publish time (UTC or player-local, representative local times shown) → Confirm schedule → Review (items, time, consequence) → Confirm → status Scheduled, audit entry | Day inspector, Publish-time panel, Schedule review |
-| P3 Schedule ahead in bulk | Drop desk → List → tick ready dates or Select all ready → Schedule N drops → Review shows count and effective time → Confirm → per-date results (queued, or skipped with reason) | Drop desk list, Bulk review, Bulk results |
-| P4 Reorder, replace or unschedule | Day inspector (Scheduled, not yet live) → move order → Replace → picker → or Unschedule → reason → day returns to Ready | Day inspector, Picker, Reason dialog |
+| P3 Schedule ahead in bulk | Daily challenge → List → tick ready dates or Select all ready → Schedule N Daily challenges → Review shows count and effective time → Confirm → per-date results (queued, or skipped with reason) | Daily challenge list, Bulk review, Bulk results |
+| P4 Replace or unschedule | Day inspector (Scheduled, not yet live) → Replace a slot → picker → or Unschedule → reason → day returns to Ready | Day inspector, Picker, Reason dialog |
 | P5 Manage a collection | Collections → pick a collection → membership (add from library, reorder, remove) → metadata (shelf, emoji, blurb, unlock rule, reward) → visibility → Preview shelf → Save | Collections list, Collection editor, Preview |
 
 ### Support (Support agent)
@@ -266,7 +266,7 @@ Each path is the single unbroken route from intent to confirmed result. Error br
 
 | ID | Happy path | Screens and dialogs |
 |---|---|---|
-| O1 Triage and retry a failed job | Operations → failed signal → detail (job, affected object, error, last runs) → Retry → per-item outcome → signal clears or names the remaining item | Operations signals, Signal detail, Retry results |
+| O1 Triage and retry a failed job | Operations → failed signal → detail (job, affected object, error, last runs) → Retry → one outcome per slot → signal clears or names the remaining slot | Operations signals, Signal detail, Retry results |
 | O2 Act on pool depth | Operations → pool-depth row → per-language and per-kind depth against the 10-day floor → Open library filtered to Approved of the short kind → hand to E1 or P1 | Operations, Library (filtered) |
 | O3 Review an import batch | Operations → import batch → accepted and rejected items with reasons → open a rejected item in the editor | Operations, Batch detail, Editor |
 

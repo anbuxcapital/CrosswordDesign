@@ -153,16 +153,16 @@ Console.data = (function () {
     ['D5-0912', 'Fresh start', 'd5', 'en', 'Easy', 'published', 'passed', 'm.olsen', ['Everyday'], 'Sep 7 08:00'],
     ['CW-2262', 'Campus life', 'cw', 'en', 'Easy', 'live', 'passed', 'a.reid', ['Education'], 'Sep 8 08:14'],
     ['D5-0913', 'In the loop', 'd5', 'en', 'Easy', 'live', 'passed', 'a.reid', ['Everyday'], 'Sep 8 08:14'],
-    ['CW-2269', 'Late edition', 'cw', 'en', 'Hard', 'live', 'passed', 'm.olsen', ['News'], 'Sep 8 08:14'],
+    ['CW-2269', 'Late edition', 'cw', 'en', 'Hard', 'approved', 'passed', 'm.olsen', ['News'], 'Sep 8 08:14'],
     ['CW-2263', 'Good news', 'cw', 'en', 'Medium', 'scheduled', 'passed', 'a.reid', ['News'], 'Sep 7 09:12'],
     ['D5-0914', 'Brain boost', 'd5', 'en', 'Medium', 'scheduled', 'passed', 'a.reid', ['Science'], 'Sep 7 09:12'],
     ['CW-2264', 'On the map', 'cw', 'en', 'Medium', 'review', 'failed', 'm.olsen', ['Travel'], 'Sep 8 07:44'],
     ['D5-0915', 'True or false', 'd5', 'en', 'Easy', 'review', 'passed', 'm.olsen', ['Trivia'], 'Sep 8 07:44'],
     ['CW-2265', 'Back to work', 'cw', 'en', 'Medium', 'approved', 'passed', 'm.olsen', ['Work'], 'Sep 8 08:02'],
     ['CW-2266', 'Weekend vibes', 'cw', 'en', 'Easy', 'scheduled', 'passed', 'a.reid', ['Leisure'], 'Sep 6 15:10'],
-    ['CW-2271', 'Long weekend', 'cw', 'en', 'Medium', 'scheduled', 'passed', 'a.reid', ['Travel'], 'Sep 6 15:10'],
+    ['CW-2271', 'Long weekend', 'cw', 'en', 'Medium', 'approved', 'passed', 'a.reid', ['Travel'], 'Sep 6 15:10'],
     ['D5-0916', 'Culture club', 'd5', 'en', 'Medium', 'scheduled', 'passed', 'a.reid', ['Art'], 'Sep 6 15:10'],
-    ['D5-0920', 'Encore', 'd5', 'en', 'Hard', 'scheduled', 'passed', 'a.reid', ['Music'], 'Sep 6 15:10'],
+    ['D5-0920', 'Encore', 'd5', 'en', 'Hard', 'approved', 'passed', 'a.reid', ['Music'], 'Sep 6 15:10'],
     ['CW-2267', 'Full circle', 'cw', 'en', 'Medium', 'scheduled', 'passed', 'm.olsen', ['Everyday'], 'Sep 6 15:10'],
     ['D5-0917', 'End zone', 'd5', 'en', 'Medium', 'scheduled', 'passed', 'm.olsen', ['Sport'], 'Sep 6 15:10'],
     ['CW-2268', 'Night shift', 'cw', 'en', 'Hard', 'draft', 'not_run', 'a.reid', ['Work'], 'Sep 8 10:20'],
@@ -251,18 +251,18 @@ Console.data = (function () {
     5: ['CW-2258', 'D5-0909'],
     6: ['CW-2259', 'D5-0910'],
     7: ['CW-2261', 'D5-0912'],
-    8: ['CW-2262', 'D5-0913', 'CW-2269'],
+    8: ['CW-2262', 'D5-0913'],
     9: ['CW-2263', 'D5-0914'],
     10: ['CW-2264', 'D5-0915'],
     11: ['CW-2265'],
-    12: ['CW-2266', 'CW-2271', 'D5-0916', 'D5-0920'],
+    12: ['CW-2266', 'D5-0916'],
     13: ['CW-2267', 'D5-0917'],
     14: ['CW-2268', 'D5-0918']
   };
 
   var DAY_AUDIT = {
     8: [
-      ['12:00 UTC', 'system', 'Drop published — crossword + Daily Five'],
+      ['12:00 UTC', 'system', 'Daily challenge published — crossword + Daily Five'],
       ['Sep 7 09:12', 'm.olsen', 'Schedule confirmed'],
       ['Sep 5 16:40', 'a.reid', 'Both items approved']
     ],
@@ -335,8 +335,8 @@ Console.data = (function () {
       ['Editorial approval', 'not started', 'warn']
     ],
     empty: [
-      ['No game assigned to this slot', '', 'fail'],
-      ['2 approved Daily Five available', 'D5-0919, D5-0921', 'pass']
+      ['No game assigned to this slot', 'one is required', 'fail'],
+      ['Approved candidates available', 'choose one from the picker', 'pass']
     ]
   };
 
@@ -356,7 +356,7 @@ Console.data = (function () {
         ['Language', 'English', true],
         ['Difficulty', 'Medium', true],
         ['Topics', 'Music, Travel, Science', true],
-        ['Notifications', 'Daily drop · 12:00 local', true]
+        ['Notifications', 'Daily challenge · 12:00 local', true]
       ],
       timeline: [
         ['Today 12:06', 'solve', 'Daily Five "In the loop" solved in 3 guesses', '+40'],
@@ -418,7 +418,7 @@ Console.data = (function () {
         ['Language', 'English', true],
         ['Difficulty', 'Hard', true],
         ['Topics', 'Literature, History', true],
-        ['Notifications', 'Daily drop · 08:00 local', true]
+        ['Notifications', 'Daily challenge · 08:00 local', true]
       ],
       timeline: [
         ['Today 08:15', 'session', 'Support contact · lost streak after travel', ''],
@@ -461,7 +461,7 @@ Console.data = (function () {
         ['Language', p[3] === 'uk' ? 'Ukrainian' : 'English', true],
         ['Difficulty', 'Medium', true],
         ['Topics', 'Everyday', true],
-        ['Notifications', 'Daily drop · 09:00 local', true]
+        ['Notifications', 'Daily challenge · 09:00 local', true]
       ],
       timeline: [
         ['Today 07:30', 'session', 'Session opened · app 1.4.2', ''],
@@ -609,10 +609,10 @@ Console.data = (function () {
 
   var signals = [
     {
-      id: 'sig_drop_gen', name: 'Daily drop generation', level: 'failed',
+      id: 'sig_drop_gen', name: 'Daily challenge generation', level: 'failed',
       detail: 'Failed for Sep 11 — no Daily Five assigned', lastRun: '08:00 UTC',
       job: 'drop.generate', object: 'day 2026-09-11',
-      error: 'DropInvalid: a drop needs at least one crossword and one Daily Five',
+      error: 'DropInvalid: a Daily challenge needs exactly one crossword and one Daily Five',
       runs: [['08:00 UTC', 'failed'], ['Sep 7 08:00 UTC', 'failed'], ['Sep 6 08:00 UTC', 'ok']],
       items: [
         { label: 'Sep 11 crossword CW-2265', outcome: 'ok', detail: 'Ready' },
@@ -679,7 +679,7 @@ Console.data = (function () {
     { time: 'Sep 8 09:41', operator: 's.novak', action: 'Hold solve reward', object: 'pl_2a90bd', reason: 'Flag fl_1001 open, reward held pending review', result: 'Held' },
     { time: 'Sep 8 08:02', operator: 'm.olsen', action: 'Approve crossword', object: 'CW-2265', reason: '', result: 'Approved' },
     { time: 'Sep 7 16:30', operator: 'a.reid', action: 'Approve Daily Five', object: 'D5-0918', reason: '', result: 'Approved' },
-    { time: 'Sep 7 09:12', operator: 'm.olsen', action: 'Confirm schedule', object: 'day 2026-09-09', reason: 'Standard weekday drop', result: 'Scheduled at 12:00 UTC' },
+    { time: 'Sep 7 09:12', operator: 'm.olsen', action: 'Confirm schedule', object: 'day 2026-09-09', reason: 'Standard weekday Daily challenge', result: 'Scheduled at 12:00 UTC' },
     { time: 'Sep 6 15:10', operator: 'a.reid', action: 'Import batch', object: 'batch_2026_36', reason: 'Weekly batch from the editorial pipeline', result: '34 accepted, 2 rejected' },
     { time: 'Sep 6 11:20', operator: 'system', action: 'Reject import item', object: 'D5-0923', reason: 'Answer reuse inside the window', result: 'Rejected' },
     { time: 'Sep 5 16:40', operator: 'a.reid', action: 'Approve crossword', object: 'CW-2262', reason: '', result: 'Approved' },

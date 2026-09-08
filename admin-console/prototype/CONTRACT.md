@@ -13,7 +13,7 @@ The shell, the visual system, the shared UI patterns and the demo data already e
 | `js/data.js` | Demo seed, split into per-area sections |
 | `js/app.js` | Store, router, role gating, `Console.commit`, `Console.toast`, shell rendering |
 | `js/ui.js` | `Console.ui.*` pattern helpers |
-| `js/screens/desk.js` | Drop desk (owned by the publishing builder) |
+| `js/screens/desk.js` | Daily challenge (owned by the publishing builder) |
 | `js/screens/stubs.js` | Placeholder screens for every unbuilt route |
 
 Open `index.html` directly from the filesystem, or serve the design repo root with `python3 -m http.server 4173` and open `http://127.0.0.1:4173/admin-console/prototype/index.html`.
@@ -101,7 +101,8 @@ store.todayLabel       'Tuesday, September 8, 2026'
 **collection** — `{id, name, shelf, emoji, blurb, unlockRule, reward, visibility:'published'|'draft'|'hidden', order, members:[puzzleId]}`
 
 **day** — `{index:0…29, iso:'2026-09-11', dayOfMonth, dow:'Fri', label:'Sep 11', longLabel:'Fri Sep 11', today, past, items:[puzzleId], scheduled:Boolean, publishTime:'12:00', publishMode:'utc'|'local', audit:[{time, operator, text}]}`
-Use `Console.deriveDay(day)` for readiness: it returns `{items:[{id,kind,title,status}], missing:['cw'|'d5'], blocked, live, done, empty, readiness}`. A valid drop needs at least one crossword and one Daily Five, and every item approved or later.
+A day is exactly one **Daily challenge** with two fixed slots: one crossword and one Daily Five. `items` therefore holds at most one `cw` id and at most one `d5` id — never two of a kind, and there is no ordering to manage.
+Use `Console.deriveDay(day)` for readiness: it returns `{items:[{id,kind,title,status}], slots:{cw:item|null, d5:item|null}, missing:['cw'|'d5'], extra:[String], blocked, live, done, empty, readiness}`. A valid Daily challenge is exactly one crossword and exactly one Daily Five, both approved or later. `slots` is what screens should render; `missing` names the empty slots and `extra` names any duplicate kind (which should never occur) — either one makes the day `blocked`.
 
 **player** — `{id:'pl_8f2c41', name, signIn, lang, joined, streak, solved, tokens, stars, status:'active'|'suspended', profile:[[label, value, editable]], timeline:[[when, kind, text, amount]], devices:[[name, app, lastSeen]], ads:[[label, detail, tone]], notes:[{id, author, when, text, status:'open'|'closed'}]}`
 `timeline` kinds are `solve`, `session`, `ledger`, `flag`.
@@ -229,7 +230,7 @@ For bulk actions the result step is a second modal containing `Console.ui.result
 
 Use these keys with `Console.ui.pill` / `Console.ui.status` so wording and colour stay consistent. Never signal state with colour alone.
 
-- Game and drop: `draft` Draft · `review` Needs review · `approved` Approved · `scheduled` Scheduled · `published` Published · `live` Live now · `empty` No game
+- Game and Daily challenge: `draft` Draft · `review` Needs review · `approved` Approved · `scheduled` Scheduled · `published` Published · `live` Live now · `empty` No game
 - Validation: `passed` · `failed` · `not_run` Not run
 - Day readiness: `ready` · `blocked` · `queued` · `unplanned` · `done`
 - Signals and jobs: `ok` · `warn` Warning · `failed`
@@ -243,6 +244,7 @@ Add a key only inside `ui.js`'s `STATUS` map — which means asking, since `ui.j
 
 ## 10. Writing rules
 
+- The daily pair of one crossword and one Daily Five is a **Daily challenge** — sentence case, and never `drop` in the interface (`Daily challenge`, `Schedule Daily challenge`, `Schedule 3 Daily challenges`, `Fri Sep 11 Daily challenge`, `Daily challenge generation`). `drop` survives only as a verb where nothing better fits (`drops at 12:00 UTC`; prefer `publishes at 12:00 UTC`) and in player-app labels quoted verbatim. Code identifiers, ids, routes and job names keep the old word — `#/desk`, `sig_drop_gen`, `drop.generate`, `desk.js`.
 - Never write `puzzle` in the interface. The two games are a **crossword** and a **Daily Five**; name the kind when it is known (`Crossword editor`, `Approve crossword`, `Replace Daily Five`, `This day has no crossword yet`) and use **game** / **games** when both kinds are meant (`Import games`, `New game`, `412 games`, `Search the library`). Never write `Wordle`; Daily Five may be introduced once per screen as `Daily Five (one word, six tries)`. Code identifiers, store keys, ids and routes keep the old names — `store.puzzles`, `Console.find.puzzle`, `puzzleId`, `#/library`.
 - Sentence case for titles, controls and messages. `Confirm schedule`, not `Confirm Schedule`.
 - Concrete labels. `No Daily Five assigned`, not `Issue`. `Retry generation`, not `Manage`.

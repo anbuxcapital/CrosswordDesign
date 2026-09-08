@@ -71,7 +71,7 @@
       { label: 'CW-2272 Night shift', outcome: 'ok', detail: 'Draft created' },
       { label: 'CW-2273 Low tide', outcome: 'ok', detail: 'Draft created' },
       { label: 'CW-2270 Paper trail', outcome: 'failed', detail: 'Grid letter does not match 3-down' },
-      { label: 'D5-0931 Salt flats', outcome: 'failed', detail: 'Answer 2 reuses a word from the Sep 3 drop' }
+      { label: 'D5-0931 Salt flats', outcome: 'failed', detail: 'Answer 2 reuses a word from the Sep 3 Daily challenge' }
     ]
   });
 })(window.Console);

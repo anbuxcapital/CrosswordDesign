@@ -482,7 +482,7 @@
     var reason = C.ui.reasonField({
       required: false,
       label: 'Note (optional)',
-      placeholder: 'e.g. Swapped the Hard opener after the completion drop',
+      placeholder: 'e.g. Swapped the Hard opener after completion fell',
       help: 'Stored in the audit log with your operator name and the result.'
     });
     reason.style.marginTop = '16px';

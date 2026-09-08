@@ -196,7 +196,7 @@
       title: 'Approve ' + p.id,
       before: [['Status', C.ui.pill(p.status)], ['Validation', C.ui.status(p.validation)], ['Version', 'v' + p.version]],
       after: [['Status', C.ui.pill('approved')], ['Validation', C.ui.status('passed')], ['Version', 'v' + p.version]],
-      consequence: 'It becomes available to the drop desk as an approved ' +
+      consequence: 'It becomes available for a Daily challenge as an approved ' +
         ED.kindLabel(p.kind) + ' in ' + ED.langLabel(p.lang) + '. Nothing is scheduled or published yet.'
     }));
     var reason = C.ui.reasonField({
@@ -234,9 +234,9 @@
     var body = el('div');
     body.appendChild(C.ui.reviewPanel({
       title: 'Send ' + p.id + ' back',
-      before: [['Status', C.ui.pill(p.status)], ['Available to the drop desk', p.status === 'approved' ? 'Yes' : 'No']],
-      after: [['Status', C.ui.pill('draft')], ['Available to the drop desk', 'No']],
-      consequence: 'The ' + noun(p) + ' returns to Draft and disappears from the approved pool the drop desk picks from. ' +
+      before: [['Status', C.ui.pill(p.status)], ['Available for a Daily challenge', p.status === 'approved' ? 'Yes' : 'No']],
+      after: [['Status', C.ui.pill('draft')], ['Available for a Daily challenge', 'No']],
+      consequence: 'The ' + noun(p) + ' returns to Draft and disappears from the approved pool a Daily challenge picks from. ' +
         'The validation result is kept so the author can see what failed.'
     }));
     var reason = C.ui.reasonField({
@@ -688,7 +688,7 @@
       wrap.appendChild(C.ui.checklist(checks));
       var ok = el('div', 'ed-note');
       ok.textContent = p.status === 'approved'
-        ? 'This ' + noun(p) + ' is already approved and is available to the drop desk.'
+        ? 'This ' + noun(p) + ' is already approved and is available for a Daily challenge.'
         : 'Nothing is blocking approval. Use Approve in the bar above.';
       wrap.appendChild(ok);
       return wrap;

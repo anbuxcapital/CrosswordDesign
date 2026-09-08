@@ -62,7 +62,7 @@
       var d = C.find.day(day[1]);
       return {
         area: 'desk', route: '#/desk',
-        what: 'the drop desk' + (d ? ' on ' + d.longLabel : ' for ' + day[1])
+        what: (d ? d.longLabel : day[1]) + ' in Daily challenge'
       };
     }
 

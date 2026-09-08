@@ -500,7 +500,7 @@
         ],
         consequence: accepted.length + ' games are created as Draft with validation Not run. ' +
           rejected.length + ' rejected ' + (rejected.length === 1 ? 'game stays' : 'games stay') +
-          ' in the batch record for Operations to open. No drop is affected.'
+          ' in the batch record for Operations to open. No Daily challenge is affected.'
       }));
       body.appendChild(wrap);
 
