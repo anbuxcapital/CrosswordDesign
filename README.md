@@ -17,15 +17,16 @@ root, run `python3 -m http.server 4173`, then open
 
 ## Admin console
 
-- [Interactive prototype](admin-console/CrosscutAdminConsole.html)
+- [Clickable prototype, all admin happy paths](admin-console/prototype/index.html)
+- [Selected artboard](admin-console/CrosscutAdminConsole.html)
 - [Overview](admin-console/README.md)
 - [Console design guidelines](admin-console/CONSOLE-DESIGN-GUIDELINES.md)
 - [Research and proposed scope](admin-console/ADMIN-CONSOLE-RESEARCH.md)
-- [Actors, use cases and happy paths](admin-console/USE-CASES.md)
+- [Player use cases and the admin capabilities that cover them](admin-console/USE-CASES.md)
 - [Design QA](admin-console/design-qa.md)
 - [Earlier publishing-calendar concept](admin-console/references/publishing-calendar-metrics-concept.png)
 
-The admin console is an interactive design prototype using demo data, not a connected administration service.
+Both admin prototypes use demo data and are not a connected administration service. Serve this repository root with `python3 -m http.server 4173` and open `http://127.0.0.1:4173/admin-console/prototype/index.html`.
 
 ## Organization
 

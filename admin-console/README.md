@@ -1,19 +1,21 @@
 # Crosscut admin console
 
-`CrosscutAdminConsole.html` is the current interactive desktop prototype. It covers the daily drop desk, puzzle library, player support, leaderboard review, economy ledger, advertising rules, and operations. All data and actions are simulated; the console is not connected to production services.
+`prototype/index.html` is the clickable multi-screen prototype covering every admin happy path in `USE-CASES.md`; `CrosscutAdminConsole.html` is the selected artboard that set the visual direction. Together they cover the drop desk, the crossword and Daily Five library and editors, collections, player support, leaderboard review, economy ledger, advertising rules, operations, and access. All data and actions are simulated; the console is not connected to production services.
 
 From the design repository root, run `python3 -m http.server 4173`, then open:
 
-`http://127.0.0.1:4173/admin-console/CrosscutAdminConsole.html`
+- clickable prototype: `http://127.0.0.1:4173/admin-console/prototype/index.html`
+- artboard: `http://127.0.0.1:4173/admin-console/CrosscutAdminConsole.html`
 
-The prototype is a self-contained bundle, so it does not need a separate `support.js` file.
+The artboard is a self-contained bundle; the clickable prototype is plain HTML, CSS and JS with no build step.
 
 ## Files
 
-- `CrosscutAdminConsole.html` — current interactive prototype and source of truth for the selected UI direction.
+- `prototype/` — clickable prototype: shell with sign-in and role-gated navigation, hash router, shared patterns, demo data, one screen file per area; `prototype/CONTRACT.md` explains the layout.
+- `CrosscutAdminConsole.html` — selected artboard and visual reference for the shell and drop desk.
 - `CONSOLE-DESIGN-GUIDELINES.md` — product and interaction rules for extending the console.
 - `ADMIN-CONSOLE-RESEARCH.md` — reference patterns, proposed workflows, backend boundaries, and coverage decisions.
-- `USE-CASES.md` — operator roles, the 26 use cases, each happy path with its screens, and the plan for the clickable prototype.
+- `USE-CASES.md` — vocabulary, the 17 player use cases, the one diagram mapping them to 26 admin use cases, coverage gaps, and each admin happy path with its screens.
 - `design-qa.md` — latest browser review, interaction coverage, and known prototype limits.
 - `references/publishing-calendar-metrics-concept.png` — earlier selected publishing-calendar concept retained for visual lineage, not as the current UI.
 

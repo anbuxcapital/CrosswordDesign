@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=1440">
+<title>Crosscut console — clickable prototype</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Chivo:wght@400;500;700;900&family=Chivo+Mono:wght@400;500;600;700&display=swap">
+<link rel="stylesheet" href="css/console.css">
+</head>
+<body>
+
+<!-- Screens mount here. The shell (sidebar + header) is rebuilt on every route
+     change by Console.render(); the sign-in route replaces the shell entirely. -->
+<div id="root"></div>
+
+<!-- Global modal layer. Console.ui.modal() fills it; Console.ui.closeModal() empties it. -->
+<div id="modal-layer" class="modal-layer" hidden></div>
+
+<!-- Toast area. Console.toast('…') appends here. -->
+<div id="toast-area" class="toast-area" aria-live="polite"></div>
+
+<!-- Classic scripts in dependency order. No modules, so the page also works
+     when opened directly from the filesystem. -->
+<script src="js/data.js"></script>
+<script src="js/data/editorial.js"></script>
+<script src="js/data/integrity-economy.js"></script>
+<script src="js/data/ads-operations.js"></script>
+<script src="js/data/access.js"></script>
+<script src="js/ui.js"></script>
+<script src="js/app.js"></script>
+<script src="js/screens/stubs.js"></script>
+<script src="js/screens/desk.js"></script>
+<!-- Area builders: screen files, pre-wired. Registered later wins over stubs.js. -->
+<script src="js/screens/library.js"></script>
+<script src="js/screens/editor.js"></script>
+<script src="js/screens/collections.js"></script>
+<script src="js/screens/players.js"></script>
+<script src="js/screens/leaderboards.js"></script>
+<script src="js/screens/economy.js"></script>
+<script src="js/screens/ads.js"></script>
+<script src="js/screens/operations.js"></script>
+<script src="js/screens/access.js"></script>
+<script src="js/screens/audit.js"></script>
+<script>Console.boot();</script>
+
+</body>
+</html>
