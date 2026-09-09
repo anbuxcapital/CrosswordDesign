@@ -15,6 +15,8 @@ The artboard is a self-contained bundle; the clickable prototype is plain HTML, 
 - `CrosscutAdminConsole.html` — selected artboard and visual reference for the shell and the Daily game desk.
 - `CONSOLE-DESIGN-GUIDELINES.md` — product and interaction rules for extending the console.
 - `ADMIN-CONSOLE-RESEARCH.md` — reference patterns, proposed workflows, backend boundaries, and coverage decisions.
+- `CROSSWORD-BUILDER-RESEARCH.md` — eight crossword constructors compared; what the New crossword dialog and editor borrow.
+- `GUESSWORD-BUILDER-RESEARCH.md` — Wordle-style makers and daily-word games compared; one answer per game; the New Guessword constructor and its checks.
 - `USE-CASES.md` — vocabulary, the 17 player use cases, the one diagram mapping them to 26 admin use cases, coverage gaps, and each admin happy path with its screens.
 - `design-qa.md` — latest browser review, interaction coverage, and known prototype limits.
 - `references/publishing-calendar-metrics-concept.png` — earlier selected publishing-calendar concept retained for visual lineage, not as the current UI.
