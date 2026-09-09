@@ -701,7 +701,7 @@
     var head = el('div', 'feed-head');
     head.appendChild(el('span', 'feed-day', 'Today'));
     head.appendChild(el('span', 'feed-sub', C.store.todayLabel));
-    row.appendChild(phone('Feed card', [head, feedCard(d), el('div', 'feed-meta', 'Streak 61 · 240 tokens')]));
+    row.appendChild(phone('Feed card', [head, feedCard(d), el('div', 'feed-meta', 'Streak 61 · 240 coins')]));
 
     // solve
     var solveKids = [];

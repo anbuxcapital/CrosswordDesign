@@ -217,14 +217,14 @@ Console.data = (function () {
     {
       id: 'col_starter', name: 'Starter pack', shelf: 'Featured', emoji: '🌱',
       blurb: 'Five gentle minis for a first week.',
-      unlockRule: 'Free for everyone', reward: '+50 tokens on completion',
+      unlockRule: 'Free for everyone', reward: '+50 coins on completion',
       visibility: 'published', order: 1,
       members: ['CW-2254', 'D5-0905', 'CW-2257', 'D5-0912', 'CW-2262']
     },
     {
       id: 'col_night', name: 'Night shift', shelf: 'Themes', emoji: '🌙',
       blurb: 'Harder games for late solvers.',
-      unlockRule: 'Unlocks after a 7-day streak', reward: '+120 tokens on completion',
+      unlockRule: 'Unlocks after a 7-day streak', reward: '+120 coins on completion',
       visibility: 'draft', order: 2,
       members: ['CW-2259', 'CW-2269', 'D5-0908', 'D5-0920']
     },
@@ -310,7 +310,7 @@ Console.data = (function () {
   var players = [
     {
       id: 'pl_8f2c41', name: 'Dana Whitfield', signIn: 'dana.w@…mail.com · Apple',
-      lang: 'en', joined: 'Mar 2026', streak: 34, solved: 212, tokens: 1480, stars: 0,
+      lang: 'en', joined: 'Mar 2026', streak: 34, solved: 212, tokens: 1480, stars: 2330,
       status: 'active',
       profile: [
         ['Display name', 'Dana Whitfield', true],
@@ -343,7 +343,7 @@ Console.data = (function () {
     },
     {
       id: 'pl_2a90bd', name: 'Ihor Melnyk', signIn: 'Google · ihor.m@…',
-      lang: 'uk', joined: 'Aug 2026', streak: 3, solved: 19, tokens: 120, stars: 0,
+      lang: 'uk', joined: 'Aug 2026', streak: 3, solved: 19, tokens: 120, stars: 210,
       status: 'active',
       profile: [
         ['Display name', 'Ihor Melnyk', true],
@@ -405,12 +405,13 @@ Console.data = (function () {
   ];
 
   // Five more searchable records, so player search has something to filter.
+  // [id, name, signIn, lang, joined, streak, solved, tokens, stars, status, adFree]
   var EXTRA_PLAYERS = [
-    ['pl_5c3d02', 'Marek Dvorak', 'Apple · marek.d@…', 'en', 'Feb 2026', 12, 140, 620, 0, 'active'],
-    ['pl_9b71fe', 'Amelia Frost', 'Email · amelia.f@…', 'en', 'Jun 2026', 61, 301, 2210, 200, 'active'],
-    ['pl_3d88c7', 'Oleh Tkachuk', 'Google · oleh.t@…', 'uk', 'Jul 2026', 0, 7, 40, 0, 'suspended'],
-    ['pl_6e12ab', 'Priya Nair', 'Apple · priya.n@…', 'en', 'Apr 2026', 22, 176, 980, 0, 'active'],
-    ['pl_a40f19', 'anon_44b1', 'Guest device', 'en', 'Sep 2026', 1, 4, 100, 0, 'active']
+    ['pl_5c3d02', 'Marek Dvorak', 'Apple · marek.d@…', 'en', 'Feb 2026', 12, 140, 620, 1540, 'active', false],
+    ['pl_9b71fe', 'Amelia Frost', 'Email · amelia.f@…', 'en', 'Jun 2026', 61, 301, 2210, 3310, 'active', true],
+    ['pl_3d88c7', 'Oleh Tkachuk', 'Google · oleh.t@…', 'uk', 'Jul 2026', 0, 7, 40, 80, 'suspended', false],
+    ['pl_6e12ab', 'Priya Nair', 'Apple · priya.n@…', 'en', 'Apr 2026', 22, 176, 980, 1930, 'active', false],
+    ['pl_a40f19', 'anon_44b1', 'Guest device', 'en', 'Sep 2026', 1, 4, 100, 45, 'active', false]
   ];
 
   EXTRA_PLAYERS.forEach(function (p) {
@@ -433,7 +434,7 @@ Console.data = (function () {
       ],
       devices: [['Handset', 'app 1.4.2', 'Today 07:30']],
       ads: [
-        ['Ad-free', p[8] > 0 ? 'Star pack, expires Dec 1' : 'No', p[8] > 0 ? 'ok' : 'bad'],
+        ['Ad-free', p[10] ? 'Star pack, expires Dec 1' : 'No', p[10] ? 'ok' : 'bad'],
         ['Consent', 'ATT authorized', 'mute'],
         ['Rewarded views', '1 today · cap 3', 'mute']
       ],
@@ -443,7 +444,7 @@ Console.data = (function () {
 
   var SUPPORT_ACTIONS = [
     { id: 'restore_streak', label: 'Restore streak', params: [{ key: 'days', label: 'Days to restore', type: 'number', value: 1 }], ledger: false },
-    { id: 'grant_tokens', label: 'Grant tokens', params: [{ key: 'amount', label: 'Tokens', type: 'number', value: 100 }], ledger: true },
+    { id: 'grant_tokens', label: 'Grant coins', params: [{ key: 'amount', label: 'Coins', type: 'number', value: 100 }], ledger: true },
     { id: 'reset_session', label: 'Reset session', params: [], ledger: false }
   ];
 
@@ -524,7 +525,7 @@ Console.data = (function () {
     ['le_0006', 'Today 09:41', 'pl_2a90bd', 'tokens', 60, 'Solve reward · CW-2262', 'system', 'idem_2a90bd_cw2262', 160],
     ['le_0007', 'Today 09:55', 'pl_2a90bd', 'tokens', -40, 'Reward held pending flag fl_1001', 's.novak', 'idem_2a90bd_hold_1001', 120],
     ['le_0008', 'Sep 3 08:20', 'pl_9b71fe', 'tokens', 200, 'Collection reward · Starter pack', 'system', 'idem_9b71fe_col_starter', 2210],
-    ['le_0009', 'Sep 2 18:02', 'pl_9b71fe', 'stars', 200, 'Star pack purchase · receipt verified', 'system', 'idem_9b71fe_rcpt_44712', 200],
+    ['le_0009', 'Sep 2 18:02', 'pl_9b71fe', 'stars', 200, 'Star pack purchase · receipt verified', 'system', 'idem_9b71fe_rcpt_44712', 3310],
     ['le_0010', 'Sep 1 09:14', 'pl_6e12ab', 'tokens', 100, 'Welcome grant', 'system', 'idem_6e12ab_welcome', 980],
     ['le_0011', 'Sep 6 20:41', 'pl_5c3d02', 'tokens', 25, 'Rewarded ad grant', 'system', 'idem_5c3d02_rw_0906', 620],
     ['le_0012', 'Sep 5 11:03', 'pl_3d88c7', 'tokens', 40, 'Welcome grant', 'system', 'idem_3d88c7_welcome', 40],
@@ -555,8 +556,8 @@ Console.data = (function () {
 
   var placements = [
     { id: 'feed_interstitial', name: 'Feed interstitial', rule: 'After every 3rd solved card, never in first session', cap: 4, reward: '—', fill: '91%', platforms: 'iOS · Android', enabled: true },
-    { id: 'post_solve_rewarded', name: 'Post-solve rewarded', rule: 'Optional after any solve; grants tokens', cap: 3, reward: '+25 tokens', fill: '86%', platforms: 'iOS · Android', enabled: true },
-    { id: 'hint_rewarded', name: 'Hint for a view', rule: 'Offered when a player opens Hints with 0 tokens', cap: 2, reward: '1 hint', fill: '88%', platforms: 'iOS · Android', enabled: true },
+    { id: 'post_solve_rewarded', name: 'Post-solve rewarded', rule: 'Optional after any solve; grants coins', cap: 3, reward: '+25 coins', fill: '86%', platforms: 'iOS · Android', enabled: true },
+    { id: 'hint_rewarded', name: 'Hint for a view', rule: 'Offered when a player opens Hints with 0 coins', cap: 2, reward: '1 hint', fill: '88%', platforms: 'iOS · Android', enabled: true },
     { id: 'archive_banner', name: 'Archive banner', rule: 'Bottom of Browse and archive lists', cap: null, reward: '—', fill: '64%', platforms: 'Android', enabled: false }
   ];
 
@@ -646,7 +647,7 @@ Console.data = (function () {
     { time: 'Sep 6 15:10', operator: 'a.reid', action: 'Import batch', object: 'batch_2026_36', reason: 'Weekly batch from the editorial pipeline', result: '34 accepted, 2 rejected' },
     { time: 'Sep 6 11:20', operator: 'system', action: 'Reject import item', object: 'D5-0923', reason: 'Answer reuse inside the window', result: 'Rejected' },
     { time: 'Sep 5 16:40', operator: 'a.reid', action: 'Approve crossword', object: 'CW-2262', reason: '', result: 'Approved' },
-    { time: 'Aug 30 16:44', operator: 'm.olsen', action: 'Append compensating entry', object: 'pl_8f2c41', reason: 'Outage on Aug 30 lost a streak reward', result: '+300 tokens, balance 1,375' }
+    { time: 'Aug 30 16:44', operator: 'm.olsen', action: 'Append compensating entry', object: 'pl_8f2c41', reason: 'Outage on Aug 30 lost a streak reward', result: '+300 coins, balance 1,375' }
   ];
 
   return {

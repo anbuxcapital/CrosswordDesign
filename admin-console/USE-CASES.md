@@ -15,7 +15,7 @@ Crosscut has two games, named as the player app names them. The generic noun is 
 | Daily challenge | The daily pair: exactly one crossword and one Daily Five per language per day. The player app shows it as "Today's drop" at the top of the feed. |
 | Drop | The moment a Daily challenge is published, at a UTC or player-local time. |
 | Collection | A themed, sized, setter or archive shelf in Browse, with a lock rule and a reward. |
-| Tokens 🪙 | Earned from time left against par and from rewards; spent on hints. Can be bought. |
+| Coins 🪙 | Earned from time left against par and from rewards; spent on hints. Can be bought. The player app's handoff calls them tokens; the console says coins. |
 | Stars ⭐ | Earned only by solving. Never bought or spent. |
 | Streak 🔥 | Consecutive days with at least one game solved. Counts across languages. |
 
@@ -29,16 +29,16 @@ Read from the player prototype (`user-app/Crosscut Prototype.dc.html`) and its h
 | U2 | Open the feed and see the Daily challenge (shown as Today's drop) with each game's Start / Continue / Review state | Feed |
 | U3 | Solve a crossword against par with autocheck and the timer | Play |
 | U4 | Play Daily Five in six tries | Daily Five |
-| U5 | Use a hint: 50/50, reveal a letter, solve the word; go to Wallet when tokens run out | Hint sheet |
-| U6 | Earn stars, tokens and the time bonus, and see the celebration | Solved |
+| U5 | Use a hint: 50/50, reveal a letter, solve the word; go to Wallet when coins run out | Hint sheet |
+| U6 | Earn stars, coins and the time bonus, and see the celebration | Solved |
 | U7 | Keep the streak: streak-at-risk card, streak strip, reminders | Feed, Solved, Notifications |
 | U8 | Spin the fortune wheel or reveal the mystery grid | Feed cards |
 | U9 | Browse collections and archives, continue an unfinished game, unlock a collection and claim its reward | Browse, Collection detail |
 | U10 | Like and save posts; see live solved and solving-now counts and today's top solvers | Feed action bar, Game page |
 | U11 | Manage the profile: language, completed games, achievements | You |
-| U12 | Buy a token pack and understand tokens versus stars | Wallet |
+| U12 | Buy a coin pack and understand coins versus stars | Wallet |
 | U13 | Remove ads with a paid plan; restore purchases | Paywall, You |
-| U14 | See ads on the Lite plan: interstitials between posts, rewarded ads for tokens or a hint | Feed, Hint sheet (rewarded surface not yet drawn) |
+| U14 | See ads on the Lite plan: interstitials between posts, rewarded ads for coins or a hint | Feed, Hint sheet (rewarded surface not yet drawn) |
 | U15 | Compete: top solvers today on a game page, the weekly board in the backend | Game page (no full board screen yet) |
 | U16 | Get support: lost streak, wrong charge, duplicate account, delete the account | Not in the player app yet; backend has `deleteMe` |
 | U17 | Play in English, Ukrainian or Russian, with games written per language | Quiz, You |
@@ -51,7 +51,7 @@ The backend design names only "editors" and a shared admin token. The console ne
 |---|---|---|
 | Content editor | Library, crossword and Daily Five editors, validation, preview, approval | Scheduling, player data |
 | Publisher | Daily challenge desk, the two daily slots, publish time, schedule-ahead, collections | Editing game content |
-| Support agent | Player lookup, profile fields, streak, session and token support actions, account safeguards, notes | Leaderboard or ledger decisions |
+| Support agent | Player lookup, profile fields, streak, session and coin support actions, account safeguards, notes | Leaderboard or ledger decisions |
 | Integrity reviewer | Flagged solves, board eligibility decisions, shadow status | Reward decisions, which stay with economy |
 | Economy admin | Ledger inspection, compensating entries, purchase lookup | Editing balances directly |
 | Ads manager | Placement enablement, caps, rewards, first-session grace, fill and grant health | Campaigns, targeting, revenue reporting (AdMob) |
@@ -73,13 +73,13 @@ flowchart LR
     U3(U3 Solve a crossword)
     U4(U4 Play Daily Five)
     U5(U5 Use a hint)
-    U6(U6 Earn stars, tokens, time bonus)
+    U6(U6 Earn stars, coins, time bonus)
     U7(U7 Keep the streak)
     U8(U8 Fortune wheel, mystery grid)
     U9(U9 Browse collections, unlock, claim)
     U10(U10 Like, save, live counts, top solvers)
     U11(U11 Manage profile)
-    U12(U12 Buy tokens)
+    U12(U12 Buy coins)
     U13(U13 Remove ads, restore purchases)
     U14(U14 See ads, watch rewarded ads)
     U15(U15 Compete on boards)
@@ -111,7 +111,7 @@ flowchart LR
     direction TB
     S1(S1 Look up a player)
     S2(S2 Change a profile field)
-    S3(S3 Restore streak, grant tokens, reset session)
+    S3(S3 Restore streak, grant coins, reset session)
     S4(S4 Account safeguard)
     S5(S5 Support note)
   end
@@ -189,7 +189,7 @@ flowchart LR
 | U9 Browse collections | P5 membership, order, lock rule, reward, visibility | Full |
 | U10 Like, save, counts, top solvers | L1 keeps a cheated solve off "Top solvers today" | Partial. Likes, saves and live counts have no moderation and need none in v1. |
 | U11 Manage profile | S1 finds the player; S2 changes a field with a reason | Full |
-| U12 Buy tokens | M3 finds the purchase; M2 credits a verified but uncredited pack | Full for support. Pack prices stay in the stores. |
+| U12 Buy coins | M3 finds the purchase; M2 credits a verified but uncredited pack | Full for support. Pack prices stay in the stores. |
 | U13 Remove ads | M3 verifies the plan; A1 confirms which placements a plan suppresses | Full for support |
 | U14 See ads | A1 and A2 own placements, caps, rewards and first-session grace | Full for app-owned rules. The rewarded surface is not yet drawn in the player app. |
 | U15 Compete | L1 decides flagged solves; L2 inspects the board | Full for the backend board. The player app has no full board screen yet. |
@@ -198,7 +198,7 @@ flowchart LR
 
 ### Gaps with no admin coverage
 
-1. **U8 Wheel prizes and mystery-grid picks.** Prize table (50 / 10 / 0 / 25 / 5 / 15 tokens), spin frequency and the mystery pick rule are product constants with no operator control. Candidate: an Economy rules card, reason-gated like ad rules.
+1. **U8 Wheel prizes and mystery-grid picks.** Prize table (50 / 10 / 0 / 25 / 5 / 15 coins), spin frequency and the mystery pick rule are product constants with no operator control. Candidate: an Economy rules card, reason-gated like ad rules.
 2. **U1 and U7 Notifications.** Streak warnings, daily-drop pings and rival-overtake notices are shown in onboarding but push delivery is deferred past v1. Candidate: a Notifications area under the engagement scope already listed as "later" in the research brief.
 3. **U14 Rewarded surface.** The console owns rewarded placement rules, but the player app has no rewarded-ad moment drawn. The player design must add it before A2 changes anything a player can feel.
 4. **U15 Player-facing board.** The backend materialises a weekly board and the console can inspect it; the player app only shows "Top solvers today". Player design decision, not a console gap.
@@ -236,7 +236,7 @@ Each path is the single unbroken route from intent to confirmed result. Error br
 |---|---|---|
 | S1 Look up a player | Players → list of every player, filtered live by ID, name or sign-in → open → Profile, Timeline, Devices & ads, Notes tabs | Players list, Player record |
 | S2 Change a profile field | Player record → Profile → Edit a field → change → Save → Reason → Review (old, new, notification to player) → Confirm → audit entry, field marked Changed | Player record, Reason and review dialog |
-| S3 Restore streak, grant tokens, reset session | Player record → Support actions → choose action → parameters → Reason → Review (before/after, ledger effect) → Confirm → timeline and audit updated | Player record, Action panel, Review dialog |
+| S3 Restore streak, grant coins, reset session | Player record → Support actions → choose action → parameters → Reason → Review (before/after, ledger effect) → Confirm → timeline and audit updated | Player record, Action panel, Review dialog |
 | S4 Account safeguard | Player record → Account → Force sign-out, Suspend, Merge duplicate, or Delete on request → Reason → two-step confirm for destructive ones → result state | Player record, Safeguard dialogs |
 | S5 Support note | Player record → Notes → Add note → text and status Open / Closed → Save; close an open note | Player record (Notes) |
 

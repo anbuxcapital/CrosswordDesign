@@ -54,9 +54,9 @@
     error: 'GrantTimeout: the ledger did not acknowledge 3 reward grants within 5 s',
     runs: [['11:52 UTC', 'warn'], ['Sep 7 11:52 UTC', 'ok'], ['Sep 6 11:52 UTC', 'ok']],
     items: [
-      { label: 'pl_8f2c41 · +25 tokens · Sep 7 19:04', outcome: 'failed', detail: 'Ledger acknowledgement timed out' },
-      { label: 'pl_2a90bd · +25 tokens · Sep 7 21:31', outcome: 'failed', detail: 'Ledger acknowledgement timed out' },
-      { label: 'pl_71e0aa · +25 tokens · Sep 8 07:12', outcome: 'failed', detail: 'Ledger acknowledgement timed out' }
+      { label: 'pl_8f2c41 · +25 coins · Sep 7 19:04', outcome: 'failed', detail: 'Ledger acknowledgement timed out' },
+      { label: 'pl_2a90bd · +25 coins · Sep 7 21:31', outcome: 'failed', detail: 'Ledger acknowledgement timed out' },
+      { label: 'pl_71e0aa · +25 coins · Sep 8 07:12', outcome: 'failed', detail: 'Ledger acknowledgement timed out' }
     ]
   });
 

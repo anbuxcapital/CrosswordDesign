@@ -3,7 +3,7 @@
 
    S1 #/players          every player, with a live filter on id, name or sign-in
    S2 #/players/:id      Profile tab: edit a field → review + reason → Changed
-   S3                    Support actions: restore streak, grant tokens, reset session
+   S3                    Support actions: restore streak, grant coins, reset session
    S4                    Account safeguards: force sign-out, suspend, merge, delete
    S5                    Notes: add a note, close an open note
 
@@ -13,6 +13,10 @@
   'use strict';
 
   var el = C.ui.el;
+
+  /* Store keys stay 'tokens'; the interface always says coins. */
+  var CURRENCY_LABEL = { tokens: 'coins', stars: 'stars' };
+  function currencyWord(key) { return CURRENCY_LABEL[key] || key; }
 
   C.store.ui.players = {
     q: '',                // S1 filter text, applied from the first character
@@ -120,7 +124,8 @@
             render: function (p) { return p.streak + ' d'; }
           },
           { key: 'solved', label: 'Solved', align: 'right', width: '78px' },
-          { key: 'tokens', label: 'Tokens', align: 'right', width: '82px' },
+          { key: 'tokens', label: 'Coins', align: 'right', width: '80px' },
+          { key: 'stars', label: 'Stars', align: 'right', width: '76px' },
           {
             key: 'status', label: 'Status', align: 'right', width: '150px',
             render: function (p) {
@@ -160,7 +165,7 @@
     [
       ['Streak', p.streak + ' d'],
       ['Solved', String(p.solved)],
-      ['Tokens', String(p.tokens)],
+      ['Coins', String(p.tokens)],
       ['Stars', String(p.stars)]
     ].forEach(function (s) {
       var n = el('div', 'pl-stat');
@@ -362,7 +367,7 @@
         frow.appendChild(input);
         frow.appendChild(el('div', 'help', par.key === 'days'
           ? 'Current streak ' + p.streak + ' days.'
-          : 'Current balance ' + p.tokens + ' tokens.'));
+          : 'Current balance ' + p.tokens + ' coins.'));
         body.appendChild(frow);
       });
     } else {
@@ -392,8 +397,8 @@
     if (action.id === 'restore_streak') {
       var days = Number(values.days);
       var next = p.streak + days;
-      before = [['Streak', p.streak + ' days'], ['Tokens', p.tokens], ['Ledger', 'no entry']];
-      after = [['Streak', next + ' days'], ['Tokens', p.tokens], ['Ledger', 'no entry']];
+      before = [['Streak', p.streak + ' days'], ['Coins', p.tokens], ['Ledger', 'no entry']];
+      after = [['Streak', next + ' days'], ['Coins', p.tokens], ['Ledger', 'no entry']];
       consequence = 'The player is notified.';
       resultText = 'Streak restored to ' + next + ' days (+' + days + ')';
       applyFn = function () {
@@ -403,10 +408,10 @@
     } else if (action.id === 'grant_tokens') {
       var amount = Number(values.amount);
       var balance = p.tokens + amount;
-      before = [['Tokens', p.tokens], ['Last entry', lastLedgerLabel(p)], ['Streak', p.streak + ' days']];
-      after = [['Tokens', balance], ['Last entry', '+' + amount + ' tokens · support grant'], ['Streak', p.streak + ' days']];
-      consequence = 'A ledger entry of +' + amount + ' tokens is appended.';
-      resultText = 'Granted ' + amount + ' tokens · balance ' + balance;
+      before = [['Coins', p.tokens], ['Last entry', lastLedgerLabel(p)], ['Streak', p.streak + ' days']];
+      after = [['Coins', balance], ['Last entry', '+' + amount + ' coins · support grant'], ['Streak', p.streak + ' days']];
+      consequence = 'A ledger entry of +' + amount + ' coins is appended.';
+      resultText = 'Granted ' + amount + ' coins · balance ' + balance;
       applyFn = function (store) {
         grantSeq += 1;
         p.tokens = balance;
@@ -470,7 +475,7 @@
 
   function lastLedgerLabel(p) {
     var e = C.store.ledger.filter(function (l) { return l.playerId === p.id; })[0];
-    return e ? (e.amount > 0 ? '+' : '') + e.amount + ' ' + e.currency + ' · ' + e.reason : 'no entry';
+    return e ? (e.amount > 0 ? '+' : '') + e.amount + ' ' + currencyWord(e.currency) + ' · ' + e.reason : 'no entry';
   }
 
   // ------------------------------------------------------------------
@@ -530,8 +535,8 @@
     var body = el('div');
     body.appendChild(C.ui.reviewPanel({
       title: 'Force sign-out · ' + p.name,
-      before: [['Sessions', p.devices.length + ' device(s) signed in'], ['Account', (C.ui.STATUS[p.status] || {}).label], ['Tokens', p.tokens]],
-      after: [['Sessions', '0 signed in'], ['Account', (C.ui.STATUS[p.status] || {}).label], ['Tokens', p.tokens]],
+      before: [['Sessions', p.devices.length + ' device(s) signed in'], ['Account', (C.ui.STATUS[p.status] || {}).label], ['Coins', p.tokens]],
+      after: [['Sessions', '0 signed in'], ['Account', (C.ui.STATUS[p.status] || {}).label], ['Coins', p.tokens]],
       consequence: 'Every device is signed out immediately.'
     }));
     var reason = C.ui.reasonField({ required: true, placeholder: 'e.g. Shared device reported by the player, ticket #4840' });
@@ -640,7 +645,7 @@
         b.appendChild(el('span', 'p-id', o.id));
         b.appendChild(el('span', 'p-title', o.name));
         b.appendChild(el('span', 'spacer'));
-        b.appendChild(el('span', 'p-meta', o.tokens + ' tokens · ' + o.solved + ' solved'));
+        b.appendChild(el('span', 'p-meta', o.tokens + ' coins · ' + o.solved + ' solved'));
         b.appendChild(C.ui.status(o.status));
         b.addEventListener('click', function () { mergeReviewStep(survivor, o); });
         list.appendChild(b);
@@ -664,13 +669,13 @@
       title: 'Which record survives',
       before: [
         ['Surviving', survivor.name + ' · ' + survivor.id],
-        ['Tokens', survivor.tokens], ['Stars', survivor.stars],
+        ['Coins', survivor.tokens], ['Stars', survivor.stars],
         ['Solved', survivor.solved], ['Streak', survivor.streak + ' days'],
-        ['Duplicate', dup.name + ' · ' + dup.id + ' (' + dup.tokens + ' tokens, ' + dup.solved + ' solved)']
+        ['Duplicate', dup.name + ' · ' + dup.id + ' (' + dup.tokens + ' coins, ' + dup.solved + ' solved)']
       ],
       after: [
         ['Surviving', survivor.name + ' · ' + survivor.id],
-        ['Tokens', survivor.tokens + dup.tokens], ['Stars', survivor.stars + dup.stars],
+        ['Coins', survivor.tokens + dup.tokens], ['Stars', survivor.stars + dup.stars],
         ['Solved', survivor.solved + dup.solved], ['Streak', Math.max(survivor.streak, dup.streak) + ' days'],
         ['Duplicate', dup.id + ' closed and redirected']
       ],
@@ -692,7 +697,7 @@
             action: 'Merge duplicate account',
             object: survivor.id,
             reason: reason.value(),
-            result: dup.id + ' merged into ' + survivor.id + ' · ' + (survivor.tokens + dup.tokens) + ' tokens, ' + (survivor.solved + dup.solved) + ' solved',
+            result: dup.id + ' merged into ' + survivor.id + ' · ' + (survivor.tokens + dup.tokens) + ' coins, ' + (survivor.solved + dup.solved) + ' solved',
             apply: function () {
               survivor.tokens += dup.tokens;
               survivor.stars += dup.stars;
@@ -709,7 +714,7 @@
           resultModal('Accounts merged',
             dup.id + ' is closed. ' + survivor.id + ' holds the combined totals.',
             [
-              { label: 'Tokens', outcome: 'ok', outcomeLabel: 'Moved', detail: survivor.tokens + ' on ' + survivor.id },
+              { label: 'Coins', outcome: 'ok', outcomeLabel: 'Moved', detail: survivor.tokens + ' on ' + survivor.id },
               { label: 'Stars', outcome: 'ok', outcomeLabel: 'Moved', detail: survivor.stars + ' on ' + survivor.id },
               { label: 'Solved games', outcome: 'ok', outcomeLabel: 'Moved', detail: survivor.solved + ' total' },
               { label: 'Purchases and receipts', outcome: 'skipped', outcomeLabel: 'Kept', detail: 'stay with the original receipt' }
@@ -724,7 +729,7 @@
     var body = el('div');
     body.appendChild(C.ui.reviewPanel({
       title: 'Delete on request · ' + p.name,
-      before: [['Account', (C.ui.STATUS[p.status] || {}).label], ['Solve history', p.solved + ' games'], ['Balances', p.tokens + ' tokens, ' + p.stars + ' stars']],
+      before: [['Account', (C.ui.STATUS[p.status] || {}).label], ['Solve history', p.solved + ' games'], ['Balances', p.tokens + ' coins, ' + p.stars + ' stars']],
       after: [['Account', 'Deletion pending'], ['Solve history', 'erased within 30 days'], ['Balances', 'forfeited, no refund']],
       consequence: 'The record is locked now and erased within 30 days. This cannot be undone.'
     }));

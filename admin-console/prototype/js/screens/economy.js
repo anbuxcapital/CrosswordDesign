@@ -17,7 +17,7 @@
     query: '',            // player search, ledger tab
     playerId: null,       // pinned player context for M2
     direction: 'all',     // all | earned | spent
-    currency: 'all',      // all | tokens | stars
+    currency: 'all',      // all | tokens (shown as coins) | stars
     source: 'all',        // all | system | operator
     date: 'all',          // all | today | 7d
     entryId: null,
@@ -65,12 +65,16 @@
     return p ? p.name : id;
   }
 
+  /* Store keys stay 'tokens'; the interface always says coins. */
+  var CURRENCY_LABEL = { tokens: 'coins', stars: 'stars' };
+  function currencyWord(key) { return CURRENCY_LABEL[key] || key; }
+
   function isOperatorSource(entry) { return entry.source && entry.source !== 'system'; }
 
   function amountNode(entry) {
     var up = entry.amount >= 0;
     var n = el('span', 'ie-sign ' + (up ? 'up' : 'down'));
-    n.textContent = (up ? '+' : '−') + Math.abs(entry.amount) + ' ' + entry.currency;
+    n.textContent = (up ? '+' : '−') + Math.abs(entry.amount) + ' ' + currencyWord(entry.currency);
     return n;
   }
 
@@ -149,7 +153,7 @@
       s.direction, function (k) { s.direction = k; C.render(); }));
 
     bar.appendChild(filterGroup('Currency',
-      [{ key: 'all', label: 'All' }, { key: 'tokens', label: 'Tokens' }, { key: 'stars', label: 'Stars' }],
+      [{ key: 'all', label: 'All' }, { key: 'tokens', label: 'Coins' }, { key: 'stars', label: 'Stars' }],
       s.currency, function (k) { s.currency = k; C.render(); }));
 
     bar.appendChild(filterGroup('Source',
@@ -167,7 +171,7 @@
       var ctx = el('div', 'ec-context');
       ctx.appendChild(el('span', 'eyebrow', 'Player in view'));
       ctx.appendChild(el('span', 'ec-context-name', player.name + ' · ' + player.id));
-      ctx.appendChild(el('span', 'ie-two-sub', player.tokens + ' tokens · ' + player.stars + ' stars'));
+      ctx.appendChild(el('span', 'ie-two-sub', player.tokens + ' coins · ' + player.stars + ' stars'));
       bar.appendChild(ctx);
       bar.appendChild(C.ui.button('Add compensating entry', {
         variant: 'pink', small: true,
@@ -217,7 +221,7 @@
     var player = C.find.player(entry.playerId);
 
     var head = el('div', 'ie-detail-head');
-    head.appendChild(el('div', 'ie-detail-title', (entry.amount >= 0 ? '+' : '−') + Math.abs(entry.amount) + ' ' + entry.currency));
+    head.appendChild(el('div', 'ie-detail-title', (entry.amount >= 0 ? '+' : '−') + Math.abs(entry.amount) + ' ' + currencyWord(entry.currency)));
     head.appendChild(el('span', 'cell-id', entry.id));
     head.appendChild(el('div', 'spacer'));
     wrap.appendChild(head);
@@ -312,7 +316,7 @@
     input.setAttribute('aria-label', 'Amount to append');
     inputs.appendChild(input);
     var seg = C.ui.segmented(
-      [{ key: 'tokens', label: 'Tokens' }, { key: 'stars', label: 'Stars' }],
+      [{ key: 'tokens', label: 'Coins' }, { key: 'stars', label: 'Stars' }],
       currency,
       function (k) { currency = k; rebuildSeg(); repaint(); }
     );
@@ -325,7 +329,7 @@
     function rebuildSeg() {
       segWrap.innerHTML = '';
       segWrap.appendChild(C.ui.segmented(
-        [{ key: 'tokens', label: 'Tokens' }, { key: 'stars', label: 'Stars' }],
+        [{ key: 'tokens', label: 'Coins' }, { key: 'stars', label: 'Stars' }],
         currency,
         function (k) { currency = k; rebuildSeg(); repaint(); }
       ));
@@ -336,7 +340,7 @@
 
     var reason = C.ui.reasonField({
       required: true,
-      placeholder: 'e.g. Tokens lost in the Aug 30 outage, ticket #4903'
+      placeholder: 'e.g. Coins lost in the Aug 30 outage, ticket #4903'
     });
     body.appendChild(reason);
 
@@ -353,12 +357,12 @@
       reviewWrap.appendChild(C.ui.reviewPanel({
         title: 'Review the compensating entry',
         before: [
-          ['Balance', current() + ' ' + currency],
+          ['Balance', current() + ' ' + currencyWord(currency)],
           ['Last entry', lastEntryLabel(player, currency)]
         ],
         after: [
-          ['Entry', (parsed() >= 0 ? '+' : '−') + Math.abs(parsed()) + ' ' + currency],
-          ['Balance', after() + ' ' + currency]
+          ['Entry', (parsed() >= 0 ? '+' : '−') + Math.abs(parsed()) + ' ' + currencyWord(currency)],
+          ['Balance', after() + ' ' + currencyWord(currency)]
         ],
         consequence: 'A new entry is appended under your operator handle.'
       }));
@@ -399,7 +403,7 @@
             action: 'Append compensating ledger entry',
             object: player.id,
             reason: reason.value(),
-            result: (amt >= 0 ? '+' : '−') + Math.abs(amt) + ' ' + cur + ' appended · balance ' + balance + ' ' + cur,
+            result: (amt >= 0 ? '+' : '−') + Math.abs(amt) + ' ' + currencyWord(cur) + ' appended · balance ' + balance + ' ' + currencyWord(cur),
             apply: function (store) {
               var live = C.find.player(player.id);
               store.ledger.push({
@@ -430,7 +434,7 @@
     var rows = newestFirst(C.store.ledger.filter(function (e) {
       return e.playerId === player.id && e.currency === currency;
     }));
-    if (!rows.length) return 'No ' + currency + ' entries yet';
+    if (!rows.length) return 'No ' + currencyWord(currency) + ' entries yet';
     return rows[0].when + ' · ' + rows[0].reason;
   }
 

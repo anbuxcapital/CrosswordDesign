@@ -43,7 +43,7 @@ These rules define how to extend the selected admin-console direction without tu
 
 ## Content language
 
-- Prefer concrete labels: `No Daily Five assigned`, `Retry generation`, `6 days of Daily Five remaining`. The two games are `crossword` and `Daily Five`; the generic noun is `game`, never `puzzle`. The daily pair is the `Daily challenge`.
+- Prefer concrete labels: `No Daily Five assigned`, `Retry generation`, `6 days of Daily Five remaining`. The two games are `crossword` and `Daily Five`; the generic noun is `game`, never `puzzle`. The daily pair is the `Daily challenge`. The spendable currency is `coins`, never `tokens`; `stars` are earned only.
 - Avoid vague labels such as `Issue`, `Error`, or `Manage` when a specific action is known.
 - Label demo data and simulation boundaries clearly.
 - Use sentence case for screen titles, controls, and status messages.

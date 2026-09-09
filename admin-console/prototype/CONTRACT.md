@@ -11,7 +11,7 @@ The shell, the visual system, the shared UI patterns and the demo data already e
 | File | Contents |
 |---|---|
 | `index.html` | Shell page, script order, modal layer, toast area |
-| `css/console.css` | Tokens and every shared component class |
+| `css/console.css` | Design tokens and every shared component class |
 | `js/data.js` | Demo seed, split into per-area sections |
 | `js/app.js` | Store, router, role gating, `Console.commit`, `Console.toast`, shell rendering |
 | `js/ui.js` | `Console.ui.*` pattern helpers |
@@ -107,12 +107,14 @@ Use `Console.deriveDay(day)` for readiness: it returns `{items:[{id,kind,title,s
 
 **player** — `{id:'pl_8f2c41', name, signIn, lang, joined, streak, solved, tokens, stars, status:'active'|'suspended', profile:[[label, value, editable]], timeline:[[when, kind, text, amount]], devices:[[name, app, lastSeen]], ads:[[label, detail, tone]], notes:[{id, author, when, text, status:'open'|'closed'}]}`
 `timeline` kinds are `solve`, `session`, `ledger`, `flag`.
+`tokens` is the store key for the soft currency the interface calls **coins** — see §10. Never print the key. `stars` is the hard currency bought with money; every seeded player carries a plausible non-zero `stars` in step with `solved` (roughly 10–12 per solve), except `pl_71e0aa`, whose 500 stars and 0 coins are pinned to her ledger and timeline.
 
 **flag** — `{id, playerId, playerName, puzzleId, puzzleTitle, scope, reason, decision:null|'cleared'|'excluded'|'shadow', evidence:[[label, value]]}`
 
 **board** — `{id, scope:'week'|'puzzle', label, lang, entries:[{rank, playerId, playerName, score, eligible, note}]}`
 
 **ledgerEntry** — `{id, when, playerId, currency:'tokens'|'stars', amount:Number, reason, source:'system'|operatorHandle, idempotencyKey, balanceAfter}`
+`currency` is a store key. Render it through the screen's own `currencyWord()` map so `tokens` reads `coins` (`+40 coins`), never by printing `entry.currency` raw.
 
 **purchase** — `{id, when, playerId, pack, plan, receipt, idempotencyKey, amount, status:'verified'|'refunded'|'pending'}`
 
@@ -247,6 +249,8 @@ Add a key only inside `ui.js`'s `STATUS` map — which means asking, since `ui.j
 
 - The daily pair of one crossword and one Daily Five is a **Daily challenge** — sentence case, and never `drop` in the interface (`Daily challenge`, `Schedule Daily challenge`, `Schedule 3 Daily challenges`, `Fri Sep 11 Daily challenge`, `Daily challenge generation`). `drop` survives only as a verb where nothing better fits (`drops at 12:00 UTC`; prefer `publishes at 12:00 UTC`) and in player-app labels quoted verbatim. Code identifiers, ids, routes and job names keep the old word — `#/desk`, `sig_drop_gen`, `drop.generate`, `desk.js`.
 - Never write `puzzle` in the interface. The two games are a **crossword** and a **Daily Five**; name the kind when it is known (`Crossword editor`, `Approve crossword`, `Replace Daily Five`, `This day has no crossword yet`) and use **game** / **games** when both kinds are meant (`Import games`, `New game`, `412 games`, `Search the library`). Never write `Wordle`; Daily Five may be introduced once per screen as `Daily Five (one word, six tries)`. Code identifiers, store keys, ids and routes keep the old names — `store.puzzles`, `Console.find.puzzle`, `puzzleId`, `#/library`.
+- The currency shown with the coin glyph is **coins** — never `tokens` — everywhere a person reads it: the Players list column and record stat, `Grant coins` and its review and audit strings, ledger and purchase labels (`+40 coins`, `Coin pack`), the economy currency selector (`Coins` / `Stars`), ads reward strings (`+25 coins`), player timeline amounts and collection reward text. The second currency stays **stars**. Code identifiers, store keys and ids keep the old word — `p.tokens`, `currency:'tokens'`, `grant_tokens` — so map the key to the word at render time rather than printing it. `token` survives in the interface only as the operator credential in Access and audit (`Rotate admin token`, `token_console_admin`) and in Better Auth wording; `css/console.css` keeps design tokens.
+- The stat order for a player is Streak, Solved, Coins, Stars, in the list and on the record.
 - Sentence case for titles, controls and messages. `Confirm schedule`, not `Confirm Schedule`.
 - Concrete labels. `No Daily Five assigned`, not `Issue`. `Retry generation`, not `Manage`.
 - Every metric carries scope and window: `Daily Five · English · 7 days`, and a threshold when one exists.
