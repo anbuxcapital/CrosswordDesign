@@ -303,43 +303,6 @@ Console.data = (function () {
     });
   }
 
-  // Readiness checks keyed by puzzle status, reused by the day inspector.
-  var CHECKS = {
-    published: [
-      ['Grid and answers consistent', '48 entries', 'pass'],
-      ['Clue numbering', 'no gaps', 'pass'],
-      ['Published result', '200 OK', 'pass']
-    ],
-    live: [
-      ['Grid and answers consistent', '48 entries', 'pass'],
-      ['Clue numbering', 'no gaps', 'pass'],
-      ['Serving to players', 'since 12:00 UTC', 'pass']
-    ],
-    scheduled: [
-      ['Grid and answers consistent', '48 entries', 'pass'],
-      ['Clue numbering', 'no gaps', 'pass'],
-      ['Editorial approval', 'a.reid, Sep 5', 'pass']
-    ],
-    approved: [
-      ['Grid and answers consistent', '48 entries', 'pass'],
-      ['Clue numbering', 'no gaps', 'pass'],
-      ['Editorial approval', 'm.olsen, today', 'pass']
-    ],
-    review: [
-      ['Grid and answers consistent', '48 entries', 'pass'],
-      ['Clue numbering', '1 clue missing at 7-across', 'warn'],
-      ['Editorial approval', 'not started', 'warn']
-    ],
-    draft: [
-      ['Validation not run', 'queued', 'warn'],
-      ['Editorial approval', 'not started', 'warn']
-    ],
-    empty: [
-      ['No game assigned to this slot', 'one is required', 'fail'],
-      ['Approved candidates available', 'choose one from the picker', 'pass']
-    ]
-  };
-
   // ---------------------------------------------------------------------
   // === SECTION: support — players (owner: support builder) ===
   // ---------------------------------------------------------------------
@@ -696,7 +659,6 @@ Console.data = (function () {
     puzzles: puzzles,
     collections: collections,
     days: days,
-    checks: CHECKS,
     players: players,
     supportActions: SUPPORT_ACTIONS,
     flags: flags,

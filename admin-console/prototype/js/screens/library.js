@@ -1,4 +1,4 @@
-/* Puzzle library — the content editor's default screen.
+/* Game library — the content editor's default screen.
    OWNER: editorial builder.
    Routes: #/library
    Use cases: E1 import a batch, E2 create or duplicate, entry point for E3–E7.
@@ -257,6 +257,7 @@
      handing over from O2/O3; both routes are supported. */
   C.store.ui.library = C.store.ui.library || {};
   var LIB = C.store.ui.library;
+  if (LIB.tab == null) LIB.tab = 'cw';
   if (LIB.filter == null) LIB.filter = 'all';
   if (LIB.status == null) LIB.status = null;
   if (LIB.lang == null) LIB.lang = 'all';
@@ -265,15 +266,27 @@
 
   function st() { return C.store.ui.library; }
 
+  /* The two kinds are the tabs, so the chip row carries only the states a
+     content editor filters by within one kind. */
   var CHIPS = [
     { key: 'all', label: 'All' },
-    { key: 'cw', label: 'Crossword' },
-    { key: 'd5', label: 'Daily Five' },
     { key: 'review', label: 'Needs review' },
     { key: 'failed', label: 'Validation failed' }
   ];
   var CHIP_KEYS = CHIPS.map(function (c) { return c.key; });
   var STATUS_KEYS = ['draft', 'review', 'approved', 'scheduled', 'published', 'live'];
+
+  var TABS = [
+    { key: 'cw', label: 'Crosswords' },
+    { key: 'd5', label: 'Daily Five' }
+  ];
+
+  function activeTab() { return st().tab === 'd5' ? 'd5' : 'cw'; }
+
+  function ofTab(list) {
+    var k = activeTab();
+    return list.filter(function (p) { return p.kind === k; });
+  }
 
   // ---------------------------------------------------------------------
   // query hints — #/library?status=approved&kind=d5&lang=en
@@ -290,11 +303,12 @@
       var i = pair.indexOf('=');
       var k = decodeURIComponent(i < 0 ? pair : pair.slice(0, i));
       var v = decodeURIComponent(i < 0 ? '' : pair.slice(i + 1));
-      if (k === 'kind' && (v === 'cw' || v === 'd5')) s.filter = v;
+      if (k === 'kind' && (v === 'cw' || v === 'd5')) s.tab = v;
       else if (k === 'status') s.status = STATUS_KEYS.indexOf(v) >= 0 ? v : null;
       else if (k === 'lang') s.lang = (v === 'en' || v === 'uk') ? v : 'all';
       else if (k === 'q') s.q = v;
       else if (k === 'filter') s.filter = v;
+      else if (k === 'tab' && (v === 'cw' || v === 'd5')) s.tab = v;
     });
     s.selected = [];
   }
@@ -334,9 +348,7 @@
     var lang = st().lang;
     var q = st().q.trim().toLowerCase();
 
-    return C.store.puzzles.filter(function (p) {
-      if (f === 'cw' && p.kind !== 'cw') return false;
-      if (f === 'd5' && p.kind !== 'd5') return false;
+    return ofTab(C.store.puzzles).filter(function (p) {
       if (f === 'review' && p.status !== 'review') return false;
       if (f === 'failed' && p.validation !== 'failed') return false;
       if (status && p.status !== status) return false;
@@ -397,7 +409,7 @@
     // -- step 1 ---------------------------------------------------------
     function step1() {
       var body = el('div');
-      body.appendChild(el('div', 'help', 'Step 1 of 3 · Pick files. Drag and drop is simulated in this prototype: the four files below stand in for the drop zone.'));
+      body.appendChild(el('div', 'help', 'Step 1 of 3 · Pick files.'));
       var list = el('div');
       list.style.marginTop = '12px';
       IMPORT_FILES.forEach(function (f) {
@@ -443,17 +455,16 @@
       var rejected = items.filter(function (i) { return i.outcome !== 'ok'; });
 
       var body = el('div');
-      body.appendChild(el('div', 'help', 'Step 2 of 3 · Validation summary. Rejected games are not imported; they stay in the batch record so Operations can open them (O3).'));
+      body.appendChild(el('div', 'help', 'Step 2 of 3 · Validation summary. Rejected games are not imported.'));
 
       var cards = el('div', 'cards-3');
       cards.style.margin = '12px 0';
-      [['Files', chosenFiles().length, 'Selected in step 1'],
-       ['Accepted', accepted.length, 'Will be created as Draft'],
-       ['Rejected', rejected.length, 'Listed with a reason, not created']].forEach(function (s) {
+      [['Files', chosenFiles().length],
+       ['Accepted', accepted.length],
+       ['Rejected', rejected.length]].forEach(function (s) {
         var c = el('div', 'stat');
         c.appendChild(el('div', 'eyebrow', s[0]));
         c.appendChild(el('div', 'stat-value', String(s[1])));
-        c.appendChild(el('div', 'stat-note', s[2]));
         cards.appendChild(c);
       });
       body.appendChild(cards);
@@ -483,7 +494,7 @@
     // -- step 3 ---------------------------------------------------------
     function step3(accepted, rejected, items) {
       var body = el('div');
-      body.appendChild(el('div', 'help', 'Step 3 of 3 · Confirm. Importing creates Draft games only; nothing is scheduled or published.'));
+      body.appendChild(el('div', 'help', 'Step 3 of 3 · Confirm.'));
       var wrap = el('div');
       wrap.style.marginTop = '12px';
       wrap.appendChild(C.ui.reviewPanel({
@@ -498,9 +509,7 @@
           ['Drafts', (C.store.puzzles.filter(function (p) { return p.status === 'draft'; }).length + accepted.length) + ' drafts'],
           ['Import batches', (C.store.importBatches.length + 1) + ' batches']
         ],
-        consequence: accepted.length + ' games are created as Draft with validation Not run. ' +
-          rejected.length + ' rejected ' + (rejected.length === 1 ? 'game stays' : 'games stay') +
-          ' in the batch record for Operations to open. No Daily challenge is affected.'
+        consequence: accepted.length + ' games are created as Draft. Nothing is scheduled or published.'
       }));
       body.appendChild(wrap);
 
@@ -566,9 +575,7 @@
       });
 
       var body = el('div');
-      body.appendChild(el('div', 'help', 'Imported. The new drafts are selected in the library and the batch is visible in Operations.'));
       var res = el('div');
-      res.style.marginTop = '12px';
       res.appendChild(C.ui.results(created.map(function (p) {
         return { label: p.id + ' ' + p.title, outcome: 'ok', outcomeLabel: 'Created', detail: 'Draft · validation not run' };
       }).concat(rejected.map(function (i) {
@@ -596,7 +603,7 @@
   // ---------------------------------------------------------------------
 
   function newPuzzleFlow() {
-    var draft = { kind: 'cw', lang: 'en', difficulty: 'Medium', title: '' };
+    var draft = { kind: activeTab(), lang: 'en', difficulty: 'Medium', title: '' };
 
     function build() {
       var body = el('div');
@@ -607,9 +614,6 @@
         [{ key: 'cw', label: 'Crossword' }, { key: 'd5', label: 'Daily Five' }],
         draft.kind, function (k) { draft.kind = k; build(); }
       ));
-      r1.appendChild(el('div', 'help', draft.kind === 'cw'
-        ? 'A 5 × 5 grid with five across and five down clues.'
-        : 'Five five-letter answers and one shared hint.'));
       body.appendChild(r1);
 
       var r2 = el('div', 'form-row');
@@ -651,7 +655,6 @@
         C.ui.refreshModal();
       });
       r4.appendChild(input);
-      r4.appendChild(el('div', 'help', 'The next free id is ' + ED.nextId(draft.kind) + '. The ' + (draft.kind === 'cw' ? 'crossword' : 'Daily Five') + ' opens in the editor as a Draft with empty content.'));
       body.appendChild(r4);
 
       C.ui.modal({
@@ -693,11 +696,7 @@
     if (!sources.length) return;
 
     var body = el('div');
-    body.appendChild(el('div', 'help', sources.length === 1
-      ? 'The copy keeps the content, language and difficulty of the original and starts again as a Draft at version 1.'
-      : sources.length + ' games are copied. Each copy starts as a Draft at version 1.'));
     var res = el('div');
-    res.style.marginTop = '12px';
     var taken = [];
     var plan = sources.map(function (p) {
       var id = ED.nextId(p.kind, taken);
@@ -768,14 +767,12 @@
         ['Status', C.ui.pill('draft')],
         ['Version', 'v' + (src.version + 1) + ' · correction of v' + src.version]
       ],
-      consequence: src.id + ' stays published and keeps serving until the correction is approved and published. ' +
-        'Players who have already solved ' + src.id + ' keep their result.'
+      consequence: src.id + ' keeps serving until the correction is published.'
     }));
     var reason = C.ui.reasonField({
       required: false,
       label: 'What needs correcting',
-      placeholder: 'e.g. 7-across clue names the wrong river',
-      help: 'Optional here. It is stored on the correction and shown again before the correction is published.'
+      placeholder: 'e.g. 7-across clue names the wrong river'
     });
     body.appendChild(reason);
 
@@ -838,20 +835,16 @@
       if (disabled) b.style.opacity = '.5';
       var txt = el('div', 'check-row-text');
       txt.appendChild(el('div', 'check-row-label', label));
-      txt.appendChild(el('div', 'check-row-detail', detail));
+      if (disabled && detail) txt.appendChild(el('div', 'check-row-detail', detail));
       b.appendChild(txt);
       if (!disabled) b.addEventListener('click', function () { C.ui.closeModal(); fn(); });
       list.appendChild(b);
     }
 
-    action('Open in editor', 'Metadata, content, validation and preview', function () { C.go('#/library/' + p.id); });
-    action('Duplicate as draft', 'Copies the content into a new Draft at version 1', function () { duplicateFlow([p]); });
-    action('Create correction',
-      isPublished(p)
-        ? 'New version in Draft, noted as a correction of v' + p.version
-        : 'Only a Published or Live game can be corrected',
-      function () { correctionFlow(p); },
-      !isPublished(p));
+    action('Open in editor', '', function () { C.go('#/library/' + p.id); });
+    action('Duplicate as draft', '', function () { duplicateFlow([p]); });
+    action('Create correction', 'Only a Published or Live game can be corrected',
+      function () { correctionFlow(p); }, !isPublished(p));
 
     body.appendChild(list);
 
@@ -936,8 +929,6 @@
       repaint(mount, true);
     });
     bar.appendChild(search);
-
-    bar.appendChild(C.ui.densitySwitch());
     return bar;
   }
 
@@ -950,9 +941,6 @@
     bar.appendChild(el('span', 'bulk-label', sel.length
       ? sel.length + ' game' + (sel.length === 1 ? '' : 's') + ' selected'
       : list.length + ' game' + (list.length === 1 ? '' : 's') + ' shown'));
-    bar.appendChild(el('span', 'bulk-hint', sel.length
-      ? sel.join(', ')
-      : 'Tick rows to duplicate several at once, or open a row to edit, validate, preview and approve it.'));
     bar.appendChild(el('div', 'spacer'));
 
     if (sel.length) {
@@ -1004,14 +992,12 @@
           }
         },
         {
-          key: 'kind', label: 'Kind and language', width: '190px', cls: 'nowrap',
-          render: function (p) { return ED.kindLabel(p.kind) + ' · ' + ED.langLabel(p.lang); }
+          key: 'lang', label: 'Language', width: '112px', cls: 'nowrap',
+          render: function (p) { return ED.langLabel(p.lang); }
         },
         { key: 'difficulty', label: 'Difficulty', width: '106px', cls: 'nowrap' },
         { key: 'status', label: 'Status', width: '150px', render: function (p) { return C.ui.pill(p.status); } },
         { key: 'validation', label: 'Validation', width: '120px', render: function (p) { return C.ui.status(p.validation); } },
-        { key: 'version', label: 'Version', align: 'right', width: '86px', render: function (p) { return 'v' + p.version; } },
-        { key: 'updatedAt', label: 'Updated', align: 'right', width: '118px', cls: 'nowrap' },
         {
           key: 'menu', label: '', align: 'right', width: '56px',
           render: function (p) {
@@ -1030,7 +1016,7 @@
         idKey: 'id',
         onChange: function (next) { st().selected = next; repaint(mount); }
       },
-      empty: 'No games match these filters. Clear a filter, or import a batch.'
+      empty: 'No games match these filters.'
     });
   }
 
@@ -1038,6 +1024,12 @@
      hand-off). Fold it into the status dimension so both chip rows stay
      independent and the ✕ chip can clear it. */
   function normalizeState() {
+    /* A kind written straight into `filter` by an older hand-off picks the tab. */
+    if (st().filter === 'cw' || st().filter === 'd5') {
+      st().tab = st().filter;
+      st().filter = 'all';
+    }
+    if (st().tab !== 'cw' && st().tab !== 'd5') st().tab = 'cw';
     if (STATUS_KEYS.indexOf(st().filter) >= 0) {
       st().status = st().filter;
       st().filter = 'all';
@@ -1045,19 +1037,30 @@
     if (CHIP_KEYS.indexOf(st().filter) < 0) st().filter = 'all';
   }
 
+  /* A full re-render, not a repaint: the topbar subline counts the tab. */
+  function tabStrip() {
+    return C.ui.tabs(TABS, activeTab(), function (k) {
+      st().tab = k;
+      st().selected = [];
+      C.render();
+    });
+  }
+
   function build(mount) {
     normalizeState();
+    var inTab = ofTab(C.store.puzzles);
     var list = rows();
 
-    var needsReview = C.store.puzzles.filter(function (p) { return p.status === 'review'; });
-    var failing = C.store.puzzles.filter(function (p) { return p.validation === 'failed'; });
+    mount.appendChild(tabStrip());
+
+    var needsReview = inTab.filter(function (p) { return p.status === 'review'; });
+    var failing = inTab.filter(function (p) { return p.validation === 'failed'; });
     if (needsReview.length || failing.length) {
       var b = el('div', 'banner attention');
       b.appendChild(el('span', 'banner-dot'));
       b.appendChild(el('div', 'banner-text',
         needsReview.length + ' game' + (needsReview.length === 1 ? '' : 's') + ' waiting for review · ' +
         failing.length + ' failing validation'));
-      b.appendChild(el('div', 'banner-detail', 'Open one to validate, fix and approve it.'));
       b.appendChild(el('div', 'spacer'));
       b.appendChild(C.ui.button('Show needs review', {
         small: true,
@@ -1079,21 +1082,21 @@
     mount.appendChild(wrap);
 
     var foot = el('div', 'table-foot');
-    foot.appendChild(el('span', null, list.length + ' of ' + C.store.puzzles.length + ' games shown · ' +
-      C.store.puzzles.filter(function (p) { return p.lang === 'en'; }).length + ' English · ' +
-      C.store.puzzles.filter(function (p) { return p.lang === 'uk'; }).length + ' Ukrainian'));
+    foot.appendChild(el('span', null, list.length + ' of ' + inTab.length + ' shown · ' +
+      inTab.filter(function (p) { return p.lang === 'en'; }).length + ' English · ' +
+      inTab.filter(function (p) { return p.lang === 'uk'; }).length + ' Ukrainian'));
     foot.appendChild(el('span', 'spacer'));
     foot.appendChild(el('span', null, 'Approved and unassigned: ' +
-      C.store.puzzles.filter(function (p) { return p.status === 'approved' && p.kind === 'cw'; }).length + ' crosswords · ' +
-      C.store.puzzles.filter(function (p) { return p.status === 'approved' && p.kind === 'd5'; }).length + ' Daily Five'));
+      inTab.filter(function (p) { return p.status === 'approved'; }).length));
     mount.appendChild(foot);
   }
 
   C.registerScreen('#/library', {
     title: 'Library',
     subline: function () {
-      return 'Crosswords and Daily Five (one word, six tries) · ' + C.store.puzzles.length + ' games · English and Ukrainian · ' +
-        C.store.puzzles.filter(function (p) { return p.status === 'draft'; }).length + ' drafts';
+      normalizeState();
+      return ofTab(C.store.puzzles).length +
+        (activeTab() === 'cw' ? ' crosswords' : ' Daily Five games');
     },
     actions: function () {
       var row = el('div', 'btn-row');

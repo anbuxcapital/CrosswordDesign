@@ -84,19 +84,17 @@ window.Console = window.Console || {};
   /* ui.table({
        cols: [{key, label, align:'right'|'left', width, render(row)}],
        rows: [{...}],                       // plain objects
-       density: 'comfortable'|'compact',    // defaults to Console.store.ui.density
        onRowClick: function(row, index),
        selectable: {selected:[ids], idKey:'id', onChange(ids)},
        empty: 'text shown when rows is empty'
      }) → <table class="tbl"> */
   ui.table = function (spec) {
-    var density = spec.density || C.store.ui.density;
     var idKey = (spec.selectable && spec.selectable.idKey) || 'id';
     var selected = (spec.selectable && spec.selectable.selected) || [];
 
     if (!spec.rows.length) return ui.emptyState(spec.empty || 'Nothing to show yet.');
 
-    var table = el('table', 'tbl' + (density === 'compact' ? ' is-compact' : ''));
+    var table = el('table', 'tbl');
     var thead = el('thead');
     var htr = el('tr');
     if (spec.selectable) {
@@ -154,7 +152,7 @@ window.Console = window.Console || {};
     return table;
   };
 
-  /* ui.reasonField({required:true, label, placeholder, help})
+  /* ui.reasonField({required:true, label, placeholder})
      → node with .value() and .focus(); fires onInput so a modal can re-check
        whether its primary control may be enabled. */
   ui.reasonField = function (opts) {
@@ -170,7 +168,6 @@ window.Console = window.Console || {};
     ta.id = id;
     ta.placeholder = opts.placeholder || 'e.g. Lost streak while travelling, ticket #4821';
     wrap.appendChild(ta);
-    wrap.appendChild(el('div', 'help', opts.help || 'The reason is stored in the audit log with your operator name and the result.'));
     wrap.value = function () { return ta.value.trim(); };
     wrap.required = opts.required !== false;
     wrap.focus = function () { ta.focus(); };
@@ -180,8 +177,23 @@ window.Console = window.Console || {};
     return wrap;
   };
 
-  /* ui.reviewPanel({title, before:[[label,value]], after:[[label,value]], consequence}) */
+  /* ui.reviewPanel({title, before:[[label,value]], after:[[label,value]], consequence})
+     Only the rows that actually change are shown; `consequence` is one result line. */
+  function pairText(v) { return v instanceof Node ? v.textContent : String(v == null ? '' : v); }
+
   ui.reviewPanel = function (spec) {
+    var before = spec.before || [];
+    var after = spec.after || [];
+    if (before.length && before.length === after.length) {
+      var keep = [];
+      for (var i = 0; i < before.length; i++) {
+        if (before[i][0] !== after[i][0] || pairText(before[i][1]) !== pairText(after[i][1])) keep.push(i);
+      }
+      if (keep.length) {
+        before = keep.map(function (k) { return spec.before[k]; });
+        after = keep.map(function (k) { return spec.after[k]; });
+      }
+    }
     var n = el('div', 'review');
     n.appendChild(el('div', 'review-head', spec.title || 'Review the change'));
     var cols = el('div', 'review-cols');
@@ -198,8 +210,8 @@ window.Console = window.Console || {};
       });
       return c;
     }
-    cols.appendChild(col('before', 'Before', spec.before));
-    cols.appendChild(col('after', 'After', spec.after));
+    cols.appendChild(col('before', 'Before', before));
+    cols.appendChild(col('after', 'After', after));
     n.appendChild(cols);
     if (spec.consequence) n.appendChild(el('div', 'review-consequence', spec.consequence));
     return n;
@@ -404,23 +416,7 @@ window.Console = window.Console || {};
     return n;
   };
 
-  /* ui.checklist([[label, detail, 'pass'|'warn'|'fail']]) */
-  ui.checklist = function (rows) {
-    var n = el('div', 'checklist');
-    var MARK = { pass: '✓', warn: '!', fail: '✕' };
-    (rows || []).forEach(function (r) {
-      var tone = r[2] || 'pass';
-      var item = el('div', 'checklist-item');
-      item.appendChild(el('span', 'checklist-mark ' + tone, MARK[tone]));
-      item.appendChild(el('span', 'checklist-label', r[0]));
-      item.appendChild(el('span', 'spacer'));
-      item.appendChild(el('span', 'checklist-detail', r[1] || ''));
-      n.appendChild(item);
-    });
-    return n;
-  };
-
-  /* ui.segmented([{key,label}], activeKey, onChange) — small view/density switch */
+  /* ui.segmented([{key,label}], activeKey, onChange) — small view switch */
   ui.segmented = function (items, active, onChange) {
     var n = el('div', 'seg');
     items.forEach(function (it) {
@@ -431,15 +427,6 @@ window.Console = window.Console || {};
       n.appendChild(b);
     });
     return n;
-  };
-
-  /* ui.densitySwitch() — reads and writes Console.store.ui.density */
-  ui.densitySwitch = function () {
-    return ui.segmented(
-      [{ key: 'comfortable', label: 'Comfortable' }, { key: 'compact', label: 'Compact' }],
-      C.store.ui.density,
-      function (k) { C.store.ui.density = k; C.render(); }
-    );
   };
 
   /* ui.button(label, {variant:'primary'|'pink'|'quiet'|'danger', onClick, disabled, small}) */

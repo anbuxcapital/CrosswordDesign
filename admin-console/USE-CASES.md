@@ -212,8 +212,8 @@ Each path is the single unbroken route from intent to confirmed result. Error br
 
 | ID | Happy path | Screens and dialogs |
 |---|---|---|
-| E1 Import games | Library → Import → pick JSON files → validation summary (accepted / rejected counts) → per-item results → Import → games appear in Library as Draft and in Operations as an import batch | Library, Import dialog (3 steps), Operations |
-| E2 Create or duplicate a game | Library → New game (crossword or Daily Five, language, difficulty) or row menu → Duplicate as draft → editor opens on the new Draft | Library, New-game dialog, Editor |
+| E1 Import games | Library (Crosswords or Daily Five tab) → Import → pick JSON files → validation summary (accepted / rejected counts) → per-item results → Import → games appear in Library as Draft and in Operations as an import batch | Library, Import dialog (3 steps), Operations |
+| E2 Create or duplicate a game | Library → active tab sets the kind → New game (language, difficulty) or row menu → Duplicate as draft → editor opens on the new Draft | Library, New-game dialog, Editor |
 | E3 Edit a crossword or Daily Five | Editor → Metadata tab (title, language, difficulty, topics, author) → Content tab (crossword: grid, clues, answers; Daily Five: five answers, hint, dictionary check) → Save → version incremented | Editor (Metadata, Content) |
 | E4 Validate and fix | Editor → Run validation → Validation panel lists failures with the exact cell or clue → click a failure to focus it in Content → fix → re-run → Passed | Editor (Validation panel) |
 | E5 Preview as a player | Editor → Preview → phone-frame rendering of the feed card and the play screen → close | Editor (Preview) |
@@ -228,13 +228,13 @@ Each path is the single unbroken route from intent to confirmed result. Error br
 | P2 Schedule a day | Day inspector (Ready) → publish time (UTC or player-local, representative local times shown) → Confirm schedule → Review (items, time, consequence) → Confirm → status Scheduled, audit entry | Day inspector, Publish-time panel, Schedule review |
 | P3 Schedule ahead in bulk | Daily challenge → List → tick ready dates or Select all ready → Schedule N Daily challenges → Review shows count and effective time → Confirm → per-date results (queued, or skipped with reason) | Daily challenge list, Bulk review, Bulk results |
 | P4 Replace or unschedule | Day inspector (Scheduled, not yet live) → Replace a slot → picker → or Unschedule → reason → day returns to Ready | Day inspector, Picker, Reason dialog |
-| P5 Manage a collection | Collections → pick a collection → membership (add from library, reorder, remove) → metadata (shelf, emoji, blurb, unlock rule, reward) → visibility → Preview shelf → Save | Collections list, Collection editor, Preview |
+| P5 Manage a collection | Collections → Collections tab → pick a collection → membership (add from library, reorder, remove) → metadata (shelf, emoji, blurb, unlock rule, reward) → visibility → Preview shelf → Save | Collections list, Collection editor, Preview |
 
 ### Support (Support agent)
 
 | ID | Happy path | Screens and dialogs |
 |---|---|---|
-| S1 Look up a player | Players → search by ID, name or sign-in → result list → open → Profile, Timeline, Devices & ads, Notes tabs | Players search, Player record |
+| S1 Look up a player | Players → list of every player, filtered live by ID, name or sign-in → open → Profile, Timeline, Devices & ads, Notes tabs | Players list, Player record |
 | S2 Change a profile field | Player record → Profile → Edit a field → change → Save → Reason → Review (old, new, notification to player) → Confirm → audit entry, field marked Changed | Player record, Reason and review dialog |
 | S3 Restore streak, grant tokens, reset session | Player record → Support actions → choose action → parameters → Reason → Review (before/after, ledger effect) → Confirm → timeline and audit updated | Player record, Action panel, Review dialog |
 | S4 Account safeguard | Player record → Account → Force sign-out, Suspend, Merge duplicate, or Delete on request → Reason → two-step confirm for destructive ones → result state | Player record, Safeguard dialogs |
@@ -244,8 +244,8 @@ Each path is the single unbroken route from intent to confirmed result. Error br
 
 | ID | Happy path | Screens and dialogs |
 |---|---|---|
-| L1 Decide a flagged solve | Leaderboards → flagged row → Evidence (solve time vs cohort, S1–S4 flags, device change, prior decisions) → Clear, Exclude from board, or Shadow → Reason → Confirm → decision shown, board eligibility updated, audit entry | Leaderboards queue, Flag detail, Decision dialog |
-| L2 Inspect a board | Leaderboards → Boards → scope (week or game, language) → ranked list with eligibility markers → open a player → jumps to S1 | Leaderboards boards, Player record |
+| L1 Decide a flagged solve | Collections → Leaderboards tab → flagged row → Evidence (solve time vs cohort, S1–S4 flags, device change, prior decisions) → Clear, Exclude from board, or Shadow → Reason → Confirm → decision shown, board eligibility updated, audit entry | Leaderboards queue, Flag detail, Decision dialog |
+| L2 Inspect a board | Collections → Leaderboards tab → Boards → scope (week or game, language) → ranked list with eligibility markers → open a player → jumps to S1 | Leaderboards boards, Player record |
 
 ### Economy (Economy admin)
 

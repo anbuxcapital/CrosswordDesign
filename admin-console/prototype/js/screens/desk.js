@@ -1,6 +1,5 @@
-/* Drop desk — the publisher's default screen.
+/* Daily challenge desk — the publisher's default screen.
    OWNER: publishing builder.
-   A drop is exactly one crossword and one Daily Five — two fixed slots per day.
    P1 fill an empty slot · P2 schedule a day · P3 schedule ahead in bulk ·
    P4 replace a slot or unschedule the day. Collections (P5) live in collections.js. */
 (function (C) {
@@ -14,17 +13,28 @@
     view: 'calendar',
     day: 10,          // Sep 11, the blocked day
     marked: [],
-    hour: 12,
-    minute: 0,
+    time: '12:00',
     mode: 'utc'
   };
 
   function st() { return C.store.ui.desk; }
   function days() { return C.store.days; }
   function pad2(n) { return String(((n % 24) + 24) % 24).padStart(2, '0'); }
-  function timeString() { return pad2(st().hour) + ':' + String(st().minute).padStart(2, '0'); }
+  function timeString() { return st().time || '12:00'; }
 
-  var CITIES = [['Kyiv', 3], ['London', 1], ['New York', -4], ['Los Angeles', -7]];
+  var CITIES = [['Kyiv', 3], ['London', 1], ['New York', -4]];
+
+  /* One line of representative times. In player-local mode there is nothing to
+     convert, so it is one sentence instead. */
+  function timeLine(time, mode) {
+    var parts = String(time).split(':');
+    var h = Number(parts[0]) || 0;
+    var mm = parts[1] || '00';
+    if (mode === 'local') return time + ' on each player\u2019s own clock.';
+    return time + ' UTC · ' + CITIES.map(function (c) {
+      return c[0] + ' ' + pad2(h + c[1]) + ':' + mm;
+    }).join(' · ');
+  }
 
   function repaint(mount) {
     mount.innerHTML = '';
@@ -36,10 +46,8 @@
   // ------------------------------------------------------------------
 
   function kindWord(kind) { return kind === 'cw' ? 'crossword' : 'Daily Five'; }
-  function kindPlural(kind) { return kind === 'cw' ? 'crosswords' : 'Daily Five'; }
   function kindLabel(kind) { return kind === 'cw' ? 'Crossword' : 'Daily Five'; }
   function modeWord(mode) { return mode === 'local' ? 'player-local time' : 'UTC'; }
-  function langWord(lang) { return lang === 'uk' ? 'Ukrainian' : 'English'; }
 
   /* Index inside day.items of the game filling one slot, or -1. */
   function slotIndex(day, kind) {
@@ -70,64 +78,9 @@
     return '';
   }
 
-  /* Representative local times for one instant / one local clock time. */
-  function localList(hour, minute, mode) {
-    var mm = String(minute).padStart(2, '0');
-    var wrap = el('div', 'localtimes');
-    CITIES.forEach(function (c) {
-      var line = el('div', 'localtime');
-      line.appendChild(el('span', 'city', c[0]));
-      if (mode === 'local') {
-        line.appendChild(el('span', 't', pad2(hour) + ':' + mm));
-        line.appendChild(el('span', 'd', '= ' + pad2(hour - c[1]) + ':' + mm + ' UTC'));
-      } else {
-        var t = hour + c[1];
-        line.appendChild(el('span', 't', pad2(t) + ':' + mm));
-        line.appendChild(el('span', 'd', t < 0 ? '−1 day' : t >= 24 ? '+1 day' : ''));
-      }
-      wrap.appendChild(line);
-    });
-    return wrap;
-  }
-
-  function consequenceText(day, time, mode) {
-    return mode === 'local'
-      ? 'Every player gets the ' + day.longLabel + ' Daily challenge at ' + time + ' on their own clock. It rolls across time zones over 26 hours, starting in UTC+14. Nothing publishes before then and you can unschedule until the first zone goes live.'
-      : 'The ' + day.longLabel + ' Daily challenge goes live at one instant worldwide, ' + time + ' UTC. Players see it at the local times listed above. Nothing publishes before then and you can unschedule until it goes live.';
-  }
-
   /* The two fixed slots of a drop, used inside review dialogs. */
   function slotSummary(item) {
     return item ? item.id + ' ' + item.title : 'Empty';
-  }
-
-  function itemTable(day) {
-    var dd = C.deriveDay(day);
-    var rows = ['cw', 'd5'].map(function (kind) {
-      var it = dd.slots[kind];
-      return {
-        id: it ? it.id : '—',
-        slot: kindLabel(kind),
-        title: it ? it.title : 'No ' + kindWord(kind) + ' chosen',
-        state: it ? it.status : 'empty'
-      };
-    });
-    return C.ui.table({
-      cols: [
-        { key: 'slot', label: 'Slot' },
-        { key: 'id', label: 'Game', cls: 'cell-id' },
-        { key: 'title', label: 'Title', cls: 'cell-title' },
-        { key: 'state', label: 'State', align: 'right', render: function (r) { return C.ui.status(r.state); } }
-      ],
-      rows: rows,
-      empty: 'This day has no games yet.'
-    });
-  }
-
-  function sectionLabel(text) {
-    var n = el('div', 'eyebrow', text);
-    n.style.margin = '16px 0 6px';
-    return n;
   }
 
   // ------------------------------------------------------------------
@@ -138,8 +91,6 @@
     var lang = dayLang(day);
 
     var body = el('div');
-    body.appendChild(el('div', 'help', 'Approved ' + kindPlural(kind) + ' in ' + langWord(lang) +
-      '. Picking one fills the ' + kindLabel(kind) + ' slot of the ' + day.longLabel + ' Daily challenge straight away; the day is not scheduled until you confirm the schedule.'));
     body.appendChild(C.ui.puzzlePicker({
       kind: kind, lang: lang,
       onPick: function (p) { assignPuzzle(day, kind, p); }
@@ -201,20 +152,13 @@
         ['Crossword', slotSummary(dd.slots.cw)],
         ['Daily Five', slotSummary(dd.slots.d5)]
       ],
-      consequence: consequenceText(day, time, mode)
+      consequence: timeLine(time, mode)
     }));
-
-    body.appendChild(sectionLabel('Slots in this Daily challenge'));
-    body.appendChild(itemTable(day));
-
-    body.appendChild(sectionLabel(mode === 'local' ? 'Representative UTC instants' : 'Representative local times'));
-    body.appendChild(localList(s.hour, s.minute, mode));
 
     var reason = C.ui.reasonField({
       required: false,
       label: 'Note (optional)',
-      placeholder: 'e.g. Moved from Sep 12 to cover the holiday gap',
-      help: 'Stored in the audit log with your operator name and the result.'
+      placeholder: 'e.g. Moved from Sep 12 to cover the holiday gap'
     });
     reason.style.marginTop = '16px';
     body.appendChild(reason);
@@ -266,7 +210,7 @@
         ['Crossword', slotSummary(dd.slots.cw)],
         ['Daily Five', slotSummary(dd.slots.d5)]
       ],
-      consequence: 'The Daily challenge stops being queued and returns to Ready. Neither slot is emptied and nothing has reached players yet, so you can schedule it again at any time before ' + day.publishTime + '.'
+      consequence: 'Both slots are kept; nothing has reached players.'
     }));
     var reason = C.ui.reasonField({
       required: true,
@@ -303,8 +247,6 @@
     var current = index < 0 ? null : C.find.puzzle(day.items[index]);
     if (!current) return;
     var body = el('div');
-    body.appendChild(el('div', 'help', 'Replacing ' + current.id + ' ' + current.title + ' in the ' + day.longLabel + ' Daily challenge.' +
-      (day.scheduled ? ' The day is queued, so replacing returns it to Ready and you will need to confirm the schedule again.' : '')));
     body.appendChild(C.ui.puzzlePicker({
       kind: current.kind, lang: current.lang,
       onPick: function (p) {
@@ -337,7 +279,7 @@
         ['Status', 'Ready'],
         ['Publish time', 'Not scheduled']
       ],
-      consequence: 'The day returns to Ready and stops being queued. Confirm the schedule again to publish it at ' + day.publishTime + ' ' + modeWord(day.publishMode) + '.'
+      consequence: 'The day returns to Ready. Confirm the schedule again to publish it.'
     }));
     var reason = C.ui.reasonField({
       required: true,
@@ -402,11 +344,10 @@
 
     var body = el('div');
     var head = el('div', 'notice');
-    head.textContent = rows.length + ' dates selected · ' + ready.length + ' will be queued · ' +
-      skipped.length + ' will be skipped. Effective time ' + time + ' ' + modeWord(mode) + ' on each date.';
+    head.textContent = rows.length + ' dates selected · ' + ready.length + ' queued · ' +
+      skipped.length + ' skipped · ' + time + ' ' + modeWord(mode) + ' on each date.';
     body.appendChild(head);
 
-    body.appendChild(sectionLabel('Dates in this release'));
     body.appendChild(C.ui.table({
       cols: [
         { key: 'date', label: 'Date', cls: 'cell-title' },
@@ -422,20 +363,15 @@
       empty: 'No dates are selected.'
     }));
 
-    body.appendChild(sectionLabel(mode === 'local' ? 'Representative UTC instants' : 'Representative local times'));
-    body.appendChild(localList(s.hour, s.minute, mode));
-
     var conseq = el('div', 'review-consequence');
     conseq.style.marginTop = '12px';
-    conseq.textContent = ready.length + ' Daily challenges publish on their own date at ' + time + ' ' + modeWord(mode) +
-      '. Skipped dates are left untouched and stay in the desk. Each date is written to the audit log separately, and every queued day can still be unscheduled until it goes live.';
+    conseq.textContent = timeLine(time, mode);
     body.appendChild(conseq);
 
     var reason = C.ui.reasonField({
       required: false,
       label: 'Note (optional)',
-      placeholder: 'e.g. Week 38 release, agreed with editorial',
-      help: 'Stored with every date in this release.'
+      placeholder: 'e.g. Week 38 release, agreed with editorial'
     });
     reason.style.marginTop = '16px';
     body.appendChild(reason);
@@ -488,10 +424,9 @@
 
     var body = el('div');
     var summary = el('div', 'notice');
-    summary.textContent = rows.length + ' dates selected · ' + queued + ' queued at ' + time + ' ' + modeWord(mode) +
-      ' · ' + (rows.length - queued) + ' skipped. One audit entry was written per date.';
+    summary.textContent = queued + ' queued at ' + time + ' ' + modeWord(mode) +
+      ' · ' + (rows.length - queued) + ' skipped.';
     body.appendChild(summary);
-    body.appendChild(sectionLabel('Per-date result'));
     body.appendChild(C.ui.results(results));
 
     C.ui.modal({
@@ -539,25 +474,6 @@
     m.appendChild(el('span', 'desk-metric-value', planned.label + ' · ' + (planned.index - TODAY_INDEX) + ' days out'));
     bar.appendChild(m);
 
-    var h = el('div', 'horizon');
-    var bars = el('div', 'horizon-bars');
-    for (var k = 0; k < 30; k++) {
-      var d = days()[k + LIST_FROM];
-      var cls = 'none';
-      if (d) {
-        var dd = C.deriveDay(d);
-        cls = d.scheduled ? 'full' : dd.empty ? 'none' : dd.missing.length ? 'gap' : dd.blocked ? 'part' : 'full';
-      }
-      bars.appendChild(el('span', 'horizon-bar ' + cls));
-    }
-    h.appendChild(bars);
-    var scale = el('div', 'horizon-scale');
-    scale.appendChild(el('span', null, 'Sep 7'));
-    scale.appendChild(el('span', null, 'next 30 days'));
-    scale.appendChild(el('span', null, 'Oct 6'));
-    h.appendChild(scale);
-    bar.appendChild(h);
-
     bar.appendChild(el('div', 'spacer'));
 
     bar.appendChild(C.ui.segmented(
@@ -566,14 +482,6 @@
       function (v) { st().view = v; repaint(mount); }
     ));
 
-    var legend = el('div', 'legend');
-    [['Scheduled', 'full'], ['Awaiting review', 'part'], ['Gap', 'gap'], ['Unplanned', 'none']].forEach(function (l) {
-      var i = el('span', 'legend-item');
-      i.appendChild(el('span', 'legend-swatch ' + l[1]));
-      i.appendChild(document.createTextNode(l[0]));
-      legend.appendChild(i);
-    });
-    bar.appendChild(legend);
     return bar;
   }
 
@@ -581,9 +489,6 @@
     var marked = st().marked;
     var bar = el('div', 'bulk-bar' + (marked.length ? ' is-active' : ''));
     bar.appendChild(el('span', 'bulk-label', marked.length ? marked.length + ' dates selected' : 'Schedule ahead'));
-    bar.appendChild(el('span', 'bulk-hint', marked.length
-      ? 'All ready. Publishing at ' + timeString() + (st().mode === 'local' ? ' player-local time' : ' UTC') + ' each day.'
-      : 'Tick dates in the list to schedule several Daily challenges in one release.'));
     bar.appendChild(el('div', 'spacer'));
     bar.appendChild(C.ui.button('Select all ready ahead', {
       small: true,
@@ -611,7 +516,6 @@
 
     var head = el('div', 'cal-head');
     head.appendChild(el('span', 'cal-month', 'September 2026'));
-    head.appendChild(el('span', 'cal-note', 'Each day is one Daily challenge: exactly one crossword and one Daily Five.'));
     wrap.appendChild(head);
 
     var dows = el('div', 'cal-dows');
@@ -673,23 +577,6 @@
     });
     cell.appendChild(chips);
 
-    // A slot can only be filled once, so the affordance is offered per empty slot.
-    if (!day.past && !dd.live && dd.missing.length) {
-      var adds = el('div', 'cal-adds');
-      dd.missing.forEach(function (kind) {
-        var b = el('span', 'cal-add', kind === 'cw' ? '+ CW' : '+ D5');
-        b.setAttribute('role', 'button');
-        b.tabIndex = 0;
-        b.addEventListener('click', function (e) {
-          e.stopPropagation();
-          st().day = day.index;
-          repaint(mount);
-          openPicker(day, kind); // P1 slot picker
-        });
-        adds.appendChild(b);
-      });
-      cell.appendChild(adds);
-    }
     return cell;
   }
 
@@ -704,7 +591,7 @@
   // ------------------------------------------------------------------
 
   function dayList(mount) {
-    var wrap = el('div', 'daylist' + (C.store.ui.density === 'compact' ? ' is-compact' : ''));
+    var wrap = el('div', 'daylist');
 
     var head = el('div', 'daylist-head');
     head.appendChild(el('span'));
@@ -776,9 +663,6 @@
       wrap.appendChild(row);
     });
 
-    var keys = el('div', 'daylist-keys');
-    ['↑↓ move', '↵ open', 'S schedule', 'P preview'].forEach(function (k) { keys.appendChild(el('span', null, k)); });
-    wrap.appendChild(keys);
     return wrap;
   }
 
@@ -795,7 +679,6 @@
     var titles = el('div');
     titles.style.minWidth = '0';
     titles.appendChild(el('div', 'inspector-title', day.longLabel + ' Daily challenge'));
-    titles.appendChild(el('div', 'inspector-sub', subline(day, dd)));
     head.appendChild(titles);
     head.appendChild(el('div', 'spacer'));
     var readyKey = day.scheduled ? 'queued' : dd.empty ? 'unplanned' : dd.blocked ? 'blocked' : dd.live ? 'live' : 'ready';
@@ -809,7 +692,6 @@
       var it = dd.slots[kind];
       body.appendChild(it ? slotPanel(kind, it, day) : emptySlotPanel(kind, day));
     });
-    body.appendChild(el('div', 'panel-note', 'A Daily challenge is one crossword and one Daily Five. Replace a slot to swap the game in it; a day never carries more than one of each.'));
     wrap.appendChild(body);
 
     wrap.appendChild(publishPanel(day, dd, mount));
@@ -817,17 +699,7 @@
     return wrap;
   }
 
-  function subline(day, dd) {
-    if (dd.empty) return 'Nothing planned yet. Choose a crossword and a Daily Five to open this Daily challenge.';
-    if (dd.missing.length) return 'A required slot is unfilled. Publishing is blocked until the day has one crossword and one Daily Five.';
-    if (dd.extra.length) return 'This day has ' + dd.extra[0] + '. A Daily challenge is one crossword and one Daily Five.';
-    if (dd.live) return 'Serving now. Crossword and Daily Five live. 68% completion, target 65%.';
-    if (day.scheduled) return 'Crossword and Daily Five queued at ' + day.publishTime + ' ' + (day.publishMode === 'local' ? 'player-local time' : 'UTC') + '.';
-    return 'Crossword and Daily Five paired and validated.';
-  }
-
   function slotPanel(kind, item, day) {
-    var p = C.find.puzzle(item.id);
     var editable = !day.past && !C.deriveDay(day).live;
     var panel = el('div', 'panel');
     var head = el('div', 'panel-head');
@@ -837,8 +709,6 @@
     head.appendChild(el('div', 'spacer'));
     head.appendChild(C.ui.status(item.status));
     panel.appendChild(head);
-
-    panel.appendChild(C.ui.checklist(C.store.checks[item.status] || C.store.checks.approved));
 
     var foot = el('div', 'panel-foot');
     foot.appendChild(C.ui.button('Open in editor', {
@@ -851,8 +721,6 @@
         foot.appendChild(C.ui.button('Unschedule', { small: true, onClick: function () { openUnschedule(day); } })); // P4 day level
       }
     }
-    foot.appendChild(el('div', 'spacer'));
-    foot.appendChild(el('span', 'panel-id', 'Updated ' + (p ? p.updatedAt : '—') + ' · v' + (p ? p.version : 1)));
     panel.appendChild(foot);
     return panel;
   }
@@ -867,14 +735,11 @@
     head.appendChild(el('div', 'spacer'));
     head.appendChild(C.ui.status('empty'));
     panel.appendChild(head);
-    panel.appendChild(C.ui.checklist(C.store.checks.empty));
     var foot = el('div', 'panel-foot');
     foot.appendChild(C.ui.button('Choose a ' + kindWord(kind), {
       variant: 'pink', small: true,
       onClick: function () { openPicker(day, kind); }
     }));
-    foot.appendChild(el('div', 'spacer'));
-    foot.appendChild(el('span', 'panel-id', 'Slot empty'));
     panel.appendChild(foot);
     return panel;
   }
@@ -885,7 +750,6 @@
 
   function publishPanel(day, dd, mount) {
     var s = st();
-    var isLocal = s.mode === 'local';
     var wrap = el('div', 'publish-panel');
 
     var left = el('div');
@@ -896,76 +760,24 @@
       s.mode,
       function (k) { s.mode = k; repaint(mount); }
     ));
+    var input = el('input', 'input');
+    input.type = 'time';
+    input.value = timeString();
+    input.style.maxWidth = '128px';
+    input.setAttribute('aria-label', 'Publish time');
+    input.addEventListener('change', function () {
+      s.time = input.value || '12:00';
+      repaint(mount);
+    });
+    modeRow.appendChild(input);
     left.appendChild(modeRow);
-
-    var stepRow = el('div', 'time-stepper');
-    stepRow.style.marginTop = '8px';
-    var stepper = el('div', 'stepper');
-    var minus = el('button', null, '−');
-    minus.type = 'button';
-    minus.setAttribute('aria-label', 'Earlier by one hour');
-    minus.addEventListener('click', function () { s.hour = (s.hour + 23) % 24; repaint(mount); });
-    stepper.appendChild(minus);
-    stepper.appendChild(el('span', 'val', pad2(s.hour)));
-    var plus = el('button', null, '+');
-    plus.type = 'button';
-    plus.setAttribute('aria-label', 'Later by one hour');
-    plus.addEventListener('click', function () { s.hour = (s.hour + 1) % 24; repaint(mount); });
-    stepper.appendChild(plus);
-    stepRow.appendChild(stepper);
-    var colon = el('span', null, ':');
-    colon.style.font = '800 14px var(--mono)';
-    stepRow.appendChild(colon);
-    var mins = el('div', 'minutes');
-    [0, 15, 30, 45].forEach(function (m) {
-      var b = el('button', s.minute === m ? 'is-on' : null, String(m).padStart(2, '0'));
-      b.type = 'button';
-      b.addEventListener('click', function () { s.minute = m; repaint(mount); });
-      mins.appendChild(b);
-    });
-    stepRow.appendChild(mins);
-    left.appendChild(stepRow);
-
-    var presets = el('div', 'time-presets');
-    presets.style.marginTop = '8px';
-    [['00:00', 'Midnight UTC'], ['06:00', 'Morning EU'], ['12:00', 'Noon UTC'], ['17:00', 'Evening EU']].forEach(function (t) {
-      var on = timeString() === t[0];
-      var b = el('button', 'chip chip-sm' + (on ? ' is-on' : ''), t[1] + ' ' + t[0]);
-      b.type = 'button';
-      b.addEventListener('click', function () {
-        var parts = t[0].split(':');
-        s.hour = Number(parts[0]);
-        s.minute = Number(parts[1]);
-        repaint(mount);
-      });
-      presets.appendChild(b);
-    });
-    left.appendChild(presets);
+    left.appendChild(el('div', 'mode-note', timeLine(timeString(), s.mode)));
     wrap.appendChild(left);
-
-    var right = el('div', 'localtimes');
-    right.appendChild(el('div', 'mode-note', isLocal
-      ? 'Every player gets the Daily challenge at ' + timeString() + ' on their own clock. It rolls across time zones over 26 hours, starting in UTC+14.'
-      : 'One instant worldwide. Players see it at the local times below.'));
-    CITIES.forEach(function (c) {
-      var line = el('div', 'localtime');
-      line.appendChild(el('span', 'city', c[0]));
-      if (isLocal) {
-        line.appendChild(el('span', 't', timeString()));
-        line.appendChild(el('span', 'd', '= ' + pad2(s.hour - c[1]) + ':' + String(s.minute).padStart(2, '0') + ' UTC'));
-      } else {
-        var t = s.hour + c[1];
-        line.appendChild(el('span', 't', pad2(t) + ':' + String(s.minute).padStart(2, '0')));
-        line.appendChild(el('span', 'd', t < 0 ? '−1 day' : t >= 24 ? '+1 day' : ''));
-      }
-      right.appendChild(line);
-    });
-    wrap.appendChild(right);
 
     wrap.appendChild(el('div', 'spacer'));
 
     var blocked = dd.blocked || dd.empty || day.past;
-    var confirm = C.ui.button(
+    wrap.appendChild(C.ui.button(
       day.scheduled ? 'Unschedule' : blocked ? 'Cannot schedule yet' : 'Confirm schedule',
       {
         variant: day.scheduled ? 'danger' : 'primary',
@@ -975,27 +787,7 @@
           else openScheduleReview(day);             // P2 schedule review
         }
       }
-    );
-    wrap.appendChild(confirm);
-    if (day.scheduled) {
-      var queued = el('div', 'notice');
-      queued.style.flexBasis = '100%';
-      queued.textContent = 'Queued for ' + day.longLabel + ' at ' + day.publishTime + ' ' + modeWord(day.publishMode) +
-        '. Unschedule to change the time, or replace a slot to return the day to Ready.';
-      wrap.appendChild(queued);
-    }
-    if (blocked && !day.scheduled) {
-      var why = el('div', 'notice blocked');
-      why.style.flexBasis = '100%';
-      why.textContent = dd.empty
-        ? 'Blocked: this day has no crossword and no Daily Five yet. Choose one of each.'
-        : dd.missing.length
-          ? 'Blocked: the day is missing a ' + (dd.missing.indexOf('cw') >= 0 ? 'crossword' : 'Daily Five') + '.'
-          : dd.extra.length
-            ? 'Blocked: this day has ' + dd.extra[0] + '.'
-            : day.past ? 'This day has already published.' : 'Blocked: one or both games are not approved yet.';
-      wrap.appendChild(why);
-    }
+    ));
     return wrap;
   }
 
@@ -1038,10 +830,9 @@
 
   C.registerScreen('#/desk', {
     title: 'Daily challenge',
-    subline: function () { return C.store.todayLabel + ' · demo data'; },
+    subline: function () { return C.store.todayLabel; },
     actions: function () {
       var row = el('div', 'btn-row');
-      row.appendChild(C.ui.densitySwitch());
       row.appendChild(C.ui.button('Schedule Daily challenge', {
         variant: 'pink',
         onClick: function () {

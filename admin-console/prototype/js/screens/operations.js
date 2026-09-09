@@ -106,17 +106,10 @@
       });
     body.appendChild(kv);
 
-    var note = el('div', 'notice');
-    note.style.marginTop = '12px';
-    note.textContent = 'The retry re-reads the current content and reports one outcome per ' +
-      (dayOf(sig) ? 'slot' : 'item') + '. It does not edit games, days or player records.';
-    body.appendChild(note);
-
     var reason = C.ui.reasonField({
       required: false,
       label: 'Reason (optional)',
-      placeholder: 'e.g. Daily Five assigned in Daily challenge, re-running generation',
-      help: 'A job retry does not require a reason. Anything you write is stored in the audit log with the result.'
+      placeholder: 'e.g. Daily Five assigned in Daily challenge, re-running generation'
     });
     body.appendChild(reason);
 
@@ -161,28 +154,22 @@
   function openRetryResults(sig, items) {
     var allOk = items.every(function (i) { return i.outcome === 'ok'; });
     var body = el('div');
-    body.appendChild(el('div', 'panel-note',
-      sig.job + ' · ' + sig.object + ' · ' + items.length + (dayOf(sig) ? ' slots' : ' items') + ' · run at 12:31 UTC'));
+    body.appendChild(el('div', 'panel-note', sig.job + ' · run at 12:31 UTC'));
     body.lastChild.style.marginBottom = '10px';
     body.appendChild(C.ui.results(items.map(function (i) {
       return { label: i.label, outcome: i.outcome, detail: i.detail, outcomeLabel: i.outcome === 'ok' ? 'OK' : 'Failed' };
     })));
 
-    var note = el('div', allOk ? 'notice' : 'notice blocked');
-    note.style.marginTop = '12px';
-    if (allOk) {
-      note.textContent = sig.name + ' is now OK. Nothing else is waiting on this job.';
-    } else {
-      var first = items.filter(function (i) { return i.outcome !== 'ok'; })[0];
-      var day = dayOf(sig);
-      note.textContent = sig.name + ' still fails: ' + first.label + ' — ' + first.detail + '. ' +
-        (day
-          ? 'Assign a ' + (/Daily Five/.test(first.label) ? 'Daily Five' : 'crossword') + ' to ' + day.longLabel + ' in Daily challenge, then retry.'
-          : 'Fix the item above, then retry.');
-    }
-    body.appendChild(note);
-
     var day = dayOf(sig);
+    if (!allOk) {
+      var first = items.filter(function (i) { return i.outcome !== 'ok'; })[0];
+      var note = el('div', 'notice blocked');
+      note.style.marginTop = '12px';
+      note.textContent = day
+        ? 'Assign a ' + (/Daily Five/.test(first.label) ? 'Daily Five' : 'crossword') + ' to ' + day.longLabel + ' in Daily challenge, then retry.'
+        : 'Fix the item above, then retry.';
+      body.appendChild(note);
+    }
     C.ui.modal({
       title: 'Retry results — ' + sig.name,
       body: body,
@@ -207,12 +194,12 @@
   // O2 — pool depth
   // ------------------------------------------------------------------
 
-  /* Hand-off to the editorial builder's library. Its state object reads
-     `filter` (kind or a tolerated status key), `status` and `lang`; `kind` is
-     carried too so the shape stays readable if that screen changes. */
+  /* Hand-off to the editorial builder's library. The kind picks its tab;
+     `filter` carries the state chips, `status` and `lang` the rest. */
   function openLibrary(row) {
     C.store.ui.library = Object.assign({}, C.store.ui.library || {}, {
-      filter: row.kind, status: 'approved', kind: row.kind, lang: row.lang
+      tab: row.kind, filter: 'all', status: 'approved', kind: row.kind, lang: row.lang,
+      selected: []
     });
     C.go('#/library');
   }
@@ -250,30 +237,15 @@
   // signal detail panel
   // ------------------------------------------------------------------
 
+  /* One short line, and only where it names a next step the pill and the
+     key-value rows above do not already give. */
   function alertNotice(sig) {
+    if (sig.level !== 'failed') return null;
     var day = dayOf(sig);
-    var n = el('div', 'notice' + (sig.level === 'failed' ? ' blocked' : ''));
-    if (sig.depth) {
-      var short = sig.depth.filter(function (r) { return r.days < r.floor; });
-      if (!short.length) {
-        n.className = 'panel-note';
-        n.textContent = sig.name + ' is OK. Every language and kind is above the 10-day floor. Last run ' + sig.lastRun + '.';
-        return n;
-      }
-      n.textContent = short.length + ' of ' + sig.depth.length + ' pools are under the floor: ' + short.map(function (r) {
-        return LANG[r.lang] + ' ' + KIND[r.kind] + ' has ' + days(r.days) + ' against a ' + r.floor + '-day floor';
-      }).join('; ') + '. Approve or import more games of that kind — Open library on a short row lands on Approved games of exactly that kind and language.';
-      return n;
-    }
-    if (sig.level === 'ok') {
-      n.className = 'panel-note';
-      n.textContent = sig.name + ' is OK. Last run ' + sig.lastRun + '. Nothing is waiting on this job.';
-      return n;
-    }
-    n.textContent = sig.name + ' failed on ' + sig.object + ' at ' + sig.lastRun + '. ' +
-      (day
-        ? 'The Daily challenge for ' + day.longLabel + ' will not publish until the missing item is assigned. Fix it in Daily challenge, then retry the job.'
-        : 'Retry the job below; every item reports its own outcome.');
+    var n = el('div', 'notice blocked');
+    n.textContent = day
+      ? 'The ' + day.longLabel + ' Daily challenge cannot publish until the missing item is assigned.'
+      : 'Retry the job; every item reports its own outcome.';
     return n;
   }
 
@@ -281,7 +253,7 @@
     var sig = selectedSignal();
     var wrap = el('div', 'inspector');
     if (!sig) {
-      wrap.appendChild(C.ui.emptyState('Pick a signal to see the job, the affected object and its last runs.'));
+      wrap.appendChild(C.ui.emptyState('Pick a signal to see its job, object and last runs.'));
       return wrap;
     }
 
@@ -289,7 +261,6 @@
     var titles = el('div');
     titles.style.minWidth = '0';
     titles.appendChild(el('div', 'inspector-title', sig.name));
-    titles.appendChild(el('div', 'inspector-sub', sig.job + ' · last run ' + sig.lastRun));
     head.appendChild(titles);
     head.appendChild(el('div', 'spacer'));
     head.appendChild(C.ui.pill(sig.level));
@@ -306,10 +277,11 @@
     });
     body.appendChild(kv);
 
-    body.appendChild(alertNotice(sig));
+    var notice = alertNotice(sig);
+    if (notice) body.appendChild(notice);
 
     if (sig.depth) {
-      body.appendChild(el('div', 'eyebrow', 'Pool depth · measured ' + sig.lastRun + ' · 10-day floor'));
+      body.appendChild(el('div', 'eyebrow', 'Pool depth'));
       body.appendChild(depthTable(sig));
     }
 
@@ -321,8 +293,13 @@
     }
 
     body.appendChild(el('div', 'eyebrow', 'Last runs'));
-    body.appendChild(C.ui.checklist((sig.runs || []).map(function (r) {
-      return [r[0], (C.ui.STATUS[r[1]] || { label: r[1] }).label, r[1] === 'ok' ? 'pass' : r[1] === 'warn' ? 'warn' : 'fail'];
+    body.appendChild(C.ui.results((sig.runs || []).map(function (r) {
+      return {
+        label: r[0],
+        outcome: r[1] === 'ok' ? 'ok' : r[1] === 'warn' ? 'skipped' : 'failed',
+        outcomeLabel: (C.ui.STATUS[r[1]] || { label: r[1] }).label,
+        detail: ''
+      };
     })));
 
     var foot = el('div', 'btn-row roomy');
@@ -389,11 +366,11 @@
     var body = el('div');
     body.appendChild(el('div', 'panel-note',
       id
-        ? id + ' was rejected before a library record was created, so there is nothing to open.'
-        : 'This line covers several games at once and does not name a single record, so there is nothing to open.'));
+        ? id + ' was rejected before a library record was created.'
+        : 'This line does not name a single record.'));
     var n = el('div', 'notice');
     n.style.marginTop = '12px';
-    n.textContent = 'Rejection reason: ' + item.detail + '. Fix the item in the source file and re-import the batch; the editorial import flow creates the draft on the next accepted run.';
+    n.textContent = 'Rejected: ' + item.detail + '. Fix it in the source file and re-import.';
     body.appendChild(n);
     C.ui.modal({
       title: 'Cannot open ' + (id || 'this item'),
@@ -438,7 +415,6 @@
     var titles = el('div');
     titles.style.minWidth = '0';
     titles.appendChild(el('div', 'inspector-title', b.source));
-    titles.appendChild(el('div', 'inspector-sub', b.id + ' · imported by ' + b.operator + ' · ' + b.when));
     head.appendChild(titles);
     head.appendChild(el('div', 'spacer'));
     head.appendChild(C.ui.pill(b.rejected ? 'warn' : 'ok', b.rejected ? b.rejected + ' rejected' : 'All accepted'));
@@ -447,26 +423,17 @@
     var body = el('div', 'inspector-body');
 
     var kv = el('dl', 'kv-grid');
-    [['Batch', b.id], ['Source file', b.source], ['Imported by', b.operator], ['When', b.when],
+    [['Batch', b.id], ['Imported by', b.operator], ['When', b.when],
      ['Accepted', b.accepted + ' games'], ['Rejected', b.rejected + ' games']].forEach(function (r) {
       kv.appendChild(el('dt', null, r[0]));
       kv.appendChild(el('dd', 'mono', r[1]));
     });
     body.appendChild(kv);
 
-    if (b.rejected) {
-      var n = el('div', 'notice');
-      n.textContent = b.rejected + ' of ' + (b.accepted + b.rejected) + ' games in ' + b.source +
-        ' were rejected and never became drafts. Open a rejected item to fix it, or send the reasons back to the author.';
-      body.appendChild(n);
-    }
-
-    body.appendChild(el('div', 'eyebrow', 'Items · ' + (b.items || []).length + ' reported'));
+    body.appendChild(el('div', 'eyebrow', 'Items'));
     var list = el('div', 'results');
     (b.items || []).forEach(function (item) { list.appendChild(batchItemRow(item)); });
     body.appendChild(list);
-    body.appendChild(el('div', 'panel-note',
-      'This list is what the import job reported. Counts above cover the whole file; the lines here name every item the job called out.'));
 
     wrap.appendChild(body);
     return wrap;
@@ -501,7 +468,7 @@
       ],
       rows: batches(),
       onRowClick: function (b) { st().batch = b.id; C.render(); },
-      empty: 'No import batches yet. The editorial import flow adds them here.'
+      empty: 'No import batches yet.'
     });
   }
 
@@ -517,7 +484,7 @@
     b.appendChild(el('span', 'banner-dot'));
     b.appendChild(el('div', 'banner-text', bad.name + ' · ' + bad.detail));
     b.appendChild(el('div', 'banner-detail', day
-      ? 'Blocks the ' + day.longLabel + ' Daily challenge. Retry the job, or assign the missing game first.'
+      ? 'Blocks the ' + day.longLabel + ' Daily challenge.'
       : 'Retry the job to get a per-item outcome.'));
     b.appendChild(el('div', 'spacer'));
     b.appendChild(C.ui.button('Triage', {
@@ -538,12 +505,6 @@
       function (k) { st().tab = k; C.render(); }
     ));
     head.appendChild(el('div', 'spacer'));
-    head.appendChild(el('div', 'panel-note', st().tab === 'signals'
-      ? signals().filter(function (s) { return s.level === 'failed'; }).length + ' failed · ' +
-        signals().filter(function (s) { return s.level === 'warn'; }).length + ' warning · ' +
-        signals().length + ' signals · content pool floor 10 days'
-      : batches().length + ' batches · ' + batches().reduce(function (a, b) { return a + b.rejected; }, 0) + ' rejected items total'));
-    head.appendChild(C.ui.densitySwitch());
     mount.appendChild(head);
 
     var grid = el('div', 'ops-grid');
@@ -556,7 +517,7 @@
 
   C.registerScreen('#/operations', {
     title: 'Operations',
-    subline: 'Job signals, content pool depth and import batches',
+    subline: 'Job signals, pool depth and import batches',
     render: function (mount) { build(mount); }
   });
 

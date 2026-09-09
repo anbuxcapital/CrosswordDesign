@@ -1,4 +1,4 @@
-/* Audit log — every mutation in this session, newest first (C3).
+/* Audit log — the session trail, newest first (C3).
    OWNER: access builder. Route: #/audit (role: console_admin). */
 (function (C) {
   'use strict';
@@ -55,7 +55,7 @@
      or {why: 'one line explaining why nothing can be opened'}. */
   function resolve(object) {
     var id = String(object || '').trim();
-    if (!id) return { why: 'This entry records no object, so there is nothing to open.' };
+    if (!id) return { why: 'This entry records no object.' };
 
     var day = id.match(/^day (\d{4}-\d{2}-\d{2})$/);
     if (day) {
@@ -69,19 +69,19 @@
     if (/^pl_/.test(id)) {
       return C.find.player(id)
         ? { area: 'players', route: '#/players/' + id, what: C.find.player(id).name + '’s support record' }
-        : { why: id + ' is a player id, but that player is not in this environment any more.' };
+        : { why: id + ' is no longer in this environment.' };
     }
 
     if (/^(CW|D5)-/.test(id)) {
       var puz = C.find.puzzle(id);
       return puz
         ? { area: 'library', route: '#/library/' + id, what: '“' + puz.title + '” in the ' + (puz.kind === 'cw' ? 'crossword' : 'Daily Five') + ' editor' }
-        : { why: id + ' is a game id, but that game is not in this library. It may have been rejected on import and never created.' };
+        : { why: id + ' is not in this library.' };
     }
 
     if (C.find.collection(id) || /^col_/.test(id)) {
       var col = C.find.collection(id);
-      return { area: 'collections', route: '#/collections', what: col ? '“' + col.name + '” in Collections' : 'Collections' };
+      return { area: 'collections', role: 'publisher', route: '#/collections', what: col ? '“' + col.name + '” in Collections' : 'Collections' };
     }
 
     var placement = C.store.placements.filter(function (p) { return p.id === id; })[0];
@@ -93,8 +93,8 @@
     if (/^fl_/.test(id)) {
       var flag = C.store.flags.filter(function (f) { return f.id === id; })[0];
       return flag
-        ? { area: 'leaderboards', route: '#/leaderboards', what: 'the flagged solve by ' + flag.playerName }
-        : { why: id + ' is a flag id, but that flag is no longer in the queue.' };
+        ? { area: 'collections', role: 'integrity', route: '#/leaderboards', what: 'the flagged solve by ' + flag.playerName }
+        : { why: id + ' is no longer in the queue.' };
     }
 
     if (/^(batch_|sig_)/.test(id)) {
@@ -106,10 +106,7 @@
       return { area: 'access', route: '#/access', what: op.name + '’s operator account' };
     }
 
-    return {
-      why: id + ' is not an object any console screen owns. It is recorded for the trail only — '
-        + 'admin tokens, environments and other infrastructure are managed outside the console.'
-    };
+    return { why: id + ' is not owned by any console screen.' };
   }
 
   // ------------------------------------------------------------------
@@ -202,13 +199,9 @@
   // ------------------------------------------------------------------
 
   function countLine(rows) {
-    var total = C.store.audit.length;
-    var text = isFiltered()
-      ? rows.length + ' of ' + total + ' entries · this session'
-      : total + ' entries · this session';
+    if (!isFiltered()) return null;
     var n = el('div', 'table-foot aud-count');
-    n.appendChild(el('span', null, text));
-    n.appendChild(el('span', null, 'Newest first · append-only'));
+    n.appendChild(el('span', null, rows.length + ' of ' + C.store.audit.length + ' entries'));
     return n;
   }
 
@@ -236,17 +229,14 @@
       ],
       rows: rows,
       onRowClick: onPick,
-      empty: 'No audit entry matches these filters. Clear a filter to see the whole session.'
+      empty: 'No audit entry matches these filters.'
     });
   }
 
   function detail(entry) {
     var wrap = el('div', 'aud-detail');
     if (!entry) {
-      wrap.appendChild(C.ui.emptyState(
-        'Pick an entry to see its reason, its result and the object it changed.',
-        'No entry selected'
-      ));
+      wrap.appendChild(C.ui.emptyState('Pick an entry to see its detail.', 'No entry selected'));
       return wrap;
     }
 
@@ -266,8 +256,7 @@
     pair('Action', entry.action);
     pair('Object', entry.object || '—', 'mono');
     pair('Result', entry.result);
-    pair('Reason', entry.reason || 'No reason recorded. This action does not require one.',
-      entry.reason ? null : 'muted');
+    pair('Reason', entry.reason || 'No reason recorded.', entry.reason ? null : 'muted');
     body.appendChild(kv);
 
     var hit = resolve(entry.object);
@@ -275,21 +264,20 @@
     if (hit.why) {
       open.appendChild(C.ui.button('Open affected object', { disabled: true }));
       open.appendChild(el('div', 'help', hit.why));
-    } else if (!C.canSee(hit.area)) {
+    } else if (!C.canSee(hit.area) || (hit.role && !C.hasRole(hit.role))) {
       open.appendChild(C.ui.button('Open affected object', { disabled: true }));
-      open.appendChild(el('div', 'help',
-        'This object lives in ' + areaLabel(hit.area) + ', which your roles do not unlock.'));
+      open.appendChild(el('div', 'help', hit.role && !C.hasRole(hit.role)
+        ? 'Opening it needs the ' + ((C.data.roles[hit.role] || {}).label || hit.role).toLowerCase() + ' role.'
+        : 'This object lives in ' + areaLabel(hit.area) + ', which your roles do not unlock.'));
     } else {
       open.appendChild(C.ui.button('Open affected object', {
         variant: 'pink',
         onClick: function () { C.go(hit.route); }
       }));
-      open.appendChild(el('div', 'help', 'Opens ' + hit.what + ' · ' + hit.route));
+      open.appendChild(el('div', 'help', 'Opens ' + hit.what));
     }
     body.appendChild(open);
 
-    body.appendChild(el('div', 'panel-note',
-      'Audit entries are append-only. Correct a mistake with a new, compensating action, not by editing this record.'));
     wrap.appendChild(body);
     return wrap;
   }
@@ -310,7 +298,8 @@
       if (bar && bar.clearBtn) bar.clearBtn.disabled = !isFiltered();
       if (st().selected && rows.indexOf(st().selected) < 0) st().selected = null;
       left.innerHTML = '';
-      left.appendChild(countLine(rows));
+      var count = countLine(rows);
+      if (count) left.appendChild(count);
       left.appendChild(list(rows, function (e) {
         st().selected = e;
         paint();
@@ -328,11 +317,10 @@
   C.registerScreen('#/audit', {
     title: 'Audit log',
     subline: function () {
-      return C.store.audit.length + ' entries · every mutation in this session, newest first';
+      return C.store.audit.length + ' entries · newest first';
     },
     actions: function () {
       var row = el('div', 'btn-row');
-      row.appendChild(C.ui.densitySwitch());
       row.appendChild(C.ui.button('Access', { onClick: function () { C.go('#/access'); } }));
       return row;
     },

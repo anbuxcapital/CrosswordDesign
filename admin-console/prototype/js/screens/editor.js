@@ -1,4 +1,4 @@
-/* Puzzle editor — metadata, content, validation and player preview.
+/* Game editor — metadata, content, validation and player preview.
    OWNER: editorial builder.
    Route: #/library/:id
    Use cases: E3 edit, E4 validate and fix, E5 preview, E6 approve or send back,
@@ -78,7 +78,6 @@
     facts.appendChild(fact('Validation', C.ui.status(p.validation)));
     facts.appendChild(fact('Version', 'v' + p.version));
     facts.appendChild(fact('Kind', ED.kindLabel(p.kind) + ' · ' + ED.langLabel(p.lang)));
-    facts.appendChild(fact('Updated', p.updatedAt + ' · ' + p.author));
     if (p.correctionOf) facts.appendChild(fact('Correction of', p.correctionOf));
     bar.appendChild(facts);
 
@@ -124,25 +123,6 @@
   }
 
   function noun(p) { return p.kind === 'cw' ? 'crossword' : 'Daily Five'; }
-
-  function blockNote(p) {
-    var reasons = [];
-    if (dirty(p)) reasons.push('there are unsaved changes');
-    if (p.validation === 'not_run') reasons.push('validation has not been run');
-    else if (p.validation === 'failed') reasons.push('validation failed with ' + p.validationIssues.length + ' issues');
-    if (p.status === 'approved') reasons.push('the ' + noun(p) + ' is already approved');
-    if (p.status === 'scheduled' || p.status === 'published' || p.status === 'live') {
-      reasons.push('a ' + (C.ui.STATUS[p.status] || {}).label.toLowerCase() + ' ' + noun(p) + ' is corrected, not edited in place');
-    }
-    if (!reasons.length) return null;
-    var n = el('div', 'notice' + (p.validation === 'failed' ? ' blocked' : ''));
-    n.textContent = 'Approve is blocked because ' + reasons.join(', and ') + '.';
-    if (p.correctionOf) {
-      n.textContent += ' This is a correction of ' + p.correctionOf +
-        '; publishing it will not change the result of anyone who already solved ' + p.correctionOf + '.';
-    }
-    return n;
-  }
 
   // =====================================================================
   // actions
@@ -196,14 +176,12 @@
       title: 'Approve ' + p.id,
       before: [['Status', C.ui.pill(p.status)], ['Validation', C.ui.status(p.validation)], ['Version', 'v' + p.version]],
       after: [['Status', C.ui.pill('approved')], ['Validation', C.ui.status('passed')], ['Version', 'v' + p.version]],
-      consequence: 'It becomes available for a Daily challenge as an approved ' +
-        ED.kindLabel(p.kind) + ' in ' + ED.langLabel(p.lang) + '. Nothing is scheduled or published yet.'
+      consequence: 'It becomes available for a Daily challenge. Nothing is scheduled yet.'
     }));
     var reason = C.ui.reasonField({
       required: false,
       label: 'Approval note',
-      placeholder: 'e.g. Checked against the style sheet',
-      help: 'Optional for an approval. It is stored in the audit log with your operator name.'
+      placeholder: 'e.g. Checked against the style sheet'
     });
     body.appendChild(reason);
 
@@ -236,14 +214,12 @@
       title: 'Send ' + p.id + ' back',
       before: [['Status', C.ui.pill(p.status)], ['Available for a Daily challenge', p.status === 'approved' ? 'Yes' : 'No']],
       after: [['Status', C.ui.pill('draft')], ['Available for a Daily challenge', 'No']],
-      consequence: 'The ' + noun(p) + ' returns to Draft and disappears from the approved pool a Daily challenge picks from. ' +
-        'The validation result is kept so the author can see what failed.'
+      consequence: 'It leaves the approved pool. The author sees this reason.'
     }));
     var reason = C.ui.reasonField({
       required: true,
       label: 'Reason to send back',
-      placeholder: 'e.g. 7-across clue is ambiguous; rewrite before re-review',
-      help: 'Required. The author sees this reason, and it is stored in the audit log.'
+      placeholder: 'e.g. 7-across clue is ambiguous; rewrite before re-review'
     });
     body.appendChild(reason);
 
@@ -285,9 +261,7 @@
         ['Correction', p.id + ' · Published'],
         ['Validation', C.ui.status('passed')]
       ],
-      consequence: 'Players who have already solved ' + p.correctionOf +
-        ' keep their result, their streak and their leaderboard placement — the corrected version is not replayed and no score is recalculated. ' +
-        'Players who open the ' + noun(p) + ' from now on get ' + p.id + ' v' + p.version + '.'
+      consequence: 'Players who already solved ' + p.correctionOf + ' keep their result.'
     }));
     if (p.note) {
       var note = el('div', 'notice');
@@ -298,8 +272,7 @@
     var reason = C.ui.reasonField({
       required: false,
       label: 'Publication note',
-      placeholder: 'e.g. Corrected 7-across clue, cleared with the author',
-      help: 'Optional. It is stored in the audit log next to the correction.'
+      placeholder: 'e.g. Corrected 7-across clue, cleared with the author'
     });
     body.appendChild(reason);
 
@@ -372,25 +345,21 @@
     var d = st().draft;
     var wrap = el('div', 'ed-body');
 
-    wrap.appendChild(el('div', 'ed-note',
-      'Editable fields sit on paper; read-only facts are dashed and washed. Changes are held here until you press Save, which writes v' +
-      (p.version + 1) + ' and one audit entry.'));
-
     var cols = el('div', 'ed-cols');
 
     var left = el('div');
     left.appendChild(textRow('Title', d.title, function (v) { d.title = v; markDirty(p); },
-      { placeholder: 'e.g. Harbour lights', help: 'Shown on the feed card and the solve screen.' }));
+      { placeholder: 'e.g. Harbour lights' }));
     left.appendChild(chipRow('Language', [['en', 'English'], ['uk', 'Ukrainian']], d.lang,
-      function (v) { d.lang = v; }, 'The dictionary used by validation follows the language.'));
+      function (v) { d.lang = v; }));
     left.appendChild(chipRow('Difficulty', [['Easy', 'Easy'], ['Medium', 'Medium'], ['Hard', 'Hard']], d.difficulty,
       function (v) { d.difficulty = v; }));
     left.appendChild(textRow('Topics', d.topics.join(', '), function (v) {
       d.topics = v.split(',').map(function (t) { return t.trim(); }).filter(Boolean);
       markDirty(p);
-    }, { placeholder: 'e.g. Travel, Food', help: 'Comma separated. At least one topic is required before approval.' }));
+    }, { placeholder: 'e.g. Travel, Food' }));
     left.appendChild(textRow('Author', d.author, function (v) { d.author = v; markDirty(p); },
-      { placeholder: 'operator handle', help: 'The handle credited in the library and in exports.' }));
+      { placeholder: 'operator handle' }));
     cols.appendChild(left);
 
     var right = el('div');
@@ -484,12 +453,7 @@
 
   function crosswordEditor(p, d) {
     var wrap = el('div');
-    wrap.appendChild(el('div', 'ed-note',
-      'The grid is a 5 × 5 double word square: every row is an across answer and every column is a down answer. ' +
-      'Validation checks that each letter matches both answers, that every clue has text, and that every answer is a five-letter dictionary word.'));
-
     var cols = el('div', 'ed-cols');
-    cols.style.marginTop = '14px';
 
     // grid
     var gridSide = el('div');
@@ -516,7 +480,6 @@
       });
     });
     gridSide.appendChild(grid);
-    gridSide.appendChild(el('div', 'help', 'One letter per cell. Numbers mark where an across or down answer starts.'));
     cols.appendChild(gridSide);
 
     // clues
@@ -574,12 +537,7 @@
 
   function dailyFiveEditor(p, d) {
     var wrap = el('div');
-    wrap.appendChild(el('div', 'ed-note',
-      'A Daily Five is five independent five-letter answers and one shared hint. Each answer is checked against the ' +
-      ED.langLabel(d.lang) + ' dictionary and against the 90-day reuse window.'));
-
     var list = el('div', 'clues');
-    list.style.marginTop = '14px';
     d.content.answers.forEach(function (a, i) {
       var flagged = focusIs('answer', i);
       var row = el('div', 'd5-row' + (flagged ? ' is-flagged' : ''));
@@ -632,7 +590,6 @@
     ta.placeholder = 'One sentence the five answers have in common.';
     ta.addEventListener('input', function () { d.content.hint = ta.value; markDirty(p); });
     hint.appendChild(ta);
-    hint.appendChild(el('div', 'help', 'Shown above the five slots on the solve screen.'));
     wrap.appendChild(hint);
     return wrap;
   }
@@ -662,40 +619,17 @@
       p.validation === 'not_run' ? 'Validation has not been run on ' + p.id
         : p.validation === 'passed' ? 'Validation passed for ' + p.id + ' v' + p.version
           : ED.summary(p.validationIssues) + ' for ' + p.id + ' v' + p.version));
-    head.appendChild(el('div', 'banner-detail', dirty(p)
-      ? 'There are unsaved changes. Run validation again to check them.'
-      : 'Checks: grid and answers agree, every clue has text, answers are five-letter dictionary words, and at least one topic is set.'));
+    if (dirty(p)) head.appendChild(el('div', 'banner-detail', 'Unsaved changes — run validation again.'));
     head.appendChild(el('div', 'spacer'));
     head.appendChild(C.ui.button('Run validation', { small: true, onClick: function () { runValidation(p); } }));
     wrap.appendChild(head);
 
     if (p.validation === 'not_run') {
-      wrap.appendChild(C.ui.emptyState(
-        'Validation has not run for this ' + noun(p) + ' yet. Run it to see the exact cells and clues that need work.', 'Not run'));
+      wrap.appendChild(C.ui.emptyState('Validation has not run yet.', 'Not run'));
       return wrap;
     }
 
-    if (!p.validationIssues.length) {
-      var checks = p.kind === 'cw'
-        ? [['Grid and answers agree', 'All 25 cells match both directions', 'pass'],
-           ['Clue text', 'All ten clues have text', 'pass'],
-           ['Dictionary', 'Every answer is a five-letter ' + ED.langLabel(p.lang) + ' word', 'pass']]
-        : [['Answer length', 'All five answers are exactly five letters', 'pass'],
-           ['Dictionary', 'Every answer is a five-letter ' + ED.langLabel(p.lang) + ' word', 'pass'],
-           ['Hint', 'The shared hint is set', 'pass'],
-           ['Reuse window', 'No answer was used in the last 90 days', 'pass']];
-      checks.push(['Metadata', p.topics.length + ' topic' + (p.topics.length === 1 ? '' : 's') + ' set', 'pass']);
-      wrap.appendChild(C.ui.checklist(checks));
-      var ok = el('div', 'ed-note');
-      ok.textContent = p.status === 'approved'
-        ? 'This ' + noun(p) + ' is already approved and is available for a Daily challenge.'
-        : 'Nothing is blocking approval. Use Approve in the bar above.';
-      wrap.appendChild(ok);
-      return wrap;
-    }
-
-    wrap.appendChild(el('div', 'ed-note',
-      'Click an issue to jump to the exact cell, clue or field it names. Fix it, then run validation again.'));
+    if (!p.validationIssues.length) return wrap;
 
     var list = el('div');
     p.validationIssues.forEach(function (issue) {
@@ -713,12 +647,6 @@
       list.appendChild(b);
     });
     wrap.appendChild(list);
-
-    if (dirty(p)) {
-      var n = el('div', 'notice');
-      n.textContent = 'These issues are from the last run. You have unsaved edits — run validation again to re-check them.';
-      wrap.appendChild(n);
-    }
     return wrap;
   }
 
@@ -765,7 +693,6 @@
       st().previewFill,
       function (k) { st().previewFill = k; C.render(); }
     ));
-    bar.appendChild(el('span', 'ed-note', 'Rendered from the content on the Content tab, including unsaved edits.'));
     wrap.appendChild(bar);
 
     var row = el('div', 'preview-row');
@@ -838,6 +765,14 @@
     { key: 'preview', label: 'Preview' }
   ];
 
+  /* The library is split into a Crosswords and a Daily Five tab: come back to
+     the one this game lives on. */
+  function backToLibrary(id) {
+    var p = C.find.puzzle(id);
+    if (p && C.store.ui.library) C.store.ui.library.tab = p.kind;
+    C.go('#/library');
+  }
+
   C.registerScreen('#/library/:id', {
     title: function (params) {
       var p = C.find.puzzle(params.id);
@@ -845,13 +780,13 @@
     },
     subline: function (params) {
       var p = C.find.puzzle(params.id);
-      if (!p) return 'Unknown game';
-      return p.id + ' · ' + ED.kindLabel(p.kind) + ' · ' + ED.langLabel(p.lang) + ' · ' +
-        p.difficulty + ' · v' + p.version + (p.correctionOf ? ' · correction of ' + p.correctionOf : '');
+      return p ? p.id + ' · ' + ED.kindLabel(p.kind) : 'Unknown game';
     },
     actions: function (params) {
       var row = el('div', 'btn-row');
-      row.appendChild(C.ui.button('Back to library', { onClick: function () { C.go('#/library'); } }));
+      row.appendChild(C.ui.button('Back to library', {
+        onClick: function () { backToLibrary(params.id); }
+      }));
       var p = C.find.puzzle(params.id);
       if (p && (p.status === 'published' || p.status === 'live')) {
         row.appendChild(C.ui.button('Create correction', {
@@ -864,21 +799,13 @@
     render: function (mount, params) {
       var p = C.find.puzzle(params.id);
       if (!p) {
-        mount.appendChild(C.ui.emptyState(
-          'No game with the id ' + params.id + '. It may have been created in a session that has since been reloaded.', 'Not found'));
+        mount.appendChild(C.ui.emptyState('No game with the id ' + params.id + '.', 'Not found'));
         mount.appendChild(C.ui.button('Back to library', { onClick: function () { C.go('#/library'); } }));
         return;
       }
       ensureDraft(p);
 
       mount.appendChild(reviewBar(p));
-
-      var note = blockNote(p);
-      if (note) {
-        var holder = el('div', 'screen-pad');
-        holder.appendChild(note);
-        mount.appendChild(holder);
-      }
 
       mount.appendChild(C.ui.tabs(TABS, st().tab, function (k) {
         st().tab = k;

@@ -173,8 +173,6 @@
         variant: 'pink', small: true,
         onClick: function () { openCompensation(player); }
       }));
-    } else {
-      bar.appendChild(el('div', 'ie-hint', 'Search one player to append a compensating entry. Balances are never edited directly.'));
     }
     return bar;
   }
@@ -213,7 +211,7 @@
     var wrap = el('div', 'ie-detail');
     var entry = C.store.ledger.filter(function (e) { return e.id === st().entryId; })[0];
     if (!entry) {
-      wrap.appendChild(C.ui.emptyState('Pick a ledger entry to read its reason, source and idempotency key.', 'No entry open'));
+      wrap.appendChild(C.ui.emptyState('Pick a ledger entry to read its detail.', 'No entry open'));
       return wrap;
     }
     var player = C.find.player(entry.playerId);
@@ -222,9 +220,6 @@
     head.appendChild(el('div', 'ie-detail-title', (entry.amount >= 0 ? '+' : '−') + Math.abs(entry.amount) + ' ' + entry.currency));
     head.appendChild(el('span', 'cell-id', entry.id));
     head.appendChild(el('div', 'spacer'));
-    head.appendChild(isOperatorSource(entry)
-      ? C.ui.pill('warn', 'Operator entry')
-      : C.ui.pill('system', 'System entry'));
     wrap.appendChild(head);
     wrap.appendChild(el('div', 'ie-detail-sub', entry.when + ' · ' + playerName(entry.playerId) + ' · ' + entry.playerId));
 
@@ -236,13 +231,9 @@
     var pb = el('div', 'panel-body');
     var dl = el('dl', 'kv-grid');
     [
-      ['Reason', entry.reason],
-      ['Source', isOperatorSource(entry) ? 'Operator ' + entry.source : 'System, no operator'],
-      ['Currency', entry.currency === 'stars' ? 'Stars' : 'Tokens'],
-      ['Amount', (entry.amount >= 0 ? '+' : '−') + Math.abs(entry.amount)],
+      ['Source', isOperatorSource(entry) ? 'Operator ' + entry.source : 'System'],
       ['Idempotency key', entry.idempotencyKey],
-      ['Balance after', String(entry.balanceAfter)],
-      ['Recorded', entry.when]
+      ['Balance after', String(entry.balanceAfter)]
     ].forEach(function (pair) {
       dl.appendChild(el('dt', null, pair[0]));
       var dd = el('dd', null, pair[1]);
@@ -264,14 +255,13 @@
       }
     }));
     pf.appendChild(el('div', 'spacer'));
-    pf.appendChild(el('span', 'panel-id', 'Read only'));
     panel.appendChild(pf);
     wrap.appendChild(panel);
 
     var linked = C.store.purchases.filter(function (p) { return p.idempotencyKey === entry.idempotencyKey; })[0];
     if (linked) {
       var note = el('div', 'notice');
-      note.textContent = 'This entry shares an idempotency key with purchase ' + linked.receipt + ' (' + linked.pack + ', ' + linked.status + ').';
+      note.textContent = 'Same idempotency key as purchase ' + linked.receipt + '.';
       wrap.appendChild(note);
     }
 
@@ -284,7 +274,7 @@
         onClick: function () { openCompensation(player); }
       }));
       act.appendChild(row);
-      act.appendChild(el('div', 'help', 'Balances are never edited. A correction appends a new entry, so this one stays exactly as recorded.'));
+      act.appendChild(el('div', 'help', 'Corrections append entries; balances are never overwritten.'));
       wrap.appendChild(act);
     }
     return wrap;
@@ -301,8 +291,7 @@
     var body = el('div');
 
     var note = el('div', 'notice');
-    note.textContent = 'In production this control stays disabled until the audited server command exists. ' +
-      'The demo completes the flow so the safeguards can be reviewed: the entry is appended, never written over an existing balance.';
+    note.textContent = 'Stays disabled in production until the audited server command exists.';
     body.appendChild(note);
 
     var who = el('div', 'form-row');
@@ -331,7 +320,6 @@
     segWrap.appendChild(seg);
     inputs.appendChild(segWrap);
     amountRow.appendChild(inputs);
-    amountRow.appendChild(el('div', 'help', 'Use a negative amount to reverse a credit. The entry is appended; the balance is recomputed from it.'));
     body.appendChild(amountRow);
 
     function rebuildSeg() {
@@ -372,14 +360,13 @@
           ['Entry', (parsed() >= 0 ? '+' : '−') + Math.abs(parsed()) + ' ' + currency],
           ['Balance', after() + ' ' + currency]
         ],
-        consequence: 'A new ledger entry is appended with your operator handle and a fresh idempotency key. ' +
-          'No existing entry or balance is rewritten. Board eligibility and reward decisions are not changed.'
+        consequence: 'A new entry is appended under your operator handle.'
       }));
       if (!valid()) {
         var warn = el('div', 'notice blocked');
         warn.textContent = parsed() === 0
           ? 'Enter an amount other than zero.'
-          : 'A compensating entry cannot take the balance below zero. The current balance is ' + current() + ' ' + currency + '.';
+          : 'The entry cannot take the balance below zero.';
         reviewWrap.appendChild(warn);
       }
       if (open && C.ui.refreshModal) C.ui.refreshModal();
@@ -477,15 +464,7 @@
     search.appendChild(input);
     bar.appendChild(search);
 
-    var counts = C.store.purchases.reduce(function (acc, p) { acc[p.status] = (acc[p.status] || 0) + 1; return acc; }, {});
-    var m = el('div', 'ie-metric');
-    m.appendChild(el('span', 'eyebrow', 'Receipts on file'));
-    m.appendChild(el('span', 'ie-metric-value',
-      (counts.verified || 0) + ' verified · ' + (counts.pending || 0) + ' pending · ' + (counts.refunded || 0) + ' refunded'));
-    bar.appendChild(m);
-
     bar.appendChild(el('div', 'spacer'));
-    bar.appendChild(el('div', 'ie-hint', 'Receipt status comes from the store. The console reads it; it never changes it.'));
     return bar;
   }
 
@@ -523,7 +502,7 @@
     var wrap = el('div', 'ie-detail');
     var pu = C.store.purchases.filter(function (p) { return p.id === st().purchaseId; })[0];
     if (!pu) {
-      wrap.appendChild(C.ui.emptyState('Pick a purchase to read its pack, plan, idempotency key and receipt status.', 'No purchase open'));
+      wrap.appendChild(C.ui.emptyState('Pick a purchase to read its receipt detail.', 'No purchase open'));
       return wrap;
     }
 
@@ -543,17 +522,13 @@
     var pb = el('div', 'panel-body');
     var dl = el('dl', 'kv-grid');
     [
-      ['Pack', pu.pack],
       ['Plan', pu.plan],
       ['Amount', pu.amount],
-      ['Receipt', pu.receipt],
-      ['Idempotency key', pu.idempotencyKey],
-      ['Status', pu.status === 'verified' ? 'Verified with the store' : pu.status === 'refunded' ? 'Refunded by the store' : 'Pending store verification'],
-      ['Recorded', pu.when]
+      ['Idempotency key', pu.idempotencyKey]
     ].forEach(function (pair) {
       dl.appendChild(el('dt', null, pair[0]));
       var dd = el('dd', null, pair[1]);
-      if (pair[0] === 'Idempotency key' || pair[0] === 'Receipt') dd.className = 'mono';
+      if (pair[0] === 'Idempotency key') dd.className = 'mono';
       dl.appendChild(dd);
     });
     pb.appendChild(dl);
@@ -573,34 +548,30 @@
       }
     }));
     pf.appendChild(el('div', 'spacer'));
-    pf.appendChild(el('span', 'panel-id', 'Read only'));
     panel.appendChild(pf);
     wrap.appendChild(panel);
 
     var entry = C.store.ledger.filter(function (e) { return e.idempotencyKey === pu.idempotencyKey; })[0];
-    var linked = el('div', 'panel');
-    var lh = el('div', 'panel-head');
-    lh.appendChild(el('span', 'panel-kind', 'Ledger'));
-    lh.appendChild(el('span', 'panel-title', entry ? 'Matching ledger entry' : 'No matching ledger entry'));
-    linked.appendChild(lh);
-    var lb = el('div', 'panel-body');
     if (entry) {
+      var linked = el('div', 'panel');
+      var lh = el('div', 'panel-head');
+      lh.appendChild(el('span', 'panel-kind', 'Ledger'));
+      lh.appendChild(el('span', 'panel-title', 'Matching entry'));
+      linked.appendChild(lh);
+      var lb = el('div', 'panel-body');
       var line = el('div', 'ie-impact');
       line.appendChild(el('span', 'ie-impact-board', entry.reason));
       line.appendChild(el('span', 'cell-id', entry.when));
       line.appendChild(el('div', 'spacer'));
       line.appendChild(amountNode(entry));
       lb.appendChild(line);
-      var open = C.ui.button('Open entry', {
+      lb.appendChild(C.ui.button('Open entry', {
         small: true,
         onClick: function () { st().tab = 'ledger'; st().entryId = entry.id; C.render(); }
-      });
-      lb.appendChild(open);
-    } else {
-      lb.appendChild(el('div', 'panel-note', 'This receipt granted no wallet currency, so nothing was written to the ledger.'));
+      }));
+      linked.appendChild(lb);
+      wrap.appendChild(linked);
     }
-    linked.appendChild(lb);
-    wrap.appendChild(linked);
     return wrap;
   }
 
@@ -635,10 +606,10 @@
   C.registerScreen('#/economy', {
     title: 'Economy',
     subline: function () {
-      return C.store.ledger.length + ' ledger entries · ' + C.store.purchases.length +
-        ' receipts · balances are inspected, never edited';
+      return st().tab === 'purchases'
+        ? C.store.purchases.length + ' receipts'
+        : C.store.ledger.length + ' ledger entries';
     },
-    actions: function () { return C.ui.densitySwitch(); },
     render: function (mount) { build(mount); }
   });
 

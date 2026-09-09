@@ -1,10 +1,6 @@
 /* Ads — placements, caps, rewards and grant health (A1, A2).
    OWNER: ads and operations builder.
 
-   Scope boundary: this screen owns the in-app placement rules only. Campaigns,
-   targeting, mediation and revenue reporting stay in AdMob and are linked, not
-   duplicated (ADMIN-CONSOLE-RESEARCH.md).
-
    A1 Enable or pause a placement — switch → effective time (now or scheduled
       UTC) → required reason → Confirm → row updates and an audit entry lands.
    A2 Change a cap or reward rule — Edit rule → editor → review (old, new,
@@ -96,7 +92,6 @@
     time.id = 'ads_eff_time';
     time.addEventListener('input', function () { at = time.value || '00:00'; paint(); });
     timeRow.appendChild(time);
-    timeRow.appendChild(el('div', 'help', 'The app reads placement rules on launch, so a scheduled change reaches a player at their next cold start after this time.'));
     body.appendChild(timeRow);
 
     var reviewWrap = el('div');
@@ -138,9 +133,7 @@
           ['Platforms', platformText(p.platformList)],
           ['Effective', effLabel()]
         ],
-        consequence: next
-          ? 'Serving resumes on ' + platformText(p.platformList) + '. No campaign, targeting or bid setting changes; those stay in AdMob.'
-          : 'The placement stops serving on ' + platformText(p.platformList) + '. Rewards already granted are untouched; no new reward from this placement can be earned.'
+        consequence: (next ? 'Serving resumes on ' : 'Serving stops on ') + platformText(p.platformList) + '.'
       }));
     }
     paint();
@@ -202,7 +195,7 @@
     input.style.maxWidth = '160px';
     input.addEventListener('input', function () { onChange(input.value); C.ui.refreshModal(); });
     row.appendChild(input);
-    row.appendChild(el('div', 'help', help));
+    if (help) row.appendChild(el('div', 'help', help));
     return row;
   }
 
@@ -219,7 +212,7 @@
     input.style.maxWidth = '260px';
     input.addEventListener('input', function () { onChange(input.value); C.ui.refreshModal(); });
     row.appendChild(input);
-    row.appendChild(el('div', 'help', help));
+    if (help) row.appendChild(el('div', 'help', help));
     return row;
   }
 
@@ -239,7 +232,7 @@
       chips.appendChild(b);
     });
     row.appendChild(chips);
-    row.appendChild(el('div', 'help', 'A placement with no platform selected cannot serve anywhere. Platform availability is enforced in the app, not in AdMob.'));
+    row.appendChild(el('div', 'help', 'With no platform selected the placement cannot serve.'));
     return row;
   }
 
@@ -247,14 +240,13 @@
     draft = draft || draftOf(p);
     var body = el('div');
 
-    body.appendChild(el('div', 'panel-note',
-      'Serving rule: ' + p.rule + '. This editor changes the in-app cap, reward, first-session grace and platforms only.'));
+    body.appendChild(el('div', 'panel-note', 'Serving rule: ' + p.rule));
 
-    body.appendChild(numberRow('Cap per day', 'Views per player per day. Leave empty for no cap.', draft.cap,
+    body.appendChild(numberRow('Cap per day', 'Empty means no cap.', draft.cap,
       function (v) { draft.cap = v; }));
-    body.appendChild(textRow('Reward', 'What the player receives for a completed view. Use — for a placement that grants nothing.', draft.reward,
+    body.appendChild(textRow('Reward', 'Use — for a placement that grants nothing.', draft.reward,
       function (v) { draft.reward = v; }));
-    body.appendChild(numberRow('First-session grace (hours)', 'Hours after first launch during which this placement never shows.', draft.grace,
+    body.appendChild(numberRow('First-session grace (hours)', '0 removes the grace period.', draft.grace,
       function (v) { draft.grace = v; }));
 
     var pRow = platformRow(draft.platforms, function (next) {
@@ -301,8 +293,7 @@
       title: 'Review the rule change',
       before: pairs.map(function (r) { return [r[0], r[1]]; }),
       after: pairs.map(function (r) { return [r[0], r[2]]; }),
-      consequence: 'Affected platforms: ' + platformText(affected) +
-        '. The app reads placement rules on launch, so the change reaches a player at their next cold start. Rewards already granted are not recalculated.'
+      consequence: 'Affected platforms: ' + platformText(affected) + '.'
     }));
     var reason = C.ui.reasonField({
       required: true,
@@ -351,14 +342,12 @@
   }
 
   function openGraceEditor(draftValue) {
-    var r = rule('grace');
     var current = placements()[0] ? placements()[0].graceHours : 24;
     var draft = draftValue == null ? String(current) : draftValue;
 
     var body = el('div');
-    body.appendChild(el('div', 'panel-note', r.note));
     body.appendChild(numberRow('First-session grace (hours)',
-      'Applies to every placement. 0 removes the grace period entirely.', draft,
+      'Applies to every placement. 0 removes the grace period.', draft,
       function (v) { draft = v; }));
 
     C.ui.modal({
@@ -375,13 +364,12 @@
 
   function openGraceReview(draft, current) {
     var next = parseInt(draft, 10);
-    var names = placements().map(function (p) { return p.name; }).join(', ');
     var body = el('div');
     body.appendChild(C.ui.reviewPanel({
       title: 'Review the rule change',
       before: [['First-session grace', graceLabel(current)], ['Applies to', placements().length + ' placements']],
       after: [['First-session grace', graceLabel(next)], ['Applies to', placements().length + ' placements']],
-      consequence: 'Affected placements: ' + names + '. Affected platforms: iOS · Android. New players installed before this change keep the grace they were given at first launch.'
+      consequence: 'Affected platforms: ' + PLATFORMS.join(' · ') + '.'
     }));
     var reason = C.ui.reasonField({ required: true, label: 'Reason', placeholder: 'e.g. Onboarding test — extend the ad-free window to 48 h' });
     body.appendChild(reason);
@@ -414,9 +402,8 @@
     var draft = draftValue == null ? String(current) : draftValue;
 
     var body = el('div');
-    body.appendChild(el('div', 'panel-note', r.note));
     body.appendChild(numberRow('Rewarded views per player per day',
-      'Applies to every placement that grants a reward: ' + rewardedPlacements().map(function (p) { return p.name; }).join(', ') + '.',
+      'Applies to ' + rewardedPlacements().map(function (p) { return p.name; }).join(', ') + '.',
       draft, function (v) { draft = v; }));
 
     C.ui.modal({
@@ -438,9 +425,8 @@
     body.appendChild(C.ui.reviewPanel({
       title: 'Review the rule change',
       before: [['Rewarded cap', current + ' views / day']].concat(affected.map(function (p) { return [p.name + ' cap', capLabel(p)]; })),
-      after: [['Rewarded cap', next + ' views / day']].concat(affected.map(function () { return ['', next + ' / day']; })),
-      consequence: 'Affected placements: ' + affected.map(function (p) { return p.name; }).join(', ') +
-        '. Affected platforms: iOS · Android. Grants beyond the cap are refused and logged, never queued, so raising the cap cannot back-fill yesterday.'
+      after: [['Rewarded cap', next + ' views / day']].concat(affected.map(function (p) { return [p.name + ' cap', next + ' / day']; })),
+      consequence: 'Affected platforms: ' + PLATFORMS.join(' · ') + '.'
     }));
     var reason = C.ui.reasonField({ required: true, label: 'Reason', placeholder: 'e.g. Hint economy is too tight, raising the daily rewarded cap' });
     body.appendChild(reason);
@@ -477,8 +463,8 @@
     var p = bad[0];
     var b = el('div', 'banner attention');
     b.appendChild(el('span', 'banner-dot'));
-    b.appendChild(el('div', 'banner-text', p.name + ' filled ' + p.fill + ' of requests over 7 days, under the ' + FILL_FLOOR + '% floor.'));
-    b.appendChild(el('div', 'banner-detail', 'Serving now on ' + platformText(p.platformList) + '. Lower the cap, or pause the placement until fill recovers.'));
+    b.appendChild(el('div', 'banner-text', p.name + ' filled ' + p.fill + ' over 7 days, under the ' + FILL_FLOOR + '% floor.'));
+    b.appendChild(el('div', 'banner-detail', 'Lower the cap, or pause the placement until fill recovers.'));
     b.appendChild(el('div', 'spacer'));
     b.appendChild(C.ui.button('Edit rule', { small: true, onClick: function () { openPlacementEditor(p); } }));
     return b;
@@ -545,9 +531,7 @@
       var pct = parseFloat(r.value);
       if (pct >= GRANT_FLOOR) value.style.color = 'var(--pink)';
       card.appendChild(el('span', 'stat-note',
-        'Reward grants · all placements · 7 days. ' +
-        (pct < GRANT_FLOOR ? 'Under the ' + GRANT_FLOOR + '% alert floor.' : 'At or over the ' + GRANT_FLOOR + '% alert floor — investigate before raising any cap.') +
-        ' Failures surface in Operations with a retry.'));
+        'Reward grants · all placements · 7 days · ' + GRANT_FLOOR + '% alert floor'));
       card.appendChild(C.ui.button('Open grant signal in Operations', {
         small: true,
         onClick: function () {
@@ -558,20 +542,7 @@
         }
       }));
     } else {
-      var note = r.note;
-      if (r.id === 'cap') {
-        note += ' Applied per placement now: ' + rewardedPlacements().map(function (x) {
-          return x.name + ' ' + capLabel(x);
-        }).join(', ') + '.';
-      }
-      if (r.id === 'grace') {
-        var hours = placements().map(function (x) { return x.graceHours; });
-        var same = hours.every(function (h) { return h === hours[0]; });
-        note += same ? '' : ' Placement grace now varies: ' + placements().map(function (x) {
-          return x.name + ' ' + x.graceHours + ' h';
-        }).join(', ') + '.';
-      }
-      card.appendChild(el('span', 'stat-note', note));
+      card.appendChild(el('span', 'stat-note', r.note));
       card.appendChild(C.ui.button('Edit rule', {
         small: true,
         onClick: r.id === 'grace' ? function () { openGraceEditor(); } : function () { openCapEditor(); }
@@ -582,12 +553,11 @@
 
   function boundaryBar() {
     var bar = el('div', 'banner calm');
-    bar.appendChild(el('div', 'banner-text', 'This console owns placement rules, caps, rewards and grant health.'));
-    bar.appendChild(el('div', 'banner-detail', 'Campaigns, targeting, mediation and revenue reporting stay in AdMob and are not mirrored here.'));
+    bar.appendChild(el('div', 'banner-text', 'Campaigns, targeting and revenue stay in AdMob.'));
     bar.appendChild(el('div', 'spacer'));
-    bar.appendChild(C.ui.button('Open AdMob ↗', {
+    bar.appendChild(C.ui.button('Open AdMob', {
       small: true,
-      onClick: function () { C.toast('AdMob opens outside the console. Nothing in this prototype leaves the browser.'); }
+      onClick: function () { C.toast('AdMob opens outside the console.'); }
     }));
     return bar;
   }
@@ -599,31 +569,24 @@
 
     var head = el('div', 'section-head');
     head.appendChild(el('div', 'section-title', 'Placements'));
-    head.appendChild(el('div', 'panel-note', placements().length + ' placements · fill measured over the last 7 days against a ' + FILL_FLOOR + '% floor'));
-    head.appendChild(el('div', 'spacer'));
-    head.appendChild(C.ui.densitySwitch());
     mount.appendChild(head);
     mount.appendChild(placementsTable());
 
     var rhead = el('div', 'section-head rule-top');
     rhead.appendChild(el('div', 'section-title', 'Reward rules'));
-    rhead.appendChild(el('div', 'panel-note', 'App-wide. Every change is audited and takes effect at the next app launch.'));
+    rhead.appendChild(el('div', 'panel-note', 'App-wide · effective at the next app launch'));
     mount.appendChild(rhead);
 
     var pad = el('div', 'screen-pad');
     var cards = el('div', 'cards-3');
     C.store.adRules.forEach(function (r) { cards.appendChild(ruleCard(r)); });
     pad.appendChild(cards);
-    pad.appendChild(el('div', 'panel-note',
-      'Rewarded-ad grants post to the same ledger as every other credit, so a failed grant appears in Operations with a retry rather than being silently dropped. Consent state (ATT / GDPR) is read-only per player and lives on the player record.'));
-    pad.lastChild.style.marginTop = '14px';
-    pad.lastChild.style.maxWidth = '680px';
     mount.appendChild(pad);
   }
 
   C.registerScreen('#/ads', {
     title: 'Ads',
-    subline: 'Placements, caps and rewards · network reporting stays in AdMob',
+    subline: 'Placements, caps and rewards',
     render: function (mount) { build(mount); }
   });
 

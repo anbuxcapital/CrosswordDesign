@@ -1,6 +1,12 @@
-/* Collections — P5 Manage a collection.
-   OWNER: publishing builder. Routes: #/collections (list) and
-   #/collections/:id (editor: membership, metadata, visibility, preview, save).
+/* Collections — one area, two role-gated tabs.
+   OWNER: publishing builder. Routes: #/collections (Collections tab and the
+   Leaderboards tab, which renders the integrity screen from leaderboards.js)
+   and #/collections/:id (collection editor: membership, metadata, visibility,
+   preview, save). #/collections/leaderboards and the old #/leaderboards are
+   aliases that open this area on the Leaderboards tab.
+
+   Collections is visible to the publisher, Leaderboards to the integrity
+   reviewer; an operator with one role sees only that tab.
 
    Edits are held in a draft on Console.store.ui.collections until Save, which
    is the single Console.commit for the whole change set. */
@@ -9,14 +15,13 @@
 
   var el = C.ui.el;
 
-  C.store.ui.collections = { drafts: {}, focus: null };
+  C.store.ui.collections = { drafts: {}, focus: null, tab: 'collections' };
 
   function ui() { return C.store.ui.collections; }
 
   var FIELDS = [
     { key: 'name', label: 'Name' },
     { key: 'shelf', label: 'Shelf' },
-    { key: 'emoji', label: 'Emoji' },
     { key: 'blurb', label: 'Blurb', multiline: true },
     { key: 'unlockRule', label: 'Unlock rule' },
     { key: 'reward', label: 'Reward' }
@@ -29,16 +34,16 @@
   ];
 
   var VISIBILITY_NOTE = {
-    published: 'Visible on the shelf to every player who meets the unlock rule.',
-    draft: 'Not on any shelf. Only operators see it here.',
-    hidden: 'Kept out of the shelves but reachable by a direct link, for testing.'
+    published: 'On the shelf for players who meet the unlock rule.',
+    draft: 'Not on any shelf.',
+    hidden: 'Off the shelves, reachable by direct link.'
   };
 
   function draftFor(col) {
     var d = ui().drafts[col.id];
     if (!d) {
       d = ui().drafts[col.id] = {
-        name: col.name, shelf: col.shelf, emoji: col.emoji, blurb: col.blurb,
+        name: col.name, shelf: col.shelf, blurb: col.blurb,
         unlockRule: col.unlockRule, reward: col.reward,
         visibility: col.visibility, members: col.members.slice(),
         editing: null
@@ -74,67 +79,104 @@
   }
 
   // ------------------------------------------------------------------
+  // area tabs
+  // ------------------------------------------------------------------
+
+  var TABS = [
+    { key: 'collections', label: 'Collections', role: 'publisher' },
+    { key: 'leaderboards', label: 'Leaderboards', role: 'integrity' }
+  ];
+
+  function visibleTabs() {
+    return TABS.filter(function (t) { return C.hasRole(t.role); });
+  }
+
+  /* The stored tab, unless the operator's roles do not unlock it. */
+  function activeTab() {
+    var vis = visibleTabs();
+    var want = ui().tab;
+    var ok = vis.filter(function (t) { return t.key === want; })[0];
+    return ok ? ok.key : (vis[0] ? vis[0].key : 'collections');
+  }
+
+  function tabStrip() {
+    return C.ui.tabs(visibleTabs(), activeTab(), function (k) {
+      ui().tab = k;
+      C.render();
+    });
+  }
+
+  /* The Leaderboards tab is the integrity screen, rendered in place.
+     leaderboards.js loads after this file, so it is read at render time. */
+  function leaderboardsPanel(mount) {
+    if (C.leaderboards && C.leaderboards.render) C.leaderboards.render(mount);
+    else mount.appendChild(C.ui.emptyState('The leaderboards screen did not load.'));
+  }
+
+  // ------------------------------------------------------------------
   // list
   // ------------------------------------------------------------------
+
+  function collectionsList(mount) {
+    var rows = C.store.collections.slice().sort(function (a, b) { return a.order - b.order; });
+
+    mount.appendChild(C.ui.table({
+      cols: [
+        {
+          key: 'name', label: 'Collection',
+          render: function (r) { return el('span', 'cell-title', r.name); }
+        },
+        { key: 'shelf', label: 'Shelf' },
+        { key: 'blurb', label: 'Blurb' },
+        {
+          key: 'members', label: 'Members', align: 'right',
+          render: function (r) { return r.members.length + ' games'; }
+        },
+        {
+          key: 'visibility', label: 'Visibility', align: 'right',
+          render: function (r) { return C.ui.pill(r.visibility); }
+        }
+      ],
+      rows: rows,
+      onRowClick: function (r) { C.go('#/collections/' + r.id); },
+      empty: 'No collections yet.'
+    }));
+  }
 
   C.registerScreen('#/collections', {
     title: 'Collections',
     subline: function () {
-      var pub = C.store.collections.filter(function (c) { return c.visibility === 'published'; }).length;
-      return C.store.collections.length + ' collections · ' + pub + ' published to shelves';
+      if (activeTab() === 'leaderboards') {
+        var open = C.store.flags.filter(function (f) { return !f.decision; }).length;
+        return open + ' flagged solves awaiting a decision';
+      }
+      return C.store.collections.length + ' collections';
     },
     actions: function () {
+      if (activeTab() !== 'collections') return null;
       var row = el('div', 'btn-row');
-      row.appendChild(C.ui.densitySwitch());
       row.appendChild(C.ui.button('New collection', { variant: 'pink', onClick: openNewCollection }));
       return row;
     },
     render: function (mount) {
-      var rows = C.store.collections.slice().sort(function (a, b) { return a.order - b.order; });
-
-      var intro = el('div', 'banner calm');
-      intro.appendChild(el('span', 'banner-dot'));
-      intro.appendChild(el('div', 'banner-text', 'Shelves are ordered as listed. Only published collections reach players.'));
-      intro.appendChild(el('div', 'banner-detail', 'Membership, metadata and visibility are saved together, in one audited change.'));
-      mount.appendChild(intro);
-
-      mount.appendChild(C.ui.table({
-        cols: [
-          {
-            key: 'name', label: 'Collection',
-            render: function (r) {
-              var n = el('span', 'col-name-cell');
-              n.appendChild(el('span', 'col-emoji', r.emoji));
-              n.appendChild(el('span', 'cell-title', r.name));
-              return n;
-            }
-          },
-          { key: 'shelf', label: 'Shelf' },
-          { key: 'blurb', label: 'Blurb' },
-          {
-            key: 'members', label: 'Members', align: 'right',
-            render: function (r) { return r.members.length + ' games'; }
-          },
-          {
-            key: 'visibility', label: 'Visibility', align: 'right',
-            render: function (r) { return C.ui.pill(r.visibility); }
-          }
-        ],
-        rows: rows,
-        onRowClick: function (r) { C.go('#/collections/' + r.id); },
-        empty: 'No collections yet. Create one to group games onto a shelf.'
-      }));
+      mount.appendChild(tabStrip());
+      if (activeTab() === 'leaderboards') leaderboardsPanel(mount);
+      else collectionsList(mount);
     }
   });
+
+  /* #/leaderboards and #/collections/leaderboards both open this area on the
+     Leaderboards tab: the audit log's "Open affected object" and the player
+     timeline still link to the old route. */
+  function toLeaderboards() { ui().tab = 'leaderboards'; }
+  C.alias('#/leaderboards', '#/collections', toLeaderboards);
+  C.alias('#/collections/leaderboards', '#/collections', toLeaderboards);
 
   function openNewCollection() {
     var body = el('div');
     var name = textRow(body, 'Name', 'e.g. Weekend warm-up');
     var shelf = textRow(body, 'Shelf', 'e.g. Featured');
-    var emoji = textRow(body, 'Emoji', 'e.g. 🌤');
     shelf.input.value = 'Featured';
-    emoji.input.value = '🧩';
-    body.appendChild(el('div', 'help', 'The collection is created as a Draft with no members. Add games and set visibility in the editor, then save.'));
     name.input.addEventListener('input', function () { C.ui.refreshModal(); });
 
     C.ui.modal({
@@ -150,7 +192,6 @@
           var record = {
             id: id, name: name.input.value.trim(),
             shelf: shelf.input.value.trim() || 'Featured',
-            emoji: emoji.input.value.trim() || '🧩',
             blurb: '', unlockRule: 'Free for everyone', reward: 'None',
             visibility: 'draft', order: C.store.collections.length + 1, members: []
           };
@@ -189,21 +230,17 @@
   C.registerScreen('#/collections/:id', {
     title: function (p) {
       var col = C.find.collection(p.id);
-      return col ? col.emoji + ' ' + col.name : 'Collection';
+      return col ? col.name : 'Collection';
     },
     subline: function (p) {
       var col = C.find.collection(p.id);
       if (!col) return 'Unknown collection';
-      var d = draftFor(col);
-      var dirty = changeList(col, d).length;
-      return col.shelf + ' shelf · ' + d.members.length + ' games · ' +
-        ((C.ui.STATUS[d.visibility] || {}).label || d.visibility) +
-        (dirty ? ' · ' + dirty + ' unsaved change' + (dirty === 1 ? '' : 's') : ' · saved');
+      return draftFor(col).members.length + ' games';
     },
     actions: function (p) {
       var col = C.find.collection(p.id);
       var row = el('div', 'btn-row');
-      if (!col) return row;
+      if (!col || !C.hasRole('publisher')) return row;
       row.appendChild(C.ui.button('Back to collections', { onClick: function () { C.go('#/collections'); } }));
       row.appendChild(C.ui.button('Preview shelf', { onClick: function () { openPreview(col); } }));
       row.appendChild(C.ui.button('Save', {
@@ -214,9 +251,13 @@
       return row;
     },
     render: function (mount, params) {
+      if (!C.hasRole('publisher')) {
+        mount.appendChild(C.ui.emptyState('Editing a collection needs the publisher role.', 'Not permitted'));
+        return;
+      }
       var col = C.find.collection(params.id);
       if (!col) {
-        mount.appendChild(C.ui.emptyState('No collection with the id ' + params.id + '. Open one from the collections list.'));
+        mount.appendChild(C.ui.emptyState('No collection with the id ' + params.id + '.'));
         return;
       }
       paint(mount, col);
@@ -235,8 +276,8 @@
     if (changes.length) {
       var dirty = el('div', 'banner attention');
       dirty.appendChild(el('span', 'banner-dot'));
-      dirty.appendChild(el('div', 'banner-text', changes.length + ' unsaved change' + (changes.length === 1 ? '' : 's') + ' in this collection.'));
-      dirty.appendChild(el('div', 'banner-detail', changes.map(function (c) { return c[0]; }).join(' · ') + '. Nothing reaches players until you save.'));
+      dirty.appendChild(el('div', 'banner-text', changes.length + ' unsaved change' + (changes.length === 1 ? '' : 's') +
+        ': ' + changes.map(function (c) { return c[0]; }).join(' · ')));
       dirty.appendChild(el('div', 'spacer'));
       dirty.appendChild(C.ui.button('Discard changes', {
         small: true,
@@ -269,13 +310,12 @@
     var head = el('div', 'section-head');
     head.appendChild(el('div', 'section-title', 'Membership'));
     head.appendChild(el('div', 'spacer'));
-    head.appendChild(el('span', 'col-count', d.members.length + ' games · shown to players in this order'));
     head.appendChild(C.ui.button('Add from library', { small: true, onClick: function () { openAdd(col, d, repaint); } }));
     wrap.appendChild(head);
 
     var list = el('div', 'col-members');
     if (!d.members.length) {
-      list.appendChild(C.ui.emptyState('No games in this collection yet. Add approved, scheduled or published games from the library.'));
+      list.appendChild(C.ui.emptyState('No games in this collection yet.'));
     }
     d.members.forEach(function (id, i) {
       var p = puzzleLine(id);
@@ -286,10 +326,7 @@
       title.appendChild(el('span', 'l-tag', p.kind === 'cw' ? 'CW' : 'D5'));
       title.appendChild(el('span', null, p.title));
       text.appendChild(title);
-      var meta = el('div', 'col-member-meta');
-      meta.textContent = p.id + ' · ' + (p.kind === 'cw' ? 'Crossword' : 'Daily Five') + ' · ' +
-        (p.lang === 'uk' ? 'Ukrainian' : 'English') + ' · ' + p.difficulty;
-      text.appendChild(meta);
+      text.appendChild(el('div', 'col-member-meta', p.id));
       row.appendChild(text);
       row.appendChild(el('div', 'spacer'));
       row.appendChild(C.ui.status(p.status));
@@ -313,8 +350,6 @@
       list.appendChild(row);
     });
     wrap.appendChild(list);
-
-    wrap.appendChild(el('div', 'panel-note', 'Members are added from the library at Approved or later. Removing a game here never deletes it; it only leaves the shelf.'));
     return wrap;
   }
 
@@ -326,7 +361,7 @@
 
   function openAdd(col, d, repaint) {
     var body = el('div');
-    body.appendChild(el('div', 'help', 'Approved, scheduled and published games can join a shelf. Drafts and games awaiting review cannot.'));
+    body.appendChild(el('div', 'help', 'Only approved, scheduled and published games can join a shelf.'));
     body.appendChild(C.ui.puzzlePicker({
       statuses: ['approved', 'scheduled', 'published'],
       onPick: function (p) {
@@ -362,8 +397,6 @@
 
     var vhead = el('div', 'section-head');
     vhead.appendChild(el('div', 'section-title', 'Visibility'));
-    vhead.appendChild(el('div', 'spacer'));
-    vhead.appendChild(C.ui.pill(d.visibility));
     wrap.appendChild(vhead);
 
     var vbody = el('div', 'col-fields');
@@ -372,7 +405,6 @@
       repaint();
     }));
     vbody.appendChild(el('div', 'help', VISIBILITY_NOTE[d.visibility]));
-    vbody.appendChild(C.ui.button('Preview shelf', { onClick: function () { openPreview(col); } }));
     wrap.appendChild(vbody);
     return wrap;
   }
@@ -414,17 +446,8 @@
   function openPreview(col) {
     var d = draftFor(col);
     var body = el('div');
-
-    if (d.visibility !== 'published') {
-      var note = el('div', 'notice');
-      note.textContent = ((C.ui.STATUS[d.visibility] || {}).label || d.visibility) +
-        ': players do not see this shelf yet. The preview shows it as it would look once published.';
-      body.appendChild(note);
-    }
-
     var shelf = el('div', 'shelf');
     var shead = el('div', 'shelf-head');
-    shead.appendChild(el('span', 'shelf-emoji', d.emoji || '🧩'));
     var stext = el('div');
     stext.appendChild(el('div', 'shelf-name', d.name || col.name));
     stext.appendChild(el('div', 'shelf-blurb', d.blurb || 'No blurb yet.'));
@@ -439,7 +462,7 @@
 
     var cards = el('div', 'shelf-cards');
     if (!d.members.length) {
-      cards.appendChild(el('div', 'shelf-empty', 'This shelf has no games yet, so players would see nothing.'));
+      cards.appendChild(el('div', 'shelf-empty', 'No games on this shelf yet.'));
     }
     d.members.forEach(function (id, i) {
       var p = puzzleLine(id);
@@ -451,7 +474,6 @@
     });
     shelf.appendChild(cards);
     body.appendChild(shelf);
-    body.appendChild(el('div', 'help', 'Preview only. Card art, progress rings and the solved state come from the app; this shows order, naming and the unlock line.'));
 
     C.ui.modal({
       title: 'Preview shelf · ' + (d.shelf || col.shelf),
@@ -474,16 +496,14 @@
       before: changes.map(function (c) { return [c[0], c[1]]; }),
       after: changes.map(function (c) { return [c[0], c[2]]; }),
       consequence: d.visibility === 'published'
-        ? 'Saving updates the ' + (d.shelf || col.shelf) + ' shelf for every player who meets the unlock rule. Games keep their own schedule; a collection never publishes a game on its own.'
-        : 'Saving stores the collection but keeps it off the shelves, because visibility is ' +
-          ((C.ui.STATUS[d.visibility] || {}).label || d.visibility) + '. Players see nothing until it is published.'
+        ? 'Updates the ' + (d.shelf || col.shelf) + ' shelf for players who meet the unlock rule.'
+        : 'Stored, but stays off the shelves.'
     }));
 
     var reason = C.ui.reasonField({
       required: false,
       label: 'Note (optional)',
-      placeholder: 'e.g. Swapped the Hard opener after completion fell',
-      help: 'Stored in the audit log with your operator name and the result.'
+      placeholder: 'e.g. Swapped the Hard opener after completion fell'
     });
     reason.style.marginTop = '16px';
     body.appendChild(reason);
@@ -518,9 +538,6 @@
           head.textContent = col.name + ' saved · ' + col.members.length + ' games · ' +
             ((C.ui.STATUS[col.visibility] || {}).label || col.visibility) + ' on the ' + col.shelf + ' shelf.';
           res.appendChild(head);
-          var lbl = el('div', 'eyebrow', 'What changed');
-          lbl.style.margin = '16px 0 6px';
-          res.appendChild(lbl);
           res.appendChild(C.ui.results(changes.map(function (c) {
             return { label: c[0], outcome: 'ok', outcomeLabel: 'Saved', detail: c[1] + ' → ' + c[2] };
           })));
@@ -542,15 +559,11 @@
 
   var style = document.createElement('style');
   style.textContent = [
-    '.col-name-cell{display:inline-flex;align-items:center;gap:8px}',
-    '.col-emoji{font-size:16px}',
     '.col-grid{display:grid;grid-template-columns:minmax(0,1.35fr) minmax(320px,.65fr);min-width:0}',
     '.col-main{min-width:0;border-right:1px solid var(--rule)}',
     '.col-side{min-width:0;background:var(--paper)}',
-    '.col-count{font:500 11px var(--mono);color:var(--ink-55)}',
     '.col-members{display:flex;flex-direction:column}',
     '.col-member{display:flex;align-items:center;gap:10px;padding:10px var(--pad-x);border-bottom:1px solid var(--rule-soft)}',
-    '.is-compact .col-member{padding-top:6px;padding-bottom:6px}',
     '.col-member:hover{background:var(--wash)}',
     '.col-pos{font:700 11px var(--mono);color:var(--ink-45);width:18px;flex:none}',
     '.col-member-text{display:flex;flex-direction:column;gap:2px;min-width:0}',
@@ -561,7 +574,6 @@
     '.col-fields .input,.col-fields .textarea{margin:0}',
     '.shelf{border:1px solid var(--ink-28);border-radius:var(--radius-lg);background:var(--cream);padding:16px;margin-top:12px}',
     '.shelf-head{display:flex;align-items:center;gap:12px}',
-    '.shelf-emoji{font-size:30px;line-height:1}',
     '.shelf-name{font:900 18px var(--sans)}',
     '.shelf-blurb{font:400 13px/1.45 var(--sans);color:var(--ink-65)}',
     '.shelf-meta{display:flex;gap:8px;margin-top:10px;font:600 11px var(--mono);color:var(--ink-55)}',

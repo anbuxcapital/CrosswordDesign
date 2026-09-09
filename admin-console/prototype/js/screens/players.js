@@ -1,7 +1,7 @@
 /* Players — the support agent's area (S1–S5).
    OWNER: support builder.
 
-   S1 #/players          search by id, name or sign-in; no unrestricted directory
+   S1 #/players          every player, with a live filter on id, name or sign-in
    S2 #/players/:id      Profile tab: edit a field → review + reason → Changed
    S3                    Support actions: restore streak, grant tokens, reset session
    S4                    Account safeguards: force sign-out, suspend, merge, delete
@@ -13,10 +13,9 @@
   'use strict';
 
   var el = C.ui.el;
-  var MIN_QUERY = 2;
 
   C.store.ui.players = {
-    q: '',                // S1 search text
+    q: '',                // S1 filter text, applied from the first character
     tab: 'profile',       // active tab on the record
     editField: null,      // label of the profile field being edited
     editValue: '',        // the in-progress value for that field
@@ -61,128 +60,85 @@
   }
 
   // ------------------------------------------------------------------
-  // S1 — search
+  // S1 — the player list
   // ------------------------------------------------------------------
 
-  function matches(q) {
-    var needle = q.trim().toLowerCase();
-    if (needle.length < MIN_QUERY) return null;
-    return C.store.players.filter(function (p) {
+  /* Every player, filtered live from the first character of the box. */
+  function listRows() {
+    var needle = st().q.trim().toLowerCase();
+    var all = C.store.players.slice().sort(function (a, b) {
+      return a.name.localeCompare(b.name);
+    });
+    if (!needle) return all;
+    return all.filter(function (p) {
       return (p.id + ' ' + p.name + ' ' + p.signIn).toLowerCase().indexOf(needle) >= 0;
     });
   }
 
-  function resultRow(p) {
-    var row = el('button', 'pl-result');
-    row.type = 'button';
-    row.appendChild(el('span', 'pl-avatar', initials(p.name)));
-
-    var text = el('span', 'pl-result-text');
-    text.appendChild(el('span', 'pl-result-name', p.name));
-    text.appendChild(el('span', 'pl-result-id', p.id + ' · ' + p.signIn));
-    row.appendChild(text);
-    row.appendChild(el('span', 'spacer'));
-
-    var meta = el('span', 'pl-result-meta');
-    meta.appendChild(el('span', null, p.streak + '-day streak · ' + p.solved + ' solved'));
-    meta.appendChild(el('span', null, langLabel(p.lang) + ' · joined ' + p.joined));
-    row.appendChild(meta);
-
-    if (p.status !== 'active' || p.deletionRequested) {
-      row.appendChild(C.ui.pill(p.status, p.deletionRequested ? 'Deletion pending' : null));
-    }
-    row.addEventListener('click', function () { C.go('#/players/' + p.id); });
-    return row;
-  }
-
-  function searchScreen(mount) {
-    var grid = el('div', 'pl-grid');
-
-    var left = el('div', 'pl-search-col');
-
-    var head = el('div', 'pl-search-head');
+  function listScreen(mount) {
+    var bar = el('div', 'pl-bar');
     var box = el('input', 'input');
+    box.id = 'players_filter';
     box.type = 'search';
     box.value = st().q;
-    box.placeholder = 'Player ID, name or sign-in address';
-    box.setAttribute('aria-label', 'Search players by ID, name or sign-in');
-    head.appendChild(box);
+    box.placeholder = 'Filter by ID, name or sign-in address';
+    box.setAttribute('aria-label', 'Filter players by ID, name or sign-in');
+    bar.appendChild(box);
 
-    var line = el('div', 'pl-search-line');
     var count = el('span', 'pl-count');
-    line.appendChild(el('span', 'help', 'Lookup only. The console never lists every player.'));
-    line.appendChild(el('span', 'spacer'));
-    line.appendChild(count);
-    head.appendChild(line);
-    left.appendChild(head);
+    bar.appendChild(el('div', 'spacer'));
+    bar.appendChild(count);
+    mount.appendChild(bar);
 
-    var list = el('div', 'pl-results');
-    left.appendChild(list);
+    var host = el('div', 'pl-table');
+    mount.appendChild(host);
 
     function paint() {
-      var q = st().q;
-      var rows = matches(q);
-      list.innerHTML = '';
-      if (rows === null) {
-        count.textContent = '';
-        list.appendChild(C.ui.emptyState(
-          'Type at least ' + MIN_QUERY + ' characters of a player ID, display name or sign-in address to find one record.',
-          'Search to begin'
-        ));
-        return;
-      }
-      count.textContent = rows.length + (rows.length === 1 ? ' match' : ' matches');
-      if (!rows.length) {
-        list.appendChild(C.ui.emptyState(
-          'No player matches “' + q.trim() + '”. Check the ID from the support ticket, or search the sign-in address instead.',
-          'No match'
-        ));
-        return;
-      }
-      rows.forEach(function (p) { list.appendChild(resultRow(p)); });
+      var rows = listRows();
+      count.textContent = rows.length === C.store.players.length
+        ? rows.length + (rows.length === 1 ? ' player' : ' players')
+        : rows.length + ' of ' + C.store.players.length + ' shown';
+      host.innerHTML = '';
+      host.appendChild(C.ui.table({
+        cols: [
+          {
+            key: 'name', label: 'Player', render: function (p) {
+              var n = el('span', 'pl-cell-name');
+              n.appendChild(el('span', 'pl-avatar', initials(p.name)));
+              n.appendChild(el('span', 'cell-title', p.name));
+              return n;
+            }
+          },
+          { key: 'id', label: 'Player ID', cls: 'cell-id', width: '116px' },
+          { key: 'signIn', label: 'Sign-in', cls: 'nowrap' },
+          {
+            key: 'lang', label: 'Language', width: '104px',
+            render: function (p) { return langLabel(p.lang); }
+          },
+          {
+            key: 'streak', label: 'Streak', align: 'right', width: '84px',
+            render: function (p) { return p.streak + ' d'; }
+          },
+          { key: 'solved', label: 'Solved', align: 'right', width: '78px' },
+          { key: 'tokens', label: 'Tokens', align: 'right', width: '82px' },
+          {
+            key: 'status', label: 'Status', align: 'right', width: '150px',
+            render: function (p) {
+              return C.ui.pill(p.status, p.deletionRequested ? 'Deletion pending' : null);
+            }
+          }
+        ],
+        rows: rows,
+        onRowClick: function (p) { C.go('#/players/' + p.id); },
+        empty: 'No player matches \u201c' + st().q.trim() + '\u201d.'
+      }));
     }
 
-    box.addEventListener('input', function () { st().q = box.value; paint(); });
+    box.addEventListener('input', function () {
+      st().q = box.value;
+      paint();
+    });
     paint();
-    grid.appendChild(left);
-
-    var side = el('div', 'pl-side');
-    var panel = el('div', 'panel on-paper');
-    var ph = el('div', 'panel-head');
-    ph.appendChild(el('span', 'panel-title', 'What a support agent can do here'));
-    panel.appendChild(ph);
-    panel.appendChild(C.ui.checklist([
-      ['Correct a profile field', 'reason + review', 'pass'],
-      ['Restore a streak, grant tokens, reset a session', 'reason + before / after', 'pass'],
-      ['Force sign-out, suspend, merge, delete on request', 'two-step confirm', 'pass'],
-      ['Add and close support notes', 'internal only', 'pass'],
-      ['Decide a flagged solve or a board place', 'integrity reviewer', 'fail'],
-      ['Edit a balance directly', 'ledger is append-only', 'fail']
-    ]));
-    panel.appendChild(el('div', 'panel-note',
-      'Token grants append a ledger entry; balances are never overwritten. Every change writes your operator name, reason and result to the audit log.'));
-    side.appendChild(panel);
-
-    var recent = C.store.audit.filter(function (a) { return a.object.indexOf('pl_') === 0; }).slice(0, 6);
-    var rp = el('div', 'panel on-paper');
-    var rh = el('div', 'panel-head');
-    rh.appendChild(el('span', 'panel-title', 'Recent player changes'));
-    rh.appendChild(el('div', 'spacer'));
-    rh.appendChild(el('span', 'panel-id', recent.length + ' entries'));
-    rp.appendChild(rh);
-    var body = el('div', 'panel-body');
-    if (!recent.length) {
-      body.appendChild(el('div', 'help', 'No player record has been changed in this session yet.'));
-    } else {
-      var al = el('div', 'audit-list');
-      recent.forEach(function (a) { al.appendChild(C.ui.auditLine(a)); });
-      body.appendChild(al);
-    }
-    rp.appendChild(body);
-    side.appendChild(rp);
-
-    grid.appendChild(side);
-    mount.appendChild(grid);
   }
 
   // ------------------------------------------------------------------
@@ -196,21 +152,20 @@
     idBlock.appendChild(el('span', 'pl-avatar lg', initials(p.name)));
     var t = el('div');
     t.appendChild(el('div', 'pl-name', p.name));
-    t.appendChild(el('div', 'pl-sub', p.id + ' · joined ' + p.joined + ' · ' + langLabel(p.lang) + ' · ' + p.signIn));
+    t.appendChild(el('div', 'pl-sub', p.signIn + ' · ' + langLabel(p.lang) + ' · joined ' + p.joined));
     idBlock.appendChild(t);
     wrap.appendChild(idBlock);
     wrap.appendChild(el('div', 'spacer'));
 
     [
-      ['Streak', p.streak + ' d', 'consecutive days'],
-      ['Solved', String(p.solved), 'all time'],
-      ['Tokens', String(p.tokens), 'current balance'],
-      ['Stars', String(p.stars), 'current balance']
+      ['Streak', p.streak + ' d'],
+      ['Solved', String(p.solved)],
+      ['Tokens', String(p.tokens)],
+      ['Stars', String(p.stars)]
     ].forEach(function (s) {
       var n = el('div', 'pl-stat');
       n.appendChild(el('span', 'eyebrow', s[0]));
       n.appendChild(el('span', 'pl-stat-value', s[1]));
-      n.appendChild(el('span', 'stat-note', s[2]));
       wrap.appendChild(n);
     });
 
@@ -221,8 +176,8 @@
   function banners(mount, p) {
     if (p.deletionRequested) {
       var d = el('div', 'notice blocked');
-      d.textContent = 'Deletion on request accepted ' + p.deletionRequested.when + '. The record is locked and is erased by ' +
-        p.deletionRequested.by + '. Support actions and profile edits are closed.';
+      d.textContent = 'Deletion accepted ' + p.deletionRequested.when + ': the record is locked and is erased by ' +
+        p.deletionRequested.by + '.';
       mount.appendChild(d);
       return;
     }
@@ -231,14 +186,14 @@
       b.style.display = 'flex';
       b.style.alignItems = 'center';
       b.style.gap = '12px';
-      b.appendChild(el('span', null, 'This account is suspended. The player cannot sign in, solve or appear on a board. Lift the suspension to restore play.'));
+      b.appendChild(el('span', null, 'Suspended: the player cannot sign in, solve or appear on a board.'));
       b.appendChild(el('div', 'spacer'));
       b.appendChild(C.ui.button('Unsuspend', { small: true, onClick: function () { suspendFlow(p, false); } }));
       mount.appendChild(b);
     }
     if (p.mergedInto) {
       var m = el('div', 'notice');
-      m.textContent = 'This record was merged into ' + p.mergedInto + '. It is closed; its sign-in now resolves to the surviving record.';
+      m.textContent = 'Merged into ' + p.mergedInto + '. Its sign-in now resolves to that record.';
       mount.appendChild(m);
     }
   }
@@ -264,7 +219,6 @@
 
       var row = el('div', 'btn-row');
       row.style.marginTop = '8px';
-      row.appendChild(el('span', 'help', 'Saving opens a review with the old and the new value and asks for a reason.'));
       row.appendChild(el('div', 'spacer'));
       row.appendChild(C.ui.button('Cancel', {
         small: true,
@@ -304,8 +258,8 @@
       before: [[label, oldValue], ['Record', p.id], ['Status', (C.ui.STATUS[p.status] || {}).label]],
       after: [[label, newValue], ['Record', p.id], ['Status', (C.ui.STATUS[p.status] || {}).label]],
       consequence: identity
-        ? 'The player is notified of identity changes. The previous value is kept in the audit log; leaderboard placement is not recomputed.'
-        : 'The player is notified of identity changes. This field is not one of them, so the change applies silently on next app launch.'
+        ? 'The player is notified.'
+        : 'The player is not notified of this field.'
     }));
     var reason = C.ui.reasonField({
       required: true,
@@ -336,7 +290,7 @@
             }
           });
           C.ui.closeModal();
-          C.toast(label + ' changed. The player is notified.');
+          C.toast(label + ' changed.');
         }
       }
     });
@@ -345,17 +299,9 @@
   function profileTab(mount, p) {
     var wrap = el('div', 'pl-pad');
 
-    wrap.appendChild(el('div', 'eyebrow', 'Profile'));
     var fields = el('div');
-    fields.style.marginTop = '10px';
     p.profile.forEach(function (entry) { fields.appendChild(fieldRow(p, entry, mount)); });
     wrap.appendChild(fields);
-
-    var changedCount = (st().changed[p.id] || []).length;
-    wrap.appendChild(el('div', 'help',
-      changedCount
-        ? changedCount + ' field(s) changed in this session. Each change wrote its own audit entry with your reason and the previous value.'
-        : 'Fields save one at a time. Read-only fields come from the sign-in provider and cannot be edited here.'));
 
     wrap.appendChild(supportActionsPanel(p));
     wrap.appendChild(accountPanel(p));
@@ -372,16 +318,11 @@
     panel.style.marginTop = '16px';
     var head = el('div', 'panel-head');
     head.appendChild(el('span', 'panel-title', 'Support actions'));
-    head.appendChild(el('div', 'spacer'));
-    head.appendChild(el('span', 'panel-id', 'reason required'));
     panel.appendChild(head);
 
     var body = el('div', 'panel-body');
-    body.appendChild(el('div', 'help',
-      'Choose an action, set its parameters, then review the before / after. Corrections append a compensating ledger entry; balances are never overwritten.'));
 
     var row = el('div', 'btn-row');
-    row.style.marginTop = '10px';
     C.store.supportActions.forEach(function (a) {
       row.appendChild(C.ui.button(a.label, {
         small: true,
@@ -392,8 +333,8 @@
     body.appendChild(row);
     if (locked) {
       body.appendChild(el('div', 'help', accountLocked(p)
-        ? 'Support actions are closed while a deletion request is pending.'
-        : 'Support actions are closed while the account is suspended. Lift the suspension first.'));
+        ? 'Closed while a deletion request is pending.'
+        : 'Closed while the account is suspended.'));
     }
     panel.appendChild(body);
     return panel;
@@ -420,15 +361,14 @@
         });
         frow.appendChild(input);
         frow.appendChild(el('div', 'help', par.key === 'days'
-          ? 'Days added back to the streak. The current streak is ' + p.streak + ' days.'
-          : 'Tokens credited as one compensating ledger entry. The current balance is ' + p.tokens + ' tokens.'));
+          ? 'Current streak ' + p.streak + ' days.'
+          : 'Current balance ' + p.tokens + ' tokens.'));
         body.appendChild(frow);
       });
     } else {
       body.appendChild(el('div', 'notice',
-        'Resetting the session ends every active session and returns the player to the daily feed. Solve progress on today’s games is kept; an unfinished attempt is restarted.'));
+        'Ends every active session. Solve progress on today’s games is kept.'));
     }
-    body.appendChild(el('div', 'help', 'Step 1 of 2. The next step shows the before / after and asks for a reason.'));
 
     C.ui.modal({
       title: action.label,
@@ -454,7 +394,7 @@
       var next = p.streak + days;
       before = [['Streak', p.streak + ' days'], ['Tokens', p.tokens], ['Ledger', 'no entry']];
       after = [['Streak', next + ' days'], ['Tokens', p.tokens], ['Ledger', 'no entry']];
-      consequence = 'The player is notified. No ledger entry is written and weekly board placement is not recomputed.';
+      consequence = 'The player is notified.';
       resultText = 'Streak restored to ' + next + ' days (+' + days + ')';
       applyFn = function () {
         p.streak = next;
@@ -465,7 +405,7 @@
       var balance = p.tokens + amount;
       before = [['Tokens', p.tokens], ['Last entry', lastLedgerLabel(p)], ['Streak', p.streak + ' days']];
       after = [['Tokens', balance], ['Last entry', '+' + amount + ' tokens · support grant'], ['Streak', p.streak + ' days']];
-      consequence = 'A compensating ledger entry of +' + amount + ' tokens is appended with your operator name and an idempotency key. The balance is never overwritten, and the entry appears in Economy.';
+      consequence = 'A ledger entry of +' + amount + ' tokens is appended.';
       resultText = 'Granted ' + amount + ' tokens · balance ' + balance;
       applyFn = function (store) {
         grantSeq += 1;
@@ -487,7 +427,7 @@
       var device = (p.devices[0] && p.devices[0][0]) || 'the current device';
       before = [['Sessions', p.devices.length + ' active'], ['Last seen', (p.devices[0] && p.devices[0][2]) || '—'], ['Streak', p.streak + ' days']];
       after = [['Sessions', '0 active'], ['Last seen', 'ended just now'], ['Streak', p.streak + ' days']];
-      consequence = 'Every active session ends, including ' + device + '. The player signs in again on next launch. Nothing is charged and no ledger entry is written.';
+      consequence = 'Every active session ends, including ' + device + '.';
       resultText = 'Session reset · ' + p.devices.length + ' session(s) ended';
       applyFn = function () {
         pushTimeline(p, 'session', 'Session reset by support', '');
@@ -566,8 +506,6 @@
       onClick: function () { deleteStepOne(p); }
     }));
     body.appendChild(row);
-    body.appendChild(el('div', 'help',
-      'Suspend, merge and delete each need a reason and a second confirmation, and each shows a before / after. Delete on request completes within 30 days and cannot be undone.'));
     panel.appendChild(body);
     return panel;
   }
@@ -594,7 +532,7 @@
       title: 'Force sign-out · ' + p.name,
       before: [['Sessions', p.devices.length + ' device(s) signed in'], ['Account', (C.ui.STATUS[p.status] || {}).label], ['Tokens', p.tokens]],
       after: [['Sessions', '0 signed in'], ['Account', (C.ui.STATUS[p.status] || {}).label], ['Tokens', p.tokens]],
-      consequence: 'Every device is signed out immediately. The player can sign in again straight away; nothing is deleted and no balance changes.'
+      consequence: 'Every device is signed out immediately.'
     }));
     var reason = C.ui.reasonField({ required: true, placeholder: 'e.g. Shared device reported by the player, ticket #4840' });
     body.appendChild(reason);
@@ -616,7 +554,7 @@
           });
           C.ui.closeModal();
           resultModal('Signed out of ' + devices.length + ' device(s)',
-            'Every session ended at ' + C.store.audit[0].time + '. The player signs in again on next launch.',
+            'Every session ended at ' + C.store.audit[0].time + '.',
             devices.map(function (d) {
               return { label: d[0], outcome: 'ok', outcomeLabel: 'Ended', detail: d[1] };
             }));
@@ -632,8 +570,8 @@
       before: [['Account', (C.ui.STATUS[p.status] || {}).label], ['Play', p.status === 'suspended' ? 'blocked' : 'allowed'], ['Boards', p.status === 'suspended' ? 'not eligible' : 'eligible']],
       after: [['Account', suspend ? 'Suspended' : 'Active'], ['Play', suspend ? 'blocked' : 'allowed'], ['Boards', suspend ? 'not eligible' : 'eligible']],
       consequence: suspend
-        ? 'The player cannot sign in, solve or appear on any board while suspended. Balances and solve history are untouched, and the suspension can be lifted from this screen.'
-        : 'The player can sign in and solve again from the next app launch. Board eligibility returns from the next weekly recompute.'
+        ? 'The player cannot sign in, solve or appear on a board.'
+        : 'The player can sign in and solve again.'
     }));
     var reason = C.ui.reasonField({
       required: true,
@@ -667,10 +605,11 @@
   }
 
   // merge — step 1: pick the duplicate
+  var MIN_QUERY = 2;   // merging is destructive: make the operator name the account
   function mergePickStep(survivor) {
     var body = el('div');
     body.appendChild(el('div', 'help',
-      'Find the duplicate account by ID, name or sign-in. ' + survivor.name + ' (' + survivor.id + ') is the record that survives.'));
+      survivor.name + ' (' + survivor.id + ') is the record that survives.'));
     var search = el('input', 'input picker-search');
     search.type = 'search';
     search.placeholder = 'Duplicate account: ID, name or sign-in';
@@ -735,8 +674,7 @@
         ['Solved', survivor.solved + dup.solved], ['Streak', Math.max(survivor.streak, dup.streak) + ' days'],
         ['Duplicate', dup.id + ' closed and redirected']
       ],
-      consequence: survivor.id + ' keeps its ID, purchases and board history. ' + dup.id +
-        ' is closed, its sign-in resolves to the surviving record, and its balances move across as ledger-visible totals. The player is notified. This cannot be undone from the console.'
+      consequence: dup.id + ' is closed and its sign-in resolves to ' + survivor.id + '. This cannot be undone.'
     }));
     var reason = C.ui.reasonField({ required: true, placeholder: 'e.g. Player created a second account with Google, ticket #4851' });
     body.appendChild(reason);
@@ -769,7 +707,7 @@
           });
           C.ui.closeModal();
           resultModal('Accounts merged',
-            dup.id + ' is closed. ' + survivor.id + ' now holds the combined balances and solve history.',
+            dup.id + ' is closed. ' + survivor.id + ' holds the combined totals.',
             [
               { label: 'Tokens', outcome: 'ok', outcomeLabel: 'Moved', detail: survivor.tokens + ' on ' + survivor.id },
               { label: 'Stars', outcome: 'ok', outcomeLabel: 'Moved', detail: survivor.stars + ' on ' + survivor.id },
@@ -788,7 +726,7 @@
       title: 'Delete on request · ' + p.name,
       before: [['Account', (C.ui.STATUS[p.status] || {}).label], ['Solve history', p.solved + ' games'], ['Balances', p.tokens + ' tokens, ' + p.stars + ' stars']],
       after: [['Account', 'Deletion pending'], ['Solve history', 'erased within 30 days'], ['Balances', 'forfeited, no refund']],
-      consequence: 'Step 1 of 2. The record is locked immediately, then erased within 30 days. Purchases keep their receipts for tax records. This cannot be undone from the console.'
+      consequence: 'The record is locked now and erased within 30 days. This cannot be undone.'
     }));
     var reason = C.ui.reasonField({ required: true, placeholder: 'e.g. Player exercised the right to erasure, ticket #4860' });
     body.appendChild(reason);
@@ -809,12 +747,8 @@
   function deleteStepTwo(p, reasonText) {
     var typed = '';
     var body = el('div');
-    var warn = el('div', 'notice blocked');
-    warn.textContent = 'This erases ' + p.name + '’s account within 30 days. Type the player ID exactly to confirm.';
-    body.appendChild(warn);
 
     var frow = el('div', 'form-row');
-    frow.style.marginTop = '14px';
     var lab = el('label', 'label', 'Type ' + p.id + ' to confirm');
     lab.appendChild(el('span', 'req', 'required'));
     frow.appendChild(lab);
@@ -848,7 +782,7 @@
           });
           C.ui.closeModal();
           resultModal('Deletion accepted',
-            'The record is locked now and is erased by Oct 8, 2026. The player is notified by email.',
+            'The record is locked now and is erased by Oct 8, 2026.',
             [
               { label: 'Account access', outcome: 'ok', outcomeLabel: 'Locked', detail: 'sign-in blocked now' },
               { label: 'Profile and solve history', outcome: 'ok', outcomeLabel: 'Queued', detail: 'erased by Oct 8, 2026' },
@@ -872,7 +806,7 @@
 
   function timelineTab(mount, p) {
     var wrap = el('div', 'pl-pad');
-    wrap.appendChild(el('div', 'eyebrow', 'Timeline · solves, sessions, ledger and flags · newest first'));
+    wrap.appendChild(el('div', 'eyebrow', 'Newest first'));
 
     var list = el('div');
     list.style.marginTop = '8px';
@@ -940,8 +874,6 @@
       rows.appendChild(r);
     });
     ads.appendChild(rows);
-    ads.appendChild(el('div', 'help',
-      'Consent state comes from the device (ATT and GDPR) and cannot be changed from the console. Caps and rewards live in Ads.'));
     wrap.appendChild(ads);
     mount.appendChild(wrap);
   }
@@ -957,7 +889,7 @@
     var list = el('div');
     list.style.marginTop = '10px';
     if (!p.notes.length) {
-      list.appendChild(C.ui.emptyState('No support note on this record yet. Add one so the next agent has the context.'));
+      list.appendChild(C.ui.emptyState('No support note on this record yet.'));
     }
     p.notes.forEach(function (n) {
       var card = el('div', 'pl-note');
@@ -996,7 +928,6 @@
     ta.placeholder = 'What the player asked for, what you did, and what the next agent should know.';
     ta.addEventListener('input', function () { text = ta.value.trim(); C.ui.refreshModal(); });
     frow.appendChild(ta);
-    frow.appendChild(el('div', 'help', 'Notes are internal. The player never sees them.'));
     body.appendChild(frow);
 
     var srow = el('div', 'form-row');
@@ -1012,7 +943,6 @@
       ));
     }
     paintSeg();
-    srow.appendChild(el('div', 'help', 'Open notes are counted on the Notes tab so the next agent picks them up.'));
     body.appendChild(srow);
 
     C.ui.modal({
@@ -1052,7 +982,7 @@
       title: 'Close note',
       before: [['Status', 'Open'], ['Author', note.author], ['Opened', note.when]],
       after: [['Status', 'Closed'], ['Author', note.author], ['Closed by', (C.store.session.operator && C.store.session.operator.handle) || 'unknown']],
-      consequence: 'The note stays on the record for the next agent. Nothing the player sees changes.'
+      consequence: 'The note stays on the record.'
     }));
     C.ui.modal({
       title: 'Close note',
@@ -1083,9 +1013,9 @@
     var p = C.find.player(params.id);
     if (!p) {
       mount.appendChild(C.ui.emptyState(
-        'No player has the ID ' + params.id + '. Search by ID, name or sign-in to find the right record.', 'Not found'));
+        'No player has the ID ' + params.id + '.', 'Not found'));
       var row = el('div', 'pl-pad');
-      row.appendChild(C.ui.button('Search another player', { variant: 'pink', onClick: function () { C.go('#/players'); } }));
+      row.appendChild(C.ui.button('Back to players', { variant: 'pink', onClick: function () { C.go('#/players'); } }));
       mount.appendChild(row);
       return;
     }
@@ -1117,7 +1047,7 @@
     foot.appendChild(el('div', 'eyebrow', 'Audit · this record'));
     var al = el('div', 'audit-list');
     al.style.marginTop = '8px';
-    if (!audit.length) al.appendChild(el('div', 'help', 'Nothing has been changed on this record in this session.'));
+    if (!audit.length) al.appendChild(el('div', 'help', 'No changes on this record yet.'));
     audit.forEach(function (a) { al.appendChild(C.ui.auditLine(a)); });
     foot.appendChild(al);
     mount.appendChild(foot);
@@ -1129,15 +1059,15 @@
 
   C.registerScreen('#/players', {
     title: 'Players',
-    subline: 'Look up one player, then act. Search by ID, name or sign-in.',
+    subline: function () { return C.store.players.length + ' players'; },
     actions: function () {
-      return C.ui.button('Clear search', {
+      return C.ui.button('Clear filter', {
         small: true,
         disabled: !st().q,
         onClick: function () { st().q = ''; C.render(); }
       });
     },
-    render: function (mount) { searchScreen(mount); }
+    render: function (mount) { listScreen(mount); }
   });
 
   C.registerScreen('#/players/:id', {
@@ -1147,11 +1077,10 @@
     },
     subline: function (params) {
       var p = C.find.player(params.id);
-      return p ? params.id + ' · support record' : params.id + ' · no such record';
+      return p ? params.id : params.id + ' · no such record';
     },
     actions: function () {
       var row = el('div', 'btn-row');
-      row.appendChild(C.ui.densitySwitch());
       row.appendChild(C.ui.button('Search another player', {
         variant: 'quiet',
         onClick: function () { st().editField = null; C.go('#/players'); }
@@ -1167,23 +1096,16 @@
 
   var css = document.createElement('style');
   css.textContent = [
-    '.pl-grid{display:grid;grid-template-columns:minmax(360px,1fr) minmax(0,1fr);min-width:0}',
-    '.pl-search-col{border-right:1px solid var(--rule);display:flex;flex-direction:column;min-width:0}',
-    '.pl-search-head{padding:14px var(--pad-x);border-bottom:1px solid var(--rule);background:var(--paper)}',
-    '.pl-search-line{display:flex;align-items:baseline;gap:10px;margin-top:2px}',
+    '.pl-bar{display:flex;align-items:center;gap:14px;padding:12px var(--pad-x);',
+    'border-bottom:1px solid var(--rule);background:var(--cream)}',
+    '.pl-bar .input{max-width:300px;margin:0}',
     '.pl-count{font:700 11px var(--mono);color:var(--pink);white-space:nowrap}',
-    '.pl-results{display:flex;flex-direction:column;min-width:0}',
-    '.pl-result{display:flex;align-items:center;gap:12px;width:100%;text-align:left;padding:12px var(--pad-x);',
-    'border:0;border-bottom:1px solid var(--rule-soft);border-left:3px solid transparent;background:transparent;cursor:pointer;font:inherit;color:inherit}',
-    '.pl-result:hover{background:var(--wash);border-left-color:var(--pink)}',
-    '.pl-avatar{width:34px;height:34px;border-radius:4px;flex:none;background:var(--ink);color:var(--paper);',
-    'display:flex;align-items:center;justify-content:center;font:800 13px var(--sans)}',
+    '.pl-table{min-width:0}',
+    '.pl-table .tbl td.nowrap{white-space:nowrap}',
+    '.pl-cell-name{display:inline-flex;align-items:center;gap:10px;min-width:0}',
+    '.pl-avatar{width:28px;height:28px;border-radius:4px;flex:none;background:var(--ink);color:var(--paper);',
+    'display:flex;align-items:center;justify-content:center;font:800 11px var(--sans)}',
     '.pl-avatar.lg{width:42px;height:42px;font-size:15px}',
-    '.pl-result-text{display:flex;flex-direction:column;gap:2px;min-width:0}',
-    '.pl-result-name{font:700 13px var(--sans)}',
-    '.pl-result-id{font:500 11px var(--mono);color:var(--ink-55);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}',
-    '.pl-result-meta{display:flex;flex-direction:column;gap:2px;text-align:right;font:500 11px var(--mono);color:var(--ink-55);white-space:nowrap}',
-    '.pl-side{display:flex;flex-direction:column;gap:12px;padding:16px var(--pad-x);background:var(--paper);min-width:0}',
     '.pl-head{display:flex;align-items:center;gap:22px;flex-wrap:wrap;padding:16px var(--pad-x);',
     'border-bottom:1px solid var(--rule);background:var(--paper)}',
     '.pl-head-id{display:flex;align-items:center;gap:12px;min-width:0}',
@@ -1209,8 +1131,7 @@
     '.pl-note + .pl-note{margin-top:10px}',
     '.pl-note-meta{display:flex;gap:10px;align-items:center;font:500 11px var(--mono);color:var(--ink-55)}',
     '.pl-note-text{font:500 13px/1.45 var(--sans);margin-top:4px}',
-    '@media (max-width:1330px){.pl-grid{grid-template-columns:minmax(0,1fr)}',
-    '.pl-side{border-top:1px solid var(--rule)}}'
+    '@media (max-width:1240px){.pl-bar .input{max-width:220px}}'
   ].join('');
   document.head.appendChild(css);
 })(window.Console);

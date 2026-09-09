@@ -1,6 +1,11 @@
 /* Leaderboards — the integrity reviewer's screen (L1, L2).
    OWNER: integrity and economy builder.
 
+   This is the Leaderboards tab of the Collections area: the area, its
+   route (#/collections) and its tab strip live in collections.js, which calls
+   Console.leaderboards.render(mount) to paint this panel. #/leaderboards is
+   kept as an alias onto that tab.
+
    L1 Queue  : flagged solves, evidence, and the Clear / Exclude / Shadow decision.
    L2 Boards : week and puzzle boards per language, with eligibility markers.
 
@@ -81,12 +86,6 @@
   function queueToolbar() {
     var bar = el('div', 'ie-toolbar');
 
-    var open = flags().filter(function (f) { return !f.decision; }).length;
-    var m = el('div', 'ie-metric');
-    m.appendChild(el('span', 'eyebrow', 'Awaiting a decision'));
-    m.appendChild(el('span', 'ie-metric-value', open + ' of ' + flags().length + ' flagged solves'));
-    bar.appendChild(m);
-
     var group = el('div', 'ie-filter');
     group.appendChild(el('span', 'ie-filter-label', 'Show'));
     group.appendChild(C.ui.segmented(
@@ -97,7 +96,6 @@
     bar.appendChild(group);
 
     bar.appendChild(el('div', 'spacer'));
-    bar.appendChild(el('div', 'ie-hint', 'A decision changes board eligibility only. Reward decisions stay with the economy admin.'));
     return bar;
   }
 
@@ -112,21 +110,14 @@
             return n;
           }
         },
-        {
-          key: 'reason', label: 'Evidence', render: function (r) {
-            var n = el('div', 'ie-two');
-            n.appendChild(el('span', 'ie-two-main', r.reason));
-            n.appendChild(el('span', 'ie-two-sub', r.evidence.length + ' evidence items'));
-            return n;
-          }
-        },
+        { key: 'reason', label: 'Evidence' },
         { key: 'scope', label: 'Scope', render: function (r) { return el('span', 'cell-id', r.scope); } },
         { key: 'decision', label: 'Decision', align: 'right', render: decisionPill }
       ],
       rows: queueRows(),
       onRowClick: function (r) { st().flagId = r.id; C.render(); },
       empty: st().queueFilter === 'open'
-        ? 'No flagged solves are waiting. Switch to Decided to review earlier decisions.'
+        ? 'No flagged solves are waiting.'
         : 'No flagged solves match this filter.'
     });
   }
@@ -138,24 +129,6 @@
       dl.appendChild(el('dd', null, pair[1]));
     });
     return dl;
-  }
-
-  function boardImpact(flag) {
-    var wrap = el('div');
-    var rows = affected(flag);
-    if (!rows.length) {
-      wrap.appendChild(el('div', 'panel-note', 'This player does not appear on any current board.'));
-      return wrap;
-    }
-    rows.forEach(function (a) {
-      var line = el('div', 'ie-impact');
-      line.appendChild(el('span', 'ie-impact-board', a.board.label));
-      line.appendChild(el('span', 'cell-id', 'rank ' + a.entry.rank));
-      line.appendChild(el('div', 'spacer'));
-      line.appendChild(C.ui.status(a.entry.eligible ? 'eligible' : 'ineligible'));
-      wrap.appendChild(line);
-    });
-    return wrap;
   }
 
   function flagDetail() {
@@ -188,22 +161,11 @@
       onClick: function () { C.go('#/players/' + flag.playerId); }
     }));
     ef.appendChild(el('div', 'spacer'));
-    ef.appendChild(el('span', 'panel-id', 'Evidence is read only'));
     evidence.appendChild(ef);
     wrap.appendChild(evidence);
 
-    var impact = el('div', 'panel');
-    var ih = el('div', 'panel-head');
-    ih.appendChild(el('span', 'panel-kind', 'Board effect'));
-    ih.appendChild(el('span', 'panel-title', 'Entries this decision moves'));
-    impact.appendChild(ih);
-    var ib = el('div', 'panel-body');
-    ib.appendChild(boardImpact(flag));
-    impact.appendChild(ib);
-    wrap.appendChild(impact);
-
     var decide = el('div', 'ie-decide');
-    decide.appendChild(el('div', 'eyebrow', flag.decision ? 'Change the decision' : 'Decision'));
+    decide.appendChild(el('div', 'eyebrow', 'Decision'));
     var row = el('div', 'btn-row roomy');
     DECISIONS.forEach(function (d) {
       row.appendChild(C.ui.button(d.label, {
@@ -213,21 +175,7 @@
       }));
     });
     decide.appendChild(row);
-    decide.appendChild(el('div', 'help', flag.decision
-      ? 'Current decision: ' + (decisionDef(flag.decision) || {}).label + '. Recording a different one appends a new audit entry; the earlier one is kept.'
-      : 'Every decision needs a reason and is written to the audit log with your operator name.'));
     wrap.appendChild(decide);
-
-    var log = C.store.audit.filter(function (a) { return a.object === flag.id; });
-    if (log.length) {
-      var hist = el('div');
-      hist.appendChild(el('div', 'eyebrow', 'Decisions this session'));
-      var list = el('div', 'audit-list');
-      list.style.marginTop = '8px';
-      log.forEach(function (a) { list.appendChild(C.ui.auditLine(a)); });
-      hist.appendChild(list);
-      wrap.appendChild(hist);
-    }
     return wrap;
   }
 
@@ -244,10 +192,10 @@
     });
 
     var consequence = decision === 'cleared'
-      ? 'The player keeps the rank shown above on every board listed. Reward decisions are recorded separately by the economy admin and are not changed here.'
+      ? 'The player keeps the rank shown above.'
       : decision === 'excluded'
-        ? 'The solve stops counting on the boards listed and the ranks below it move up. Reward decisions are recorded separately by the economy admin and are not changed here.'
-        : 'The player keeps seeing their own rank; other players do not. Reward decisions are recorded separately by the economy admin and are not changed here.';
+        ? 'The solve stops counting and lower ranks move up.'
+        : 'Only the player still sees their own rank.';
 
     var body = el('div');
     body.appendChild(C.ui.reviewPanel({
@@ -349,7 +297,6 @@
     }
 
     bar.appendChild(el('div', 'spacer'));
-    bar.appendChild(el('div', 'ie-hint', 'Ineligible rows keep their place in the list so the decision stays visible.'));
     return bar;
   }
 
@@ -357,7 +304,7 @@
     var wrap = el('div');
     var board = currentBoard();
     if (!board) {
-      wrap.appendChild(C.ui.emptyState('No ' + st().boardScope + ' board exists for this language yet.', 'No board'));
+      wrap.appendChild(C.ui.emptyState('No ' + (st().boardScope === 'week' ? 'weekly' : 'game') + ' board exists for this language yet.', 'No board'));
       return wrap;
     }
 
@@ -366,12 +313,6 @@
     head.appendChild(el('div', 'spacer'));
     head.appendChild(el('span', 'cell-id', board.window || (board.scope === 'week' ? 'Weekly board' : 'Game board')));
     wrap.appendChild(head);
-
-    var held = board.entries.filter(function (e) { return !e.eligible; }).length;
-    var sum = el('div', 'ie-hint ie-board-sum');
-    sum.textContent = board.entries.length + ' ranked players · ' + held + ' not eligible · ' +
-      (board.lang === 'uk' ? 'Ukrainian' : 'English');
-    wrap.appendChild(sum);
 
     wrap.appendChild(C.ui.table({
       cols: [
@@ -392,10 +333,6 @@
       onRowClick: function (r) { C.go('#/players/' + r.playerId); },
       empty: 'This board has no ranked players yet.'
     }));
-
-    var foot = el('div', 'ie-board-foot');
-    foot.textContent = 'Open a row to read the player record. Eligibility changes only through a decision in the Queue tab.';
-    wrap.appendChild(foot);
     return wrap;
   }
 
@@ -403,15 +340,23 @@
   // assembly
   // ------------------------------------------------------------------
 
-  function build(mount) {
-    mount.appendChild(C.ui.tabs(
+  /* Queue and Boards are a view switch inside the toolbar, not a second tab
+     strip: the tabs above them already belong to the area. */
+  function viewSwitch(bar) {
+    var view = el('div', 'ie-filter');
+    view.appendChild(el('span', 'ie-filter-label', 'View'));
+    view.appendChild(C.ui.segmented(
       [{ key: 'queue', label: 'Queue' }, { key: 'boards', label: 'Boards' }],
       st().tab,
       function (k) { st().tab = k; C.render(); }
     ));
+    bar.insertBefore(view, bar.firstChild);
+    return bar;
+  }
 
+  function build(mount) {
     if (st().tab === 'queue') {
-      mount.appendChild(queueToolbar());
+      mount.appendChild(viewSwitch(queueToolbar()));
       var grid = el('div', 'ie-grid');
       var list = el('div', 'ie-list');
       list.appendChild(queueTable());
@@ -419,22 +364,15 @@
       grid.appendChild(flagDetail());
       mount.appendChild(grid);
     } else {
-      mount.appendChild(boardsToolbar());
+      mount.appendChild(viewSwitch(boardsToolbar()));
       var body = el('div', 'ie-single');
       body.appendChild(boardsBody());
       mount.appendChild(body);
     }
   }
 
-  C.registerScreen('#/leaderboards', {
-    title: 'Leaderboards',
-    subline: function () {
-      var open = C.store.flags.filter(function (f) { return !f.decision; }).length;
-      return open + ' flagged solves awaiting a decision · ' + C.store.boards.length + ' boards';
-    },
-    actions: function () { return C.ui.densitySwitch(); },
-    render: function (mount) { build(mount); }
-  });
+  /* Rendered into the Leaderboards tab by collections.js. */
+  C.leaderboards = { render: function (mount) { build(mount); } };
 
   // ------------------------------------------------------------------
   // screen-specific styles, shared with economy.js (injected once)
@@ -444,11 +382,8 @@
     s.id = 'ie-style';
     s.textContent = [
       '.ie-toolbar{display:flex;align-items:center;gap:18px;flex-wrap:wrap;padding:12px var(--pad-x);border-bottom:1px solid var(--rule);background:var(--cream)}',
-      '.ie-metric{display:flex;flex-direction:column;gap:3px}',
-      '.ie-metric-value{font:800 15px var(--sans)}',
       '.ie-filter{display:flex;align-items:center;gap:7px;flex-wrap:wrap}',
       '.ie-filter-label{font:700 10px var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--ink-55)}',
-      '.ie-hint{font:400 11px/1.45 var(--sans);color:var(--ink-55);max-width:340px}',
       '.ie-grid{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);min-width:0}',
       '.ie-grid.wide{grid-template-columns:minmax(0,1.75fr) minmax(0,1fr)}',
       '.ie-nowrap{white-space:nowrap}',
@@ -467,8 +402,6 @@
       '.ie-impact-board{font:600 12px var(--sans)}',
       '.ie-decide{border-top:1px solid var(--rule);padding-top:12px}',
       '.ie-board-head{display:flex;align-items:baseline;gap:12px;padding:16px var(--pad-x) 2px}',
-      '.ie-board-sum{padding:0 var(--pad-x) 12px;max-width:none}',
-      '.ie-board-foot{padding:12px var(--pad-x);font:400 11px var(--sans);color:var(--ink-55)}',
       '.ie-amount{width:150px}',
       '.ie-sign{font:700 12px var(--mono);white-space:nowrap}',
       '.ie-sign.up{color:var(--green)}',

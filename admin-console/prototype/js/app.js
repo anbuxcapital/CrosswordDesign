@@ -18,7 +18,7 @@ window.Console = window.Console || {};
      lets every `js/data/<area>.js` extension file run first and push records
      into `Console.data.<collection>` before anything is cloned. */
   var COLLECTIONS = [
-    'operators', 'environments', 'puzzles', 'collections', 'days', 'checks',
+    'operators', 'environments', 'puzzles', 'collections', 'days',
     'players', 'supportActions', 'flags', 'boards', 'ledger', 'purchases',
     'placements', 'adRules', 'signals', 'importBatches', 'audit'
   ];
@@ -26,7 +26,7 @@ window.Console = window.Console || {};
   C.store = {
     /* session.session is the demo Better Auth session: {provider, expires}. */
     session: { operator: null, environment: 'demo', session: null, lastSignIn: null },
-    ui: { density: 'comfortable' }
+    ui: {}
   };
 
   COLLECTIONS.forEach(function (key) { C.store[key] = Array.isArray(C.data[key]) ? [] : {}; });
@@ -136,9 +136,8 @@ window.Console = window.Console || {};
   C.nav = [
     { area: 'desk', route: '#/desk', label: 'Daily challenge', roles: ['publisher'], badge: function () { return blockedDays(); } },
     { area: 'library', route: '#/library', label: 'Library', roles: ['content_editor'], badge: function () { return C.store.puzzles.length; } },
-    { area: 'collections', route: '#/collections', label: 'Collections', roles: ['publisher'], badge: function () { return C.store.collections.length; } },
-    { area: 'players', route: '#/players', label: 'Players', roles: ['support'], badge: function () { return ''; } },
-    { area: 'leaderboards', route: '#/leaderboards', label: 'Leaderboards', roles: ['integrity'], badge: function () { return openFlags(); } },
+    { area: 'collections', route: '#/collections', label: 'Collections', roles: ['publisher', 'integrity'], badge: function () { return mergedBadge(); } },
+    { area: 'players', route: '#/players', label: 'Players', roles: ['support'], badge: function () { return C.store.players.length; } },
     { area: 'economy', route: '#/economy', label: 'Economy', roles: ['economy'], badge: function () { return ''; } },
     { area: 'ads', route: '#/ads', label: 'Ads', roles: ['ads'], badge: function () { return ''; } },
     { area: 'operations', route: '#/operations', label: 'Operations', roles: ['operations'], badge: function () { return failedSignals(); } },
@@ -156,6 +155,17 @@ window.Console = window.Console || {};
   function openFlags() {
     var n = C.store.flags.filter(function (f) { return !f.decision; }).length;
     return n || '';
+  }
+  /* Collections is one area with two role-gated tabs, so its
+     badge counts whichever side the operator can actually act on: flagged
+     solves first, because they are the ones that wait on a decision. */
+  function mergedBadge() {
+    if (C.hasRole('integrity')) {
+      var flags = openFlags();
+      if (flags) return flags;
+      if (!C.hasRole('publisher')) return '';
+    }
+    return C.hasRole('publisher') ? C.store.collections.length : '';
   }
   function failedSignals() {
     var n = C.store.signals.filter(function (s) { return s.level === 'failed'; }).length;
@@ -210,6 +220,16 @@ window.Console = window.Console || {};
   // ---------------------------------------------------------------------
 
   C.screens = {};
+
+  /* Route aliases: a route that used to be its own area and now lives inside a
+     merged one. `Console.alias('#/old', '#/new', before)` keeps the old hash
+     working — `before()` runs first, so the target screen can be opened on the
+     right tab. The redirect happens before the router matches, so an alias
+     never needs a screen of its own. */
+  C.aliases = {};
+  C.alias = function (from, to, before) {
+    C.aliases[from] = { route: to, before: before || null };
+  };
 
   /* Console.registerScreen('#/players/:id', {title, subline, render(mount, params), actions})
      - title/subline may be a string or a function(params)
@@ -301,12 +321,6 @@ window.Console = window.Console || {};
     card.appendChild(el('div', 'eyebrow', 'Operator'));
     card.appendChild(el('div', 'op-name', op.handle));
     card.appendChild(el('div', 'op-roles', op.roles.map(function (r) { return C.data.roles[r].label; }).join(' · ')));
-    var sess = C.store.session.session;
-    if (sess) {
-      card.appendChild(el('div', 'op-session',
-        'Session · ' + C.auth.providerLabel(sess.provider) + ' · expires ' + sess.expires));
-    }
-    card.appendChild(el('div', 'op-note', 'Every mutation is written to the audit log.'));
     var out = el('button', 'btn btn-sm btn-quiet', 'Sign out');
     out.type = 'button';
     out.addEventListener('click', function () { C.auth.signOut(); });
@@ -315,9 +329,9 @@ window.Console = window.Console || {};
     return side;
   }
 
-  /* The sign-in screen models Better Auth: email and password, social
-     providers, passkeys and password reset. Nothing leaves the browser — the
-     password field accepts any non-empty value and is never read or stored. */
+  /* The sign-in screen models Better Auth: email and password plus the social
+     providers. Nothing leaves the browser — the password field accepts any
+     non-empty value and is never read or stored. */
   function renderSignin(root) {
     var envPicked = C.store.session.environment;
     var cfg = C.data.auth;
@@ -347,18 +361,12 @@ window.Console = window.Console || {};
     });
     brandRow.appendChild(envRow);
     head.appendChild(brandRow);
-    head.appendChild(el('div', 'signin-sub',
-      'Sign in to the admin console. The console shows only the areas your roles permit.'));
-    var envNote = el('div', 'help', '');
-    head.appendChild(envNote);
     card.appendChild(head);
 
     function paintEnv() {
       Array.prototype.forEach.call(envRow.children, function (n) {
         n.classList.toggle('is-on', n.dataset.env === envPicked);
       });
-      var e = C.store.environments.filter(function (x) { return x.id === envPicked; })[0];
-      envNote.textContent = e ? e.note : '';
     }
 
     // --- body ---------------------------------------------------------
@@ -398,11 +406,9 @@ window.Console = window.Console || {};
     pwIn.id = 'signin-password';
     pwIn.name = 'password';
     pwIn.autocomplete = 'off';
-    pwIn.placeholder = 'Any value — this is a prototype';
+    pwIn.placeholder = 'Password';
     pwIn.addEventListener('input', function () { setMsg(''); });
     pwRow.appendChild(pwIn);
-    pwRow.appendChild(el('div', 'help',
-      'Demo field. Any non-empty value is accepted; nothing is sent, checked or stored.'));
     form.appendChild(pwRow);
 
     form.appendChild(msg);
@@ -444,21 +450,6 @@ window.Console = window.Console || {};
     });
     body.appendChild(social);
 
-    var links = el('div', 'signin-links');
-    var passkey = el('button', 'linkbtn', 'Use a passkey');
-    passkey.type = 'button';
-    passkey.addEventListener('click', function () {
-      C.toast('Passkeys are registered in Better Auth. Sign in with a demo operator instead.');
-    });
-    links.appendChild(passkey);
-    var forgot = el('button', 'linkbtn', 'Forgot password?');
-    forgot.type = 'button';
-    forgot.addEventListener('click', function () {
-      C.toast('Better Auth emails the reset link. This prototype sends no email.');
-    });
-    links.appendChild(forgot);
-    body.appendChild(links);
-
     /* Social sign-in: the provider's account chooser, modelled. */
     function pickAccount(provider) {
       var list = el('div', 'acct-list');
@@ -482,11 +473,9 @@ window.Console = window.Console || {};
         list.appendChild(b);
       });
       var wrap = el('div');
-      wrap.appendChild(el('div', 'help',
-        provider.label + ' would show its own account chooser here. Pick a seeded operator to continue.'));
       wrap.appendChild(list);
       C.ui.modal({
-        title: 'Choose an account (prototype)',
+        title: 'Choose an account',
         body: wrap,
         secondary: { label: 'Cancel' }
       });
@@ -497,8 +486,6 @@ window.Console = window.Console || {};
 
     var demo = el('div', 'signin-demo');
     demo.appendChild(el('div', 'label', 'Demo operators'));
-    demo.appendChild(el('div', 'help',
-      'Prototype shortcut. Click an operator to fill the email and sign in.'));
     var list = el('div', 'signin-demo-list');
     C.store.operators.forEach(function (o) {
       var off = o.status === 'suspended';
@@ -507,14 +494,11 @@ window.Console = window.Console || {};
       b.dataset.op = o.id;
       b.appendChild(el('span', 'op-initials', initials(o)));
       var txt = el('span', 'op-choice-text');
-      var nameLine = el('span', 'op-choice-name', o.name + ' · ' + o.handle);
+      var nameLine = el('span', 'op-choice-name', o.handle + ' · ' + o.name);
       if (off) nameLine.appendChild(el('span', 'op-choice-off', 'Deactivated'));
       txt.appendChild(nameLine);
-      txt.appendChild(el('span', 'op-choice-email', C.auth.email(o)));
       txt.appendChild(el('span', 'op-choice-roles',
         o.roles.map(function (r) { return C.data.roles[r].label; }).join(' · ')));
-      txt.appendChild(el('span', 'op-note',
-        off ? 'This account is deactivated and cannot sign in.' : o.note));
       b.appendChild(txt);
       if (off) {
         b.disabled = true;
@@ -534,7 +518,7 @@ window.Console = window.Console || {};
 
     var foot = el('div', 'signin-foot');
     foot.appendChild(el('div', 'help',
-      'Operator accounts, roles and sessions are managed by Better Auth. The console never stores passwords.'));
+      'Operator accounts, roles and sessions come from Better Auth. The console stores no passwords.'));
     card.appendChild(foot);
 
     page.appendChild(card);
@@ -546,7 +530,7 @@ window.Console = window.Console || {};
   function notPermitted(area) {
     var wrap = el('div');
     wrap.appendChild(C.ui.emptyState(
-      'Your roles do not include this area (' + area + '). Sign in as m.olsen to see every area.'
+      'Your roles do not include this area (' + area + ').'
     ));
     return wrap;
   }
@@ -560,6 +544,13 @@ window.Console = window.Console || {};
     if (parts[0] === 'signin' || !C.store.session.operator) {
       if (parts[0] !== 'signin') { location.hash = '#/signin'; return; }
       renderSignin(root);
+      return;
+    }
+
+    var alias = C.aliases['#/' + parts.join('/')];
+    if (alias) {
+      if (alias.before) alias.before();
+      location.hash = alias.route;
       return;
     }
 

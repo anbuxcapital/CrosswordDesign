@@ -2,6 +2,8 @@
 
 **TL;DR:** The area builders work in parallel on one plain HTML/CSS/JS prototype. Each owns one or two files under `js/screens/`, registers its routes with `Console.registerScreen`, reads and writes the single in-memory `Console.store`, and puts every mutation through `Console.commit` so the audit log stays truthful.
 
+**MVP rule: status once, no restating prose.** A status is shown in exactly one place — its pill. Never add a checklist, note or paragraph that restates it, repeats a label, or explains the data model. A filled slot or row shows kind, title, id, one status pill and its buttons; an empty one shows what is missing and the control that fills it. Sublines carry at most one short fact, empty states one sentence, reviews only the rows that change plus one result line.
+
 The shell, the visual system, the shared UI patterns and the demo data already exist. Do not rebuild them; extend them.
 
 ## 1. What is already built
@@ -25,9 +27,9 @@ There is no build step, no npm and no ES modules. Classic `<script>` tags in ord
 | Builder | Owns these files | Must implement these routes |
 |---|---|---|
 | Editorial | `js/screens/library.js`, `js/screens/editor.js` | `#/library`, `#/library/:id` |
-| Publishing | `js/screens/desk.js`, `js/screens/collections.js` | `#/desk` (replace the `Console.todo('P1')` stubs), `#/collections` |
+| Publishing | `js/screens/desk.js`, `js/screens/collections.js` | `#/desk` (replace the `Console.todo('P1')` stubs), `#/collections`, `#/collections/:id` |
 | Support | `js/screens/players.js` | `#/players`, `#/players/:id` |
-| Integrity and economy | `js/screens/leaderboards.js`, `js/screens/economy.js` | `#/leaderboards`, `#/economy` |
+| Integrity and economy | `js/screens/leaderboards.js`, `js/screens/economy.js` | the Leaderboards tab of `#/collections`, painted by `collections.js` through `Console.leaderboards.render(mount)`; `#/economy` |
 | Ads and operations | `js/screens/ads.js`, `js/screens/operations.js` | `#/ads`, `#/operations` |
 | Access | `js/screens/access.js`, `js/screens/audit.js` | `#/access`, `#/audit` |
 
@@ -71,13 +73,12 @@ Rules:
 
 ```
 store.session          {operator, environment}      operator is null before sign-in
-store.ui               {density:'comfortable'|'compact', <area>: {...}}
+store.ui               {<area>: {...}}
 store.operators        [{id, handle, name, roles:[roleId], note}]
 store.environments     [{id:'demo'|'staging'|'production', label, note}]
 store.puzzles          [puzzle]
 store.collections      [collection]
 store.days             [day]
-store.checks           {status: [[label, detail, 'pass'|'warn'|'fail']]}   readiness checklists
 store.players          [player]
 store.supportActions   [{id, label, params:[{key,label,type,value}], ledger:boolean}]
 store.flags            [flag]
@@ -98,7 +99,7 @@ store.todayLabel       'Tuesday, September 8, 2026'
 **puzzle** — `{id:'CW-2264', title, kind:'cw'|'d5', lang:'en'|'uk', difficulty:'Easy'|'Medium'|'Hard', status, validation:'passed'|'failed'|'not_run', validationIssues:[{code, where, message}], version:Number, author, topics:[String], updatedAt, content}`
 `content` for `kind:'cw'` is `{size:5, grid:[[letter × 5] × 5], clues:{across:[{n,clue,answer}], down:[…]}}`; for `kind:'d5'` it is `{answers:[5 strings], hint}`.
 
-**collection** — `{id, name, shelf, emoji, blurb, unlockRule, reward, visibility:'published'|'draft'|'hidden', order, members:[puzzleId]}`
+**collection** — `{id, name, shelf, blurb, unlockRule, reward, visibility:'published'|'draft'|'hidden', order, members:[puzzleId]}`
 
 **day** — `{index:0…29, iso:'2026-09-11', dayOfMonth, dow:'Fri', label:'Sep 11', longLabel:'Fri Sep 11', today, past, items:[puzzleId], scheduled:Boolean, publishTime:'12:00', publishMode:'utc'|'local', audit:[{time, operator, text}]}`
 A day is exactly one **Daily challenge** with two fixed slots: one crossword and one Daily Five. `items` therefore holds at most one `cw` id and at most one `d5` id — never two of a kind, and there is no ordering to manage.
@@ -156,9 +157,9 @@ All return DOM nodes. `Console.ui.el(tag, className, text)` is the tiny element 
 |---|---|
 | `pill(status, label?)` | Status pill, text plus colour. `C.ui.pill('review')` → “Needs review” in gold. |
 | `status(status, label?)` | Compact inline dot + word for table cells. `C.ui.status(p.validation)` |
-| `table(spec)` | `C.ui.table({cols:[{key:'title',label:'Title'},{key:'v',label:'Validation',align:'right',render:function(r){return C.ui.status(r.validation)}}], rows:puzzles, onRowClick:function(r){C.go('#/library/'+r.id)}, selectable:{selected:sel, idKey:'id', onChange:function(next){…}}, empty:'No games match these filters.'})`. Density defaults to `store.ui.density`. |
-| `reasonField(opts)` | `var r = C.ui.reasonField({required:true, label:'Reason', placeholder:'…'}); r.value()` returns the trimmed text. |
-| `reviewPanel(spec)` | `C.ui.reviewPanel({title:'Review the change', before:[['Streak','0 days']], after:[['Streak','61 days']], consequence:'The player is notified. The weekly board is not recomputed.'})` |
+| `table(spec)` | `C.ui.table({cols:[{key:'title',label:'Title'},{key:'v',label:'Validation',align:'right',render:function(r){return C.ui.status(r.validation)}}], rows:puzzles, onRowClick:function(r){C.go('#/library/'+r.id)}, selectable:{selected:sel, idKey:'id', onChange:function(next){…}}, empty:'No games match these filters.'})`. One density everywhere. |
+| `reasonField(opts)` | `var r = C.ui.reasonField({required:true, label:'Reason', placeholder:'…'}); r.value()` returns the trimmed text. No help text. |
+| `reviewPanel(spec)` | `C.ui.reviewPanel({title:'Review the change', before:[['Streak','0 days']], after:[['Streak','61 days']], consequence:'The player is notified.'})`. Pass the full before/after arrays: rows whose value is unchanged are hidden for you. `consequence` is one short result line. |
 | `modal(spec)` | `C.ui.modal({title:'Restore streak', body:node, wide:false, primary:{label:'Confirm', destructive:false, onClick:fn, disabled:function(){return !amount}}, secondary:{label:'Cancel'}})`. Primary is disabled while a contained reason field is empty. Close with `C.ui.closeModal()`; call `C.ui.refreshModal()` after changing something the `disabled()` test depends on. Escape and the backdrop close it. |
 | `results(items)` | `C.ui.results([{label:'Sep 12', outcome:'ok', detail:'Queued 12:00 UTC'}, {label:'Sep 14', outcome:'skipped', detail:'Crossword not approved'}])`. Outcomes: `ok`, `skipped`, `failed`. |
 | `auditLine(entry)` | `C.ui.auditLine(Console.store.audit[0])` |
@@ -166,9 +167,7 @@ All return DOM nodes. `Console.ui.el(tag, className, text)` is the tiny element 
 | `tabs(items, active, onChange)` | `C.ui.tabs([{key:'profile',label:'Profile'}], tab, function(k){store.ui.players.tab=k; C.render();})` |
 | `field(spec)` | `C.ui.field({label:'Display name', value:'Dana Whitfield', editable:true, changed:false, editing:false, onEdit:fn})`. Read-only fields render dashed and washed; editable fields sit on paper. |
 | `emptyState(text, mark?)` | `C.ui.emptyState('No flagged solves are waiting.')` |
-| `checklist(rows)` | `C.ui.checklist([['Clue numbering','1 clue missing at 7-across','warn']])` |
 | `segmented(items, active, onChange)` | Small view switch. |
-| `densitySwitch()` | Comfortable / Compact control wired to `store.ui.density`. |
 | `button(label, opts)` | `C.ui.button('Confirm schedule', {variant:'primary'\|'pink'\|'quiet'\|'danger', small:true, disabled:false, onClick:fn})` |
 
 `Console.toast('Saved.')` shows a transient message. `Console.todo('P1')` is the placeholder for a flow another builder owns — remove every `todo` call in your own area.
@@ -184,7 +183,7 @@ function restoreStreak(player) {
     title: 'Restore streak',
     before: [['Streak', player.streak + ' days'], ['Last solve', 'Sep 6']],
     after:  [['Streak', '61 days'], ['Last solve', 'Sep 6']],
-    consequence: 'The player is notified. Weekly board placement is not recomputed.'
+    consequence: 'The player is notified.'
   }));
   var reason = C.ui.reasonField({ required: true });
   body.appendChild(reason);
@@ -216,15 +215,17 @@ For bulk actions the result step is a second modal containing `Console.ui.result
 | Role id | Label | Areas it unlocks |
 |---|---|---|
 | `content_editor` | Content editor | `#/library`, `#/library/:id` |
-| `publisher` | Publisher | `#/desk`, `#/collections` |
+| `publisher` | Publisher | `#/desk`, `#/collections` (Collections tab), `#/collections/:id` |
 | `support` | Support agent | `#/players`, `#/players/:id` |
-| `integrity` | Integrity reviewer | `#/leaderboards` |
+| `integrity` | Integrity reviewer | `#/collections` (Leaderboards tab) |
 | `economy` | Economy admin | `#/economy` |
 | `ads` | Ads manager | `#/ads` |
 | `operations` | Operations engineer | `#/operations` |
 | `console_admin` | Console admin | `#/access`, `#/audit` |
 
-`Console.hasRole('publisher')` and `Console.canSee('players')` answer permission questions. Navigation hides areas the operator cannot enter, and a direct hash to a forbidden area renders a plain explanation instead of the screen. Demo operators: `m.olsen` (all roles), `a.reid` (editorial and publishing), `s.novak` (support and integrity), `t.baros` (operations, ads and economy).
+**Collections** (nav label; the area holds both tabs) is one area at `#/collections`, unlocked by `publisher` **or** `integrity`. Inside it, the Collections tab is shown only to a publisher and the Leaderboards tab only to an integrity reviewer, so an operator with one of the two roles sees one tab. `#/leaderboards` and `#/collections/leaderboards` are aliases that open the area on the Leaderboards tab; register an alias with `Console.alias(from, to, before)`.
+
+`Console.hasRole('publisher')` and `Console.canSee('players')` answer permission questions. Navigation hides areas the operator cannot enter, and a direct hash to a forbidden area renders a plain explanation instead of the screen. Where one area holds two role-gated tabs, the tab itself is gated with `Console.hasRole`. Demo operators: `m.olsen` (all roles), `a.reid` (editorial and publishing), `s.novak` (support and integrity), `t.baros` (operations, ads and economy).
 
 ## 9. Status vocabulary
 
@@ -264,7 +265,7 @@ Run this in the browser at 1440 × 800, signed in as `m.olsen`:
 4. Every mutation appears in `#/audit` with the right operator, object, reason and result.
 5. Reason-required actions cannot be confirmed with an empty reason.
 6. High-impact actions show a before/after review; bulk actions show selection count, effective time and per-item results.
-7. Density switch changes your tables (`Console.ui.table` handles this for free).
+7. No screen restates a status pill, and no prose repeats a label or the data model.
 8. No horizontal page scroll at 1440 and at 1240 window width.
 9. No `Console.todo(...)` calls remain in your files. Leave `stubs.js` alone — your registration already overrides the stub — and confirm your routes show your screen, not the placeholder.
 10. Reload the page: the store resets cleanly and your screen still renders from the seed.

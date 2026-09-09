@@ -6,8 +6,8 @@ These rules define how to extend the selected admin-console direction without tu
 
 1. Lead with work, not reporting. The default screen should answer what needs attention today and provide the shortest safe path to resolve it.
 2. Keep the Daily challenge as the publishing unit. A Daily challenge is exactly one crossword and one Daily Five per language per day; there is nothing else to order.
-3. Separate editorial, support, commercial, and operational concerns in navigation, while keeping operator identity and audit behavior global.
-4. Search players instead of exposing an unrestricted player directory. Show only the records needed for the current support task.
+3. Separate editorial, support, commercial, and operational concerns in navigation, while keeping operator identity and audit behavior global. Navigation labels are one word where possible; Collections holds the Leaderboards tab.
+4. Players is a list of every player with a live search filter; the player record shows only what the current support task needs.
 5. Keep third-party campaign management and revenue reporting in the ad network. The Crosscut console owns app placement rules, caps, rewards, consent visibility, and grant health.
 
 ## Metrics
@@ -21,6 +21,8 @@ These rules define how to extend the selected admin-console direction without tu
 - Every alert should identify the affected object, urgency, and one recoverable next step.
 
 ## Interaction and safeguards
+
+- Show a status once. Do not add checklists, help text or notes that restate a label, a pill or the model; the MVP keeps controls, status and the reason and review safeguards, nothing decorative.
 
 - Make read-only and mutable fields visually distinct.
 - Require a reason for player, ledger, leaderboard, ad-rule, and destructive account changes.
