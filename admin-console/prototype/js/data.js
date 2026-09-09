@@ -75,105 +75,189 @@ Console.data = (function () {
   // === SECTION: editorial — puzzles and collections (owner: editorial builder) ===
   // ---------------------------------------------------------------------
 
-  // Two valid 5x5 double word squares; rows and columns are both real words.
+  /* Two valid 5x5 word squares; rows and columns are both real words, so the
+     across and down answer sets are identical. A grid cell is '' (open and
+     empty), '#' (a block) or one letter; these two grids carry no blocks. */
   var GRID_A = ['HEART', 'EMBER', 'ABUSE', 'RESIN', 'TREND'];
   var GRID_B = ['BASIC', 'ARENA', 'SEDAN', 'INANE', 'CANES'];
 
-  var CLUES_A = {
-    across: [
-      { n: 1, clue: 'Where affection is said to live', answer: 'HEART' },
-      { n: 6, clue: 'Glowing remnant of a fire', answer: 'EMBER' },
-      { n: 7, clue: 'Mistreat', answer: 'ABUSE' },
-      { n: 8, clue: 'Tree sap used in varnish', answer: 'RESIN' },
-      { n: 9, clue: 'Direction things are moving', answer: 'TREND' }
-    ],
-    down: [
-      { n: 1, clue: 'Where affection is said to live', answer: 'HEART' },
-      { n: 2, clue: 'Glowing remnant of a fire', answer: 'EMBER' },
-      { n: 3, clue: 'Mistreat', answer: 'ABUSE' },
-      { n: 4, clue: 'Tree sap used in varnish', answer: 'RESIN' },
-      { n: 5, clue: 'Direction things are moving', answer: 'TREND' }
-    ]
-  };
-
-  var CLUES_B = {
-    across: [
-      { n: 1, clue: 'Bare-bones, or a beginner language', answer: 'BASIC' },
-      { n: 6, clue: 'Stadium bowl', answer: 'ARENA' },
-      { n: 7, clue: 'Four-door car', answer: 'SEDAN' },
-      { n: 8, clue: 'Empty of meaning', answer: 'INANE' },
-      { n: 9, clue: 'Walking sticks', answer: 'CANES' }
-    ],
-    down: [
-      { n: 1, clue: 'Bare-bones, or a beginner language', answer: 'BASIC' },
-      { n: 2, clue: 'Stadium bowl', answer: 'ARENA' },
-      { n: 3, clue: 'Four-door car', answer: 'SEDAN' },
-      { n: 4, clue: 'Empty of meaning', answer: 'INANE' },
-      { n: 5, clue: 'Walking sticks', answer: 'CANES' }
-    ]
-  };
-
-  function cwContent(which) {
-    var g = which === 'b' ? GRID_B : GRID_A;
-    var c = which === 'b' ? CLUES_B : CLUES_A;
-    return {
-      size: 5,
-      grid: g.map(function (row) { return row.split(''); }),
-      clues: { across: c.across.slice(), down: c.down.slice() }
-    };
-  }
-
-  function wordleContent(answers, hint) {
-    return { answers: answers.slice(), hint: hint };
-  }
-
-  var WORDLE_SETS = [
-    [['CHASE', 'MOTOR', 'PLAID', 'SWIFT', 'TONIC'], 'Five words, one shared vowel pattern.'],
-    [['BRINE', 'GLOVE', 'PRISM', 'STOUT', 'WEAVE'], 'All five appear in a kitchen or a workshop.'],
-    [['AMBER', 'CRISP', 'DOUSE', 'FLINT', 'SHARD'], 'Each answer has something to do with fire.'],
-    [['BLOOM', 'CRANE', 'DRIFT', 'MARSH', 'QUILT'], 'Five things you might find in a wetland.'],
-    [['CHORD', 'ETUDE', 'LYRIC', 'SCALE', 'TEMPO'], 'Every answer belongs to music.']
+  var CLUES_A = [
+    'Where affection is said to live',
+    'Glowing remnant of a fire',
+    'Mistreat',
+    'Tree sap used in varnish',
+    'Direction things are moving'
   ];
+  var CLUES_B = [
+    'Bare-bones, or a beginner language',
+    'Stadium bowl',
+    'Four-door car',
+    'Empty of meaning',
+    'Walking sticks'
+  ];
+
+  /* Slots, numbers and the (row, col) each clue is bound to are read off the
+     grid, never typed: in a 5 x 5 with no blocks the across slots start at
+     column 0 of every row and the down slots at row 0 of every column, so the
+     numbers run 1…5 along the top row and 1, 6, 7, 8, 9 down the first column.
+     `par` is the target solve time in seconds: 300 for a 5 x 5 Mini, 600 for a
+     9 x 9 Weekend grid. */
+  function cwContent(which) {
+    var rows = which === 'b' ? GRID_B : GRID_A;
+    var text = which === 'b' ? CLUES_B : CLUES_A;
+    var grid = rows.map(function (row) { return row.split(''); });
+    var across = rows.map(function (word, r) {
+      return { n: r === 0 ? 1 : r + 5, row: r, col: 0, answer: word, clue: text[r] };
+    });
+    var down = rows.map(function (word, c) {
+      return {
+        n: c + 1, row: 0, col: c,
+        answer: grid.map(function (row) { return row[c]; }).join(''),
+        clue: text[c]
+      };
+    });
+    return { size: 5, par: 300, grid: grid, clues: { across: across, down: down } };
+  }
+
+  /* A Guessword is one word. Its whole content is that answer, upper-cased in
+     the game's own locale. */
+  function guesswordContent(answer) {
+    return { answer: answer };
+  }
+
+  /* The demo word bank, two lists per language.
+
+     `answers` is the small curated bank a Guessword answer must come from;
+     each entry carries a rarity band `score`, 1 for the most common word and 5
+     for the rarest, which feeds the difficulty estimate. `accepted` is the far
+     larger list of words a player is allowed to type — every answer plus the
+     rest of the playable dictionary. The size gap between the two lists is the
+     point: the answer is curated, the guesses are not. */
+  var BANK = {
+    en: {
+      answers: [
+        ['CRANE', 1], ['SLATE', 1], ['HOUSE', 1], ['TRAIN', 1], ['PLANT', 1],
+        ['LIGHT', 1], ['MONEY', 1], ['WATER', 1], ['MUSIC', 1], ['PAPER', 1],
+        ['BREAD', 2], ['CLOUD', 2], ['DRIVE', 2], ['FROST', 2], ['GRAPE', 2],
+        ['HONEY', 2], ['NURSE', 2], ['OLIVE', 2], ['PIANO', 2], ['RIVER', 1],
+        ['STONE', 1], ['QUILT', 3], ['TIGER', 2], ['WHALE', 2], ['AMBER', 3],
+        ['BLOOM', 2], ['CHORD', 3], ['DRIFT', 3], ['GLOVE', 2], ['IVORY', 3],
+        ['JOKER', 3], ['KNEEL', 3], ['LEMON', 2], ['MOTOR', 2], ['NOBLE', 3],
+        ['MARSH', 3], ['VIOLA', 4], ['FLINT', 4], ['OZONE', 4], ['ETUDE', 5],
+        ['ARENA', 2], ['TREND', 2]
+      ],
+      accepted: [
+        'ABBEY', 'ADOPT', 'BLAZE', 'BRICK', 'CHALK', 'CHASE', 'CLASP', 'CRISP',
+        'DOUSE', 'DWELL', 'FABLE', 'FLUTE', 'GLIDE', 'GRASP', 'HATCH', 'INLET',
+        'JOUST', 'KNACK', 'LAPSE', 'MIRTH', 'NUDGE', 'ORBIT', 'PLANK', 'PRISM',
+        'QUERY', 'ROAST', 'SHARD', 'SMIRK', 'SPINE', 'STOUT', 'SWIFT', 'THORN',
+        'TONIC', 'TRUCE', 'USHER', 'VAULT', 'WEAVE', 'WRIST', 'YIELD', 'ZEBRA'
+      ]
+    },
+    uk: {
+      answers: [
+        ['ВІКНО', 1], ['ЗЕМЛЯ', 1], ['ХМАРА', 2], ['ВІТЕР', 1], ['ПОТІК', 2],
+        ['МІСТО', 1], ['РІЧКА', 1], ['ЛІТАК', 2], ['КНИГА', 1], ['СТІНА', 2],
+        ['ВЕСНА', 1], ['ОСІНЬ', 2], ['КАЗКА', 2], ['СОНЦЕ', 1], ['ГОЛОС', 2],
+        ['ТРАВА', 1], ['ЗІРКА', 2], ['РУЧКА', 2], ['ШКОЛА', 1], ['ПІСНЯ', 2],
+        ['КУХНЯ', 2], ['ВЕЧІР', 2], ['РАНОК', 2], ['СЛОВО', 1], ['ДОЩИК', 3],
+        ['ЯГОДА', 2], ['САДОК', 3], ['ЧЕРГА', 3], ['КОЛІР', 2], ['ПАПІР', 2],
+        ['ГРОШІ', 2], ['ПОРІГ', 3], ['ЖИТТЯ', 1], ['БІГТИ', 2], ['СПАТИ', 2],
+        ['ДУМКА', 2], ['ЛАМПА', 2], ['КАВУН', 3], ['ОЗЕРО', 2], ['ГІЛКА', 3],
+        ['ХАТКА', 3], ['ҐАНОК', 4], ['ЯСЕНЬ', 4]
+      ],
+      accepted: [
+        'АГЕНТ', 'БАНКА', 'ВАГОН', 'ГІЛЛЯ', 'ДОШКА', 'ЖУРБА', 'ЗАПАХ', 'ІМЕНА',
+        'ЇЖАКИ', 'КАЗАН', 'ЛОЖКА', 'МОРОЗ', 'НОЖИК', 'ОКЕАН', 'ПАРУС', 'РУКАВ',
+        'СОКІЛ', 'ТАБІР', 'УРОКИ', 'ФАРБА', 'ХОЛОД', 'ЦЕГЛА', 'ЧАЙКА', 'ШАПКА',
+        'ЮНАКИ', 'БЕРЕГ', 'ВІНОК', 'ГОРОД', 'ДРУГИ', 'ЄНОТИ', 'ЖАБКА', 'ЗІЛЛЯ',
+        'КОЛОС', 'ЛІКАР', 'МАЛЮК', 'НАПІЙ', 'ОСЕЛЯ', 'ПОДІЯ', 'РОДИЧ', 'СВІЧА'
+      ]
+    },
+    ru: {
+      answers: [
+        ['ВЕТЕР', 1], ['ГОРОД', 1], ['КНИГА', 1], ['ЗЕМЛЯ', 1], ['ТУЧКА', 3],
+        ['ПОЕЗД', 1], ['СТЕНА', 2], ['ВЕСНА', 1], ['ОСЕНЬ', 2], ['ГОЛОС', 2],
+        ['ТРАВА', 1], ['РУЧКА', 2], ['ШКОЛА', 1], ['ПЕСНЯ', 2], ['КУХНЯ', 2],
+        ['ВЕЧЕР', 2], ['СЛОВО', 1], ['ДОЖДЬ', 1], ['ЯГОДА', 2], ['САДИК', 3],
+        ['ПОРОГ', 3], ['ЖИЗНЬ', 1], ['СПАТЬ', 2], ['ЛАМПА', 2], ['АРБУЗ', 3],
+        ['ОЗЕРО', 2], ['ВЕТКА', 2], ['ДОМИК', 3], ['ЯСЕНЬ', 4], ['ЛЕСОК', 4],
+        ['ГОРКА', 3], ['ПОЧТА', 2], ['ПАРУС', 3], ['КРЫША', 2], ['МЫШКА', 3],
+        ['ЗАМОК', 2], ['РЫНОК', 2], ['ЮНОША', 4], ['ЯКОРЬ', 4], ['ЦИФРА', 3],
+        ['ЩЕНОК', 4], ['ХОЛОД', 2], ['ПЕСОК', 2]
+      ],
+      accepted: [
+        'АГЕНТ', 'БАНКА', 'ВАГОН', 'ГРУША', 'ДОСКА', 'ЖАБКА', 'ЗАПАХ', 'ИМЕНА',
+        'КАЗАН', 'ЛОЖКА', 'МОРОЗ', 'НОЖИК', 'ОКЕАН', 'ПАРТА', 'РУКАВ', 'СОКОЛ',
+        'ТАБОР', 'УРОКИ', 'ФЛАГИ', 'ХОЛСТ', 'ЦАПЛЯ', 'ЧАЙКА', 'ШАПКА', 'ЩЕТКА',
+        'ЭТАЖИ', 'ЮРИСТ', 'ЯЗЫКИ', 'БЕРЕГ', 'ВЕНОК', 'ГОРОХ', 'ДРУГИ', 'ЕНОТЫ',
+        'ЖИЛЕТ', 'ЗЕРНО', 'КОЛОС', 'ЛИМОН', 'МАЛЫШ', 'НОМЕР', 'ОЛЕНЬ', 'ПОЛКА'
+      ]
+    }
+  };
+
+  /* Every answer is playable, so the accepted-guess list is the bank plus the
+     uncurated rest. */
+  var wordBank = {};
+  Object.keys(BANK).forEach(function (lang) {
+    var answers = BANK[lang].answers.map(function (a) { return { word: a[0], score: a[1] }; });
+    var words = answers.map(function (a) { return a.word; });
+    wordBank[lang] = {
+      answers: answers,
+      accepted: words.concat(BANK[lang].accepted)
+    };
+  });
+
+  /* Seeded Guesswords take their answer from the front of their language's
+     bank, in seed order, so no two of them share a word and the reuse check
+     has real history to name. */
+  var bankCursor = { en: 0, uk: 0, ru: 0 };
+  function nextBankAnswer(lang) {
+    var list = (wordBank[lang] || wordBank.en).answers;
+    var w = list[bankCursor[lang] % list.length].word;
+    bankCursor[lang] += 1;
+    return w;
+  }
 
   var puzzleSeed = [
     // id, title, kind, lang, difficulty, status, validation, author, topics, updatedAt
     ['CW-2254', 'First light', 'cw', 'en', 'Easy', 'published', 'passed', 'a.reid', ['Nature'], 'Sep 1 08:00'],
-    ['WL-0905', 'Open door', 'wordle', 'en', 'Easy', 'published', 'passed', 'a.reid', ['Everyday'], 'Sep 1 08:00'],
+    ['GW-0905', 'Open door', 'guessword', 'en', 'Easy', 'published', 'passed', 'a.reid', ['Everyday'], 'Sep 1 08:00'],
     ['CW-2255', 'Side street', 'cw', 'en', 'Medium', 'published', 'passed', 'a.reid', ['City'], 'Sep 2 08:00'],
-    ['WL-0906', 'Tall order', 'wordle', 'en', 'Medium', 'published', 'passed', 'a.reid', ['Food'], 'Sep 2 08:00'],
+    ['GW-0906', 'Tall order', 'guessword', 'en', 'Medium', 'published', 'passed', 'a.reid', ['Food'], 'Sep 2 08:00'],
     ['CW-2256', 'Quiet hours', 'cw', 'en', 'Medium', 'published', 'passed', 'm.olsen', ['Home'], 'Sep 3 08:00'],
-    ['WL-0907', 'Blue note', 'wordle', 'en', 'Easy', 'published', 'passed', 'm.olsen', ['Music'], 'Sep 3 08:00'],
+    ['GW-0907', 'Blue note', 'guessword', 'en', 'Easy', 'published', 'passed', 'm.olsen', ['Music'], 'Sep 3 08:00'],
     ['CW-2257', 'Open book', 'cw', 'en', 'Easy', 'published', 'passed', 'a.reid', ['Literature'], 'Sep 4 08:00'],
-    ['WL-0908', 'Short fuse', 'wordle', 'en', 'Hard', 'published', 'passed', 'a.reid', ['Science'], 'Sep 4 08:00'],
+    ['GW-0908', 'Short fuse', 'guessword', 'en', 'Tricky', 'published', 'passed', 'a.reid', ['Science'], 'Sep 4 08:00'],
     ['CW-2258', 'Night market', 'cw', 'en', 'Medium', 'published', 'passed', 'm.olsen', ['Travel', 'Food'], 'Sep 5 08:00'],
-    ['WL-0909', 'Fair play', 'wordle', 'en', 'Medium', 'published', 'passed', 'm.olsen', ['Sport'], 'Sep 5 08:00'],
+    ['GW-0909', 'Fair play', 'guessword', 'en', 'Medium', 'published', 'passed', 'm.olsen', ['Sport'], 'Sep 5 08:00'],
     ['CW-2259', 'Weekend edition', 'cw', 'en', 'Hard', 'published', 'passed', 'a.reid', ['News'], 'Sep 6 08:00'],
-    ['WL-0910', 'Slow burn', 'wordle', 'en', 'Medium', 'published', 'passed', 'a.reid', ['Film'], 'Sep 6 08:00'],
+    ['GW-0910', 'Slow burn', 'guessword', 'en', 'Medium', 'published', 'passed', 'a.reid', ['Film'], 'Sep 6 08:00'],
     ['CW-2261', 'Moon walk', 'cw', 'en', 'Medium', 'published', 'passed', 'm.olsen', ['Science', 'History'], 'Sep 7 08:00'],
-    ['WL-0912', 'Fresh start', 'wordle', 'en', 'Easy', 'published', 'passed', 'm.olsen', ['Everyday'], 'Sep 7 08:00'],
+    ['GW-0912', 'Fresh start', 'guessword', 'en', 'Easy', 'published', 'passed', 'm.olsen', ['Everyday'], 'Sep 7 08:00'],
     ['CW-2262', 'Campus life', 'cw', 'en', 'Easy', 'live', 'passed', 'a.reid', ['Education'], 'Sep 8 08:14'],
-    ['WL-0913', 'In the loop', 'wordle', 'en', 'Easy', 'live', 'passed', 'a.reid', ['Everyday'], 'Sep 8 08:14'],
+    ['GW-0913', 'In the loop', 'guessword', 'en', 'Easy', 'live', 'passed', 'a.reid', ['Everyday'], 'Sep 8 08:14'],
     ['CW-2269', 'Late edition', 'cw', 'en', 'Hard', 'approved', 'passed', 'm.olsen', ['News'], 'Sep 8 08:14'],
     ['CW-2263', 'Good news', 'cw', 'en', 'Medium', 'scheduled', 'passed', 'a.reid', ['News'], 'Sep 7 09:12'],
-    ['WL-0914', 'Brain boost', 'wordle', 'en', 'Medium', 'scheduled', 'passed', 'a.reid', ['Science'], 'Sep 7 09:12'],
+    ['GW-0914', 'Brain boost', 'guessword', 'en', 'Medium', 'scheduled', 'passed', 'a.reid', ['Science'], 'Sep 7 09:12'],
     ['CW-2264', 'On the map', 'cw', 'en', 'Medium', 'review', 'failed', 'm.olsen', ['Travel'], 'Sep 8 07:44'],
-    ['WL-0915', 'True or false', 'wordle', 'en', 'Easy', 'review', 'passed', 'm.olsen', ['Trivia'], 'Sep 8 07:44'],
+    ['GW-0915', 'True or false', 'guessword', 'en', 'Easy', 'review', 'passed', 'm.olsen', ['Trivia'], 'Sep 8 07:44'],
     ['CW-2265', 'Back to work', 'cw', 'en', 'Medium', 'approved', 'passed', 'm.olsen', ['Work'], 'Sep 8 08:02'],
     ['CW-2266', 'Weekend vibes', 'cw', 'en', 'Easy', 'scheduled', 'passed', 'a.reid', ['Leisure'], 'Sep 6 15:10'],
     ['CW-2271', 'Long weekend', 'cw', 'en', 'Medium', 'approved', 'passed', 'a.reid', ['Travel'], 'Sep 6 15:10'],
-    ['WL-0916', 'Culture club', 'wordle', 'en', 'Medium', 'scheduled', 'passed', 'a.reid', ['Art'], 'Sep 6 15:10'],
-    ['WL-0920', 'Encore', 'wordle', 'en', 'Hard', 'approved', 'passed', 'a.reid', ['Music'], 'Sep 6 15:10'],
+    ['GW-0916', 'Culture club', 'guessword', 'en', 'Medium', 'scheduled', 'passed', 'a.reid', ['Art'], 'Sep 6 15:10'],
+    ['GW-0920', 'Encore', 'guessword', 'en', 'Tricky', 'approved', 'passed', 'a.reid', ['Music'], 'Sep 6 15:10'],
     ['CW-2267', 'Full circle', 'cw', 'en', 'Medium', 'scheduled', 'passed', 'm.olsen', ['Everyday'], 'Sep 6 15:10'],
-    ['WL-0917', 'End zone', 'wordle', 'en', 'Medium', 'scheduled', 'passed', 'm.olsen', ['Sport'], 'Sep 6 15:10'],
+    ['GW-0917', 'End zone', 'guessword', 'en', 'Medium', 'scheduled', 'passed', 'm.olsen', ['Sport'], 'Sep 6 15:10'],
     ['CW-2268', 'Night shift', 'cw', 'en', 'Hard', 'draft', 'not_run', 'a.reid', ['Work'], 'Sep 8 10:20'],
-    ['WL-0918', 'Split ends', 'wordle', 'en', 'Medium', 'approved', 'passed', 'a.reid', ['Everyday'], 'Sep 7 16:30'],
-    ['WL-0919', 'Cold snap', 'wordle', 'en', 'Medium', 'approved', 'passed', 'm.olsen', ['Weather'], 'Sep 8 09:05'],
-    ['WL-0921', 'Side quest', 'wordle', 'en', 'Easy', 'approved', 'passed', 'm.olsen', ['Games'], 'Sep 8 09:05'],
+    ['GW-0918', 'Split ends', 'guessword', 'en', 'Medium', 'approved', 'passed', 'a.reid', ['Everyday'], 'Sep 7 16:30'],
+    ['GW-0919', 'Cold snap', 'guessword', 'en', 'Medium', 'approved', 'passed', 'm.olsen', ['Weather'], 'Sep 8 09:05'],
+    ['GW-0921', 'Side quest', 'guessword', 'en', 'Easy', 'approved', 'passed', 'm.olsen', ['Games'], 'Sep 8 09:05'],
     ['CW-2272', 'Cold open', 'cw', 'en', 'Easy', 'approved', 'passed', 'a.reid', ['Film'], 'Sep 8 09:40'],
     ['CW-2270', 'Paper trail', 'cw', 'uk', 'Medium', 'draft', 'failed', 'i.koval', ['Work'], 'Sep 6 12:00'],
-    ['WL-0923', 'Hard water', 'wordle', 'uk', 'Hard', 'draft', 'failed', 'i.koval', ['Nature'], 'Sep 6 12:00'],
+    ['GW-0923', 'Hard water', 'guessword', 'uk', 'Tricky', 'draft', 'failed', 'i.koval', ['Nature'], 'Sep 6 12:00'],
     ['CW-2273', 'Winter light', 'cw', 'uk', 'Easy', 'approved', 'passed', 'i.koval', ['Nature'], 'Sep 7 14:20'],
-    ['WL-0924', 'Kyiv morning', 'wordle', 'uk', 'Medium', 'approved', 'passed', 'i.koval', ['City'], 'Sep 7 14:20']
+    ['GW-0924', 'Kyiv morning', 'guessword', 'uk', 'Medium', 'approved', 'passed', 'i.koval', ['City'], 'Sep 7 14:20']
   ];
 
   var VALIDATION_ISSUES = {
@@ -185,15 +269,15 @@ Console.data = (function () {
       { code: 'grid_answer_mismatch', where: 'row 3, column 2', message: 'Grid letter V does not match the answer for 3-down' },
       { code: 'invalid_entry', where: '9-across', message: 'ЙЙЙЙЙ is not in the Ukrainian dictionary' }
     ],
-    'WL-0923': [
-      { code: 'answer_length', where: 'answer 4', message: 'Answer must be exactly five letters' },
-      { code: 'answer_reuse', where: 'answer 2', message: 'ВОДА was used in WL-0911 within the reuse window' }
+    'GW-0923': [
+      { code: 'answer_length', where: 'answer', message: 'ВОДА is four letters. The answer must be exactly five letters' },
+      { code: 'answer_bank', where: 'answer', message: 'ВОДА is not in the Ukrainian answer bank' },
+      { code: 'answer_accepted', where: 'answer', message: 'ВОДА is not in the Ukrainian accepted-guess list, so a player who types it would be rejected' }
     ]
   };
 
   var puzzles = puzzleSeed.map(function (p, i) {
     var kind = p[2];
-    var wordle = WORDLE_SETS[i % WORDLE_SETS.length];
     return {
       id: p[0],
       title: p[1],
@@ -209,7 +293,7 @@ Console.data = (function () {
       updatedAt: p[9],
       content: kind === 'cw'
         ? cwContent(i % 2 ? 'b' : 'a')
-        : wordleContent(wordle[0], wordle[1])
+        : guesswordContent(nextBankAnswer(p[3]))
     };
   });
 
@@ -219,21 +303,21 @@ Console.data = (function () {
       blurb: 'Five gentle minis for a first week.',
       unlockRule: 'Free for everyone', reward: '+50 coins on completion',
       visibility: 'published', order: 1,
-      members: ['CW-2254', 'WL-0905', 'CW-2257', 'WL-0912', 'CW-2262']
+      members: ['CW-2254', 'GW-0905', 'CW-2257', 'GW-0912', 'CW-2262']
     },
     {
       id: 'col_night', name: 'Night shift', shelf: 'Themes', emoji: '🌙',
       blurb: 'Harder games for late solvers.',
       unlockRule: 'Unlocks after a 7-day streak', reward: '+120 coins on completion',
       visibility: 'draft', order: 2,
-      members: ['CW-2259', 'CW-2269', 'WL-0908', 'WL-0920']
+      members: ['CW-2259', 'CW-2269', 'GW-0908', 'GW-0920']
     },
     {
       id: 'col_uk', name: 'Ukrainian starter', shelf: 'Languages', emoji: '🇺🇦',
       blurb: 'The first Ukrainian shelf, still in preparation.',
       unlockRule: 'Free for everyone', reward: 'None',
       visibility: 'hidden', order: 3,
-      members: ['CW-2273', 'WL-0924']
+      members: ['CW-2273', 'GW-0924']
     }
   ];
 
@@ -243,33 +327,33 @@ Console.data = (function () {
 
   var DOW = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
   // Sep 1 2026 is a Tuesday, so index 0 sits in the second column of a Monday-first grid.
-  // [crosswordId, wordleId] per day of month; a missing entry is an empty slot.
+  // [crosswordId, guesswordId] per day of month; a missing entry is an empty slot.
   var DAY_GAMES = {
-    1: ['CW-2254', 'WL-0905'],
-    2: ['CW-2255', 'WL-0906'],
-    3: ['CW-2256', 'WL-0907'],
-    4: ['CW-2257', 'WL-0908'],
-    5: ['CW-2258', 'WL-0909'],
-    6: ['CW-2259', 'WL-0910'],
-    7: ['CW-2261', 'WL-0912'],
-    8: ['CW-2262', 'WL-0913'],
-    9: ['CW-2263', 'WL-0914'],
-    10: ['CW-2264', 'WL-0915'],
+    1: ['CW-2254', 'GW-0905'],
+    2: ['CW-2255', 'GW-0906'],
+    3: ['CW-2256', 'GW-0907'],
+    4: ['CW-2257', 'GW-0908'],
+    5: ['CW-2258', 'GW-0909'],
+    6: ['CW-2259', 'GW-0910'],
+    7: ['CW-2261', 'GW-0912'],
+    8: ['CW-2262', 'GW-0913'],
+    9: ['CW-2263', 'GW-0914'],
+    10: ['CW-2264', 'GW-0915'],
     11: ['CW-2265', null],
-    12: ['CW-2266', 'WL-0916'],
-    13: ['CW-2267', 'WL-0917'],
-    14: ['CW-2268', 'WL-0918']
+    12: ['CW-2266', 'GW-0916'],
+    13: ['CW-2267', 'GW-0917'],
+    14: ['CW-2268', 'GW-0918']
   };
 
   var DAY_AUDIT = {
     8: [
-      ['12:00 UTC', 'system', 'Daily game published — crossword + Wordle'],
+      ['12:00 UTC', 'system', 'Daily game published — crossword + Guessword'],
       ['Sep 7 09:12', 'm.olsen', 'Schedule confirmed'],
       ['Sep 5 16:40', 'a.reid', 'Both games approved']
     ],
     11: [
       ['Sep 8 08:02', 'm.olsen', 'Crossword CW-2265 approved'],
-      ['Sep 6 11:20', 'system', 'Wordle candidate rejected — answer reuse'],
+      ['Sep 6 11:20', 'system', 'Guessword candidate rejected — answer reuse'],
       ['Sep 4 10:05', 'm.olsen', 'Date opened for scheduling']
     ]
   };
@@ -277,7 +361,7 @@ Console.data = (function () {
   var DAY_AUDIT_DEFAULT = [
     ['Sep 8 07:44', 'm.olsen', 'Pair created'],
     ['Sep 6 15:10', 'system', 'Crossword imported from batch 2026-36'],
-    ['Sep 6 15:10', 'system', 'Wordle imported from batch 2026-36']
+    ['Sep 6 15:10', 'system', 'Guessword imported from batch 2026-36']
   ];
 
   // 30 materialised days, Sep 1 – Sep 30 2026.
@@ -295,7 +379,7 @@ Console.data = (function () {
       today: iso === TODAY_ISO,
       past: dn < 8,
       crosswordId: (DAY_GAMES[dn] || [])[0] || null,
-      wordleId: (DAY_GAMES[dn] || [])[1] || null,
+      guesswordId: (DAY_GAMES[dn] || [])[1] || null,
       scheduled: false,
       publishTime: '12:00',
       publishMode: 'utc',
@@ -324,7 +408,7 @@ Console.data = (function () {
         ['Notifications', 'Daily game · 12:00 local', true]
       ],
       timeline: [
-        ['Today 12:06', 'solve', 'Wordle "In the loop" solved in 3 guesses', '+40'],
+        ['Today 12:06', 'solve', 'Guessword "In the loop" solved in 3 guesses', '+40'],
         ['Today 12:04', 'session', 'Session opened · iOS 18.2', ''],
         ['Sep 7 12:11', 'ledger', 'Streak reward credited', '+40'],
         ['Sep 6 12:09', 'ledger', 'Hint purchased', '−15'],
@@ -387,7 +471,7 @@ Console.data = (function () {
       ],
       timeline: [
         ['Today 08:15', 'session', 'Support contact · lost streak after travel', ''],
-        ['Sep 6 23:58', 'solve', 'Wordle missed — streak reset', ''],
+        ['Sep 6 23:58', 'solve', 'Guessword missed — streak reset', ''],
         ['Sep 4 12:30', 'ledger', 'Star pack purchase', '+500']
       ],
       devices: [
@@ -576,31 +660,31 @@ Console.data = (function () {
   var signals = [
     {
       id: 'sig_drop_gen', name: 'Daily game generation', level: 'failed',
-      detail: 'Failed for Sep 11 — no Wordle assigned', lastRun: '08:00 UTC',
+      detail: 'Failed for Sep 11 — no Guessword assigned', lastRun: '08:00 UTC',
       job: 'drop.generate', object: 'day 2026-09-11',
-      error: 'DropInvalid: a Daily game needs exactly one crossword and one Wordle',
+      error: 'DropInvalid: a Daily game needs exactly one crossword and one Guessword',
       runs: [['08:00 UTC', 'failed'], ['Sep 7 08:00 UTC', 'failed'], ['Sep 6 08:00 UTC', 'ok']],
       items: [
         { label: 'Sep 11 crossword CW-2265', outcome: 'ok', detail: 'Ready' },
-        { label: 'Sep 11 Wordle', outcome: 'failed', detail: 'No Wordle assigned' }
+        { label: 'Sep 11 Guessword', outcome: 'failed', detail: 'No Guessword assigned' }
       ]
     },
     {
       id: 'sig_pool_depth', name: 'Content pool depth', level: 'ok',
-      detail: 'Crossword 21 days · Wordle 6 days', lastRun: '08:00 UTC',
+      detail: 'Crossword 21 days · Guessword 6 days', lastRun: '08:00 UTC',
       job: 'pool.measure', object: 'pool', error: '',
       runs: [['08:00 UTC', 'ok']],
       depth: [
         { lang: 'en', kind: 'cw', days: 21, floor: 10 },
-        { lang: 'en', kind: 'wordle', days: 6, floor: 10 },
+        { lang: 'en', kind: 'guessword', days: 6, floor: 10 },
         { lang: 'uk', kind: 'cw', days: 2, floor: 10 },
-        { lang: 'uk', kind: 'wordle', days: 1, floor: 10 }
+        { lang: 'uk', kind: 'guessword', days: 1, floor: 10 }
       ]
     },
     {
-      id: 'sig_pool_warn', name: 'Wordle pool warning', level: 'warn',
+      id: 'sig_pool_warn', name: 'Guessword pool warning', level: 'warn',
       detail: 'Below the 10-day floor for English', lastRun: '08:00 UTC',
-      job: 'pool.measure', object: 'pool en/wordle', error: '',
+      job: 'pool.measure', object: 'pool en/guessword', error: '',
       runs: [['08:00 UTC', 'warn']], items: []
     },
     {
@@ -625,7 +709,7 @@ Console.data = (function () {
         { label: 'CW-2266 Weekend vibes', outcome: 'ok', detail: 'Draft created' },
         { label: 'CW-2267 Full circle', outcome: 'ok', detail: 'Draft created' },
         { label: 'CW-2270 Paper trail', outcome: 'failed', detail: 'Grid letter does not match 3-down' },
-        { label: 'WL-0923 Hard water', outcome: 'failed', detail: 'Answer 4 is not five letters' }
+        { label: 'GW-0923 Hard water', outcome: 'failed', detail: 'The answer ВОДА is four letters' }
       ]
     },
     {
@@ -644,10 +728,10 @@ Console.data = (function () {
   var audit = [
     { time: 'Sep 8 09:41', operator: 's.novak', action: 'Hold solve reward', object: 'pl_2a90bd', reason: 'Flag fl_1001 open, reward held pending review', result: 'Held' },
     { time: 'Sep 8 08:02', operator: 'm.olsen', action: 'Approve crossword', object: 'CW-2265', reason: '', result: 'Approved' },
-    { time: 'Sep 7 16:30', operator: 'a.reid', action: 'Approve Wordle', object: 'WL-0918', reason: '', result: 'Approved' },
+    { time: 'Sep 7 16:30', operator: 'a.reid', action: 'Approve Guessword', object: 'GW-0918', reason: '', result: 'Approved' },
     { time: 'Sep 7 09:12', operator: 'm.olsen', action: 'Confirm schedule', object: 'day 2026-09-09', reason: 'Standard weekday Daily game', result: 'Scheduled at 12:00 UTC' },
     { time: 'Sep 6 15:10', operator: 'a.reid', action: 'Import batch', object: 'batch_2026_36', reason: 'Weekly batch from the editorial pipeline', result: '34 accepted, 2 rejected' },
-    { time: 'Sep 6 11:20', operator: 'system', action: 'Reject import item', object: 'WL-0923', reason: 'Answer reuse inside the window', result: 'Rejected' },
+    { time: 'Sep 6 11:20', operator: 'system', action: 'Reject import item', object: 'GW-0923', reason: 'Answer reuse inside the window', result: 'Rejected' },
     { time: 'Sep 5 16:40', operator: 'a.reid', action: 'Approve crossword', object: 'CW-2262', reason: '', result: 'Approved' },
     { time: 'Aug 30 16:44', operator: 'm.olsen', action: 'Append compensating entry', object: 'pl_8f2c41', reason: 'Outage on Aug 30 lost a streak reward', result: '+300 coins, balance 1,375' }
   ];
@@ -660,6 +744,7 @@ Console.data = (function () {
     operators: operators,
     environments: environments,
     puzzles: puzzles,
+    wordBank: wordBank,
     collections: collections,
     days: days,
     players: players,

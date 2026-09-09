@@ -6,7 +6,7 @@
    - placements gain the machine-readable fields the rule editor (A2) writes:
      `capNumber`, `graceHours`, `platformList` and `fillPct`. The display fields
      (`cap`, `platforms`, `fill`) stay exactly as js/data.js wrote them.
-   - the Wordle pool warning gains the `depth` rows O2 drills into.
+   - the Guessword pool warning gains the `depth` rows O2 drills into.
    - one reward-grant signal is added so the Ads grant-health card has a real
      Operations destination, and so O1 has a retry that actually succeeds.
    - one import batch is added so O3 covers both branches: a rejected item that
@@ -38,8 +38,8 @@
   var poolWarn = byId(C.data.signals, 'sig_pool_warn');
   if (poolWarn) {
     poolWarn.depth = [
-      { lang: 'en', kind: 'wordle', days: 6, floor: 10 },
-      { lang: 'uk', kind: 'wordle', days: 1, floor: 10 }
+      { lang: 'en', kind: 'guessword', days: 6, floor: 10 },
+      { lang: 'uk', kind: 'guessword', days: 1, floor: 10 }
     ];
   }
 
@@ -71,7 +71,7 @@
       { label: 'CW-2272 Night shift', outcome: 'ok', detail: 'Draft created' },
       { label: 'CW-2273 Low tide', outcome: 'ok', detail: 'Draft created' },
       { label: 'CW-2270 Paper trail', outcome: 'failed', detail: 'Grid letter does not match 3-down' },
-      { label: 'WL-0931 Salt flats', outcome: 'failed', detail: 'Answer 2 reuses a word from the Sep 3 Daily game' }
+      { label: 'GW-0931 Salt flats', outcome: 'failed', detail: 'The answer was used in GW-0907 on Sep 3' }
     ]
   });
 })(window.Console);

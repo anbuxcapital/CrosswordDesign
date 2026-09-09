@@ -323,7 +323,7 @@
       row.appendChild(el('span', 'col-pos', String(i + 1)));
       var text = el('div', 'col-member-text');
       var title = el('div', 'col-member-title');
-      title.appendChild(el('span', 'l-tag', p.kind === 'cw' ? 'CW' : 'WL'));
+      title.appendChild(el('span', 'l-tag', C.kindTag(p.kind)));
       title.appendChild(el('span', null, p.title));
       text.appendChild(title);
       text.appendChild(el('div', 'col-member-meta', p.id));
@@ -467,7 +467,7 @@
     d.members.forEach(function (id, i) {
       var p = puzzleLine(id);
       var card = el('div', 'shelf-card');
-      card.appendChild(el('div', 'shelf-card-kind', (p.kind === 'cw' ? 'Crossword' : 'Wordle') + ' · ' + p.difficulty));
+      card.appendChild(el('div', 'shelf-card-kind', C.kindLabel(p.kind) + ' · ' + p.difficulty));
       card.appendChild(el('div', 'shelf-card-title', p.title));
       card.appendChild(el('div', 'shelf-card-num', String(i + 1) + ' of ' + d.members.length));
       cards.appendChild(card);

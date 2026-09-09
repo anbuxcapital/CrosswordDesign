@@ -325,13 +325,14 @@ window.Console = window.Console || {};
     return n;
   };
 
-  /* ui.puzzlePicker({kind:'cw'|'wordle', lang:'en', onPick(puzzle), statuses}) */
+  /* ui.puzzlePicker({kind:'cw'|'guessword', lang:'en', onPick(puzzle), statuses})
+     Every kind word comes from Console.KIND_* through Console.kind*(). */
   ui.puzzlePicker = function (spec) {
     var statuses = spec.statuses || ['approved'];
     var wrap = el('div');
     var search = el('input', 'input picker-search');
     search.type = 'search';
-    var pickNoun = spec.kind === 'wordle' ? 'Wordle games' : spec.kind === 'cw' ? 'crosswords' : 'games';
+    var pickNoun = spec.kind ? C.kindWordPlural(spec.kind) : 'games';
     search.placeholder = 'Search approved ' + pickNoun + ' by title or ID';
     search.setAttribute('aria-label', 'Search approved ' + pickNoun);
     wrap.appendChild(search);
@@ -350,7 +351,7 @@ window.Console = window.Console || {};
         return (p.title + ' ' + p.id).toLowerCase().indexOf(q) >= 0;
       });
       if (!rows.length) {
-        list.appendChild(ui.emptyState('No approved ' + (spec.kind === 'wordle' ? 'Wordle game' : 'crossword') + ' matches that search.'));
+        list.appendChild(ui.emptyState('No approved ' + (spec.kind ? C.kindWord(spec.kind) : 'game') + ' matches that search.'));
         return;
       }
       rows.forEach(function (p) {

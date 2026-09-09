@@ -72,10 +72,10 @@
         : { why: id + ' is no longer in this environment.' };
     }
 
-    if (/^(CW|WL)-/.test(id)) {
+    if (/^(CW|GW)-/.test(id)) {
       var puz = C.find.puzzle(id);
       return puz
-        ? { area: 'library', route: '#/library/' + id, what: '“' + puz.title + '” in the ' + (puz.kind === 'cw' ? 'crossword' : 'Wordle') + ' editor' }
+        ? { area: 'library', route: '#/library/' + id, what: '“' + puz.title + '” in the ' + C.kindWord(puz.kind) + ' editor' }
         : { why: id + ' is not in this library.' };
     }
 

@@ -1,6 +1,6 @@
 # Crosscut admin console
 
-`prototype/index.html` is the clickable multi-screen prototype covering every admin happy path in `USE-CASES.md`; `CrosscutAdminConsole.html` is the selected artboard that set the visual direction. Together they cover the Daily game desk, the crossword and Wordle library and editors, collections, player support, leaderboard review, economy ledger, advertising rules, operations, and access. All data and actions are simulated; the console is not connected to production services.
+`prototype/index.html` is the clickable multi-screen prototype covering every admin happy path in `USE-CASES.md`; `CrosscutAdminConsole.html` is the selected artboard that set the visual direction. Together they cover the Daily game desk, the crossword and Guessword library and editors, collections, player support, leaderboard review, economy ledger, advertising rules, operations, and access. All data and actions are simulated; the console is not connected to production services.
 
 From the design repository root, run `python3 -m http.server 4173`, then open:
 
@@ -23,7 +23,7 @@ The artboard is a self-contained bundle; the clickable prototype is plain HTML, 
 
 ## Current design direction
 
-- Make the Daily game gap the first thing an operator sees and can resolve. A Daily game is exactly one crossword and one Wordle per language per day.
+- Make the Daily game gap the first thing an operator sees and can resolve. A Daily game is exactly one crossword and one Guessword per language per day.
 - Keep high-density operational information readable through strong hierarchy, quiet dividers, and restrained color.
 - Require an explicit reason and review step for player or economy mutations.
 - Keep content state, operational health, and commercial controls distinct while sharing the same navigation and audit model.

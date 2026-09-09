@@ -3,7 +3,7 @@
 
    O1 Triage and retry a failed job — signals table → detail (job, affected
       object, error, last runs) → Retry → per-item results. The retry re-reads
-      the store, so filling the Sep 11 Wordle on the Daily game desk really does
+      the store, so filling the Sep 11 Guessword on the Daily game desk really does
       turn this signal green; until then the detail names the item still missing.
    O2 Act on pool depth — depth rows per language and kind against the 10-day
       floor, each short row opening the library filtered to Approved of that kind.
@@ -16,9 +16,9 @@
 
   C.store.ui.operations = { tab: 'signals', signal: 'sig_drop_gen', batch: null };
 
-  var KIND = { cw: 'Crossword', wordle: 'Wordle' };
-  var KIND_INLINE = { cw: 'crossword', wordle: 'Wordle' };
-  var LANG = { en: 'English', uk: 'Ukrainian' };
+  /* Kind words come from Console.KIND_LABEL in app.js, read through the
+     accessors, so a rename lands here too. */
+  var LANG = { en: 'English', uk: 'Ukrainian', ru: 'Russian' };
   var READY = ['approved', 'scheduled', 'published', 'live'];
 
   function days(n) { return n + (n === 1 ? ' day' : ' days'); }
@@ -52,24 +52,24 @@
     var day = dayOf(sig);
     if (day) {
       var derived = C.deriveDay(day);
-      // A Daily game is exactly two slots: one crossword, one Wordle.
-      return ['cw', 'wordle'].map(function (kind) {
+      // A Daily game is exactly two slots: one crossword, one Guessword.
+      return ['cw', 'guessword'].map(function (kind) {
         var item = derived.slots[kind];
         if (!item) {
           return {
-            label: day.label + ' ' + KIND_INLINE[kind], outcome: 'failed',
-            detail: 'No ' + KIND[kind] + ' assigned to this day'
+            kind: kind, label: day.label + ' ' + C.kindWord(kind), outcome: 'failed',
+            detail: 'No ' + C.kindLabel(kind) + ' assigned to this day'
           };
         }
         if (READY.indexOf(item.status) < 0) {
           return {
-            label: day.label + ' ' + KIND_INLINE[kind] + ' ' + item.id, outcome: 'failed',
+            kind: kind, label: day.label + ' ' + C.kindWord(kind) + ' ' + item.id, outcome: 'failed',
             detail: item.title + ' is ' + (C.ui.STATUS[item.status] || { label: item.status }).label.toLowerCase() + ', not approved'
           };
         }
         return {
-          label: day.label + ' ' + KIND_INLINE[kind] + ' ' + item.id, outcome: 'ok',
-          detail: item.title + ' queued in the ' + KIND[kind] + ' slot'
+          kind: kind, label: day.label + ' ' + C.kindWord(kind) + ' ' + item.id, outcome: 'ok',
+          detail: item.title + ' queued in the ' + C.kindLabel(kind) + ' slot'
         };
       });
     }
@@ -80,7 +80,8 @@
 
   function successDetail(sig, items) {
     var day = dayOf(sig);
-    if (day) return 'Generated for ' + day.label + ' · Crossword queued · Wordle queued';
+    if (day) return 'Generated for ' + day.label + ' · ' + C.kindLabel('cw') +
+      ' queued · ' + C.kindLabel('guessword') + ' queued';
     if (sig.id === 'sig_reward_grants') {
       return '0 of 812 grants failed · Post-solve rewarded · 7 days (under the 1% alert floor)';
     }
@@ -109,7 +110,7 @@
     var reason = C.ui.reasonField({
       required: false,
       label: 'Reason (optional)',
-      placeholder: 'e.g. Wordle assigned in Daily game, re-running generation'
+      placeholder: 'e.g. ' + C.kindLabel('guessword') + ' assigned in Daily game, re-running generation'
     });
     body.appendChild(reason);
 
@@ -166,7 +167,7 @@
       var note = el('div', 'notice blocked');
       note.style.marginTop = '12px';
       note.textContent = day
-        ? 'Assign a ' + (/Wordle/.test(first.label) ? 'Wordle' : 'crossword') + ' to ' + day.longLabel + ' in Daily game, then retry.'
+        ? 'Assign ' + C.kindArticle(first.kind || 'cw') + ' to ' + day.longLabel + ' in Daily game, then retry.'
         : 'Fix the item above, then retry.';
       body.appendChild(note);
     }
@@ -208,7 +209,7 @@
     return C.ui.table({
       cols: [
         { key: 'lang', label: 'Language', width: '92px', render: function (r) { return LANG[r.lang] || r.lang; } },
-        { key: 'kind', label: 'Kind', render: function (r) { return KIND[r.kind] || r.kind; } },
+        { key: 'kind', label: 'Kind', render: function (r) { return C.kindLabel(r.kind); } },
         { key: 'days', label: 'Depth', align: 'right', width: '124px', render: function (r) {
           var w = el('div', 'cell-stack');
           var v = el('span', 'num', days(r.days));

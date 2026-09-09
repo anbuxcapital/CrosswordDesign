@@ -184,8 +184,50 @@ window.Console = window.Console || {};
     return entry.roles.some(C.hasRole);
   };
 
+  // ---------------------------------------------------------------------
+  // game kinds — the one place a kind is named for a person
+  // ---------------------------------------------------------------------
+
+  /* Every user-visible word for a game kind is read from this one map, so
+     renaming a game is a change here and nowhere else. Store keys, ids and
+     routes are a separate vocabulary and stay as they are: the kind keys are
+     `cw` and `guessword`, the id prefixes `CW-` and `GW-`.
+
+       one         a label or a title            'Crossword'
+       many        a tab, a column               'Crosswords'
+       a           after a verb                  'a crossword'
+       word        mid-sentence                  'crossword'
+       wordPlural  mid-sentence, counted         'crosswords'
+       tag         a calendar or member chip     'CW'
+       idPrefix    id minting, not a label       'CW-'
+
+     `crossword` is a common noun and drops its capital mid-sentence;
+     `Guessword` is the game's name and keeps it everywhere. */
+  C.KIND_LABEL = {
+    cw: {
+      one: 'Crossword', many: 'Crosswords', a: 'a crossword',
+      word: 'crossword', wordPlural: 'crosswords', tag: 'CW', idPrefix: 'CW-'
+    },
+    guessword: {
+      one: 'Guessword', many: 'Guesswords', a: 'a Guessword',
+      word: 'Guessword', wordPlural: 'Guesswords', tag: 'GW', idPrefix: 'GW-'
+    }
+  };
+
+  function kindPart(k, part, fallback) {
+    var entry = C.KIND_LABEL[k];
+    return entry ? entry[part] : (fallback == null ? k : fallback);
+  }
+  C.kindLabel = function (k) { return kindPart(k, 'one'); };
+  C.kindLabelPlural = function (k) { return kindPart(k, 'many'); };
+  C.kindArticle = function (k) { return kindPart(k, 'a'); };
+  C.kindWord = function (k) { return kindPart(k, 'word'); };
+  C.kindWordPlural = function (k) { return kindPart(k, 'wordPlural'); };
+  C.kindTag = function (k) { return kindPart(k, 'tag'); };
+  C.kindIdPrefix = function (k) { return kindPart(k, 'idPrefix', 'CW-'); };
+
   // Derived readiness for a day. Shared by the desk and by publishing screens.
-  // A Daily game is exactly two references: one crossword and one Wordle.
+  // A Daily game is exactly two references: one crossword and one Guessword.
   C.deriveDay = function (day) {
     function slot(id) {
       var p = id ? C.find.puzzle(id) : null;
@@ -195,14 +237,14 @@ window.Console = window.Console || {};
         status: day.scheduled && p.status === 'approved' ? 'scheduled' : p.status
       };
     }
-    var slots = { cw: slot(day.crosswordId), wordle: slot(day.wordleId) };
-    var items = [slots.cw, slots.wordle].filter(Boolean);
+    var slots = { cw: slot(day.crosswordId), guessword: slot(day.guesswordId) };
+    var items = [slots.cw, slots.guessword].filter(Boolean);
     var missing = [];
     if (!slots.cw) missing.push('cw');
-    if (!slots.wordle) missing.push('wordle');
+    if (!slots.guessword) missing.push('guessword');
     var okStates = ['published', 'live', 'scheduled', 'approved'];
     function slotOk(it) { return !!it && okStates.indexOf(it.status) >= 0; }
-    var okCount = (slotOk(slots.cw) ? 1 : 0) + (slotOk(slots.wordle) ? 1 : 0);
+    var okCount = (slotOk(slots.cw) ? 1 : 0) + (slotOk(slots.guessword) ? 1 : 0);
     var live = items.some(function (i) { return i.status === 'live'; });
     var done = items.length > 0 && items.every(function (i) { return i.status === 'published'; });
     var empty = items.length === 0;
