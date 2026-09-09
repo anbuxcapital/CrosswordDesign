@@ -3,7 +3,7 @@
 
    O1 Triage and retry a failed job — signals table → detail (job, affected
       object, error, last runs) → Retry → per-item results. The retry re-reads
-      the store, so filling the Sep 11 Daily Five on the drop desk really does
+      the store, so filling the Sep 11 Wordle on the Daily game desk really does
       turn this signal green; until then the detail names the item still missing.
    O2 Act on pool depth — depth rows per language and kind against the 10-day
       floor, each short row opening the library filtered to Approved of that kind.
@@ -16,8 +16,8 @@
 
   C.store.ui.operations = { tab: 'signals', signal: 'sig_drop_gen', batch: null };
 
-  var KIND = { cw: 'Crossword', d5: 'Daily Five' };
-  var KIND_INLINE = { cw: 'crossword', d5: 'Daily Five' };
+  var KIND = { cw: 'Crossword', wordle: 'Wordle' };
+  var KIND_INLINE = { cw: 'crossword', wordle: 'Wordle' };
   var LANG = { en: 'English', uk: 'Ukrainian' };
   var READY = ['approved', 'scheduled', 'published', 'live'];
 
@@ -52,8 +52,8 @@
     var day = dayOf(sig);
     if (day) {
       var derived = C.deriveDay(day);
-      // A drop is exactly two slots: one crossword, one Daily Five.
-      return ['cw', 'd5'].map(function (kind) {
+      // A Daily game is exactly two slots: one crossword, one Wordle.
+      return ['cw', 'wordle'].map(function (kind) {
         var item = derived.slots[kind];
         if (!item) {
           return {
@@ -80,7 +80,7 @@
 
   function successDetail(sig, items) {
     var day = dayOf(sig);
-    if (day) return 'Generated for ' + day.label + ' · Crossword queued · Daily Five queued';
+    if (day) return 'Generated for ' + day.label + ' · Crossword queued · Wordle queued';
     if (sig.id === 'sig_reward_grants') {
       return '0 of 812 grants failed · Post-solve rewarded · 7 days (under the 1% alert floor)';
     }
@@ -109,7 +109,7 @@
     var reason = C.ui.reasonField({
       required: false,
       label: 'Reason (optional)',
-      placeholder: 'e.g. Daily Five assigned in Daily challenge, re-running generation'
+      placeholder: 'e.g. Wordle assigned in Daily game, re-running generation'
     });
     body.appendChild(reason);
 
@@ -166,7 +166,7 @@
       var note = el('div', 'notice blocked');
       note.style.marginTop = '12px';
       note.textContent = day
-        ? 'Assign a ' + (/Daily Five/.test(first.label) ? 'Daily Five' : 'crossword') + ' to ' + day.longLabel + ' in Daily challenge, then retry.'
+        ? 'Assign a ' + (/Wordle/.test(first.label) ? 'Wordle' : 'crossword') + ' to ' + day.longLabel + ' in Daily game, then retry.'
         : 'Fix the item above, then retry.';
       body.appendChild(note);
     }
@@ -175,7 +175,7 @@
       body: body,
       wide: true,
       secondary: (!allOk && day && C.canSee('desk')) ? {
-        label: 'Open ' + day.label + ' in Daily challenge',
+        label: 'Open ' + day.label + ' in Daily game',
         onClick: function () { C.ui.closeModal(); goToDay(day); }
       } : null,
       primary: { label: 'Done', onClick: function () { C.ui.closeModal(); } }
@@ -244,7 +244,7 @@
     var day = dayOf(sig);
     var n = el('div', 'notice blocked');
     n.textContent = day
-      ? 'The ' + day.longLabel + ' Daily challenge cannot publish until the missing item is assigned.'
+      ? 'The ' + day.longLabel + ' Daily game cannot publish until the missing item is assigned.'
       : 'Retry the job; every item reports its own outcome.';
     return n;
   }
@@ -311,7 +311,7 @@
       }));
     }
     if (day && C.canSee('desk')) {
-      foot.appendChild(C.ui.button('Open ' + day.label + ' in Daily challenge', {
+      foot.appendChild(C.ui.button('Open ' + day.label + ' in Daily game', {
         onClick: function () { goToDay(day); }
       }));
     }
@@ -484,7 +484,7 @@
     b.appendChild(el('span', 'banner-dot'));
     b.appendChild(el('div', 'banner-text', bad.name + ' · ' + bad.detail));
     b.appendChild(el('div', 'banner-detail', day
-      ? 'Blocks the ' + day.longLabel + ' Daily challenge.'
+      ? 'Blocks the ' + day.longLabel + ' Daily game.'
       : 'Retry the job to get a per-item outcome.'));
     b.appendChild(el('div', 'spacer'));
     b.appendChild(C.ui.button('Triage', {

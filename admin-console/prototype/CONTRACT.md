@@ -15,7 +15,7 @@ The shell, the visual system, the shared UI patterns and the demo data already e
 | `js/data.js` | Demo seed, split into per-area sections |
 | `js/app.js` | Store, router, role gating, `Console.commit`, `Console.toast`, shell rendering |
 | `js/ui.js` | `Console.ui.*` pattern helpers |
-| `js/screens/desk.js` | Daily challenge (owned by the publishing builder) |
+| `js/screens/desk.js` | Daily game (owned by the publishing builder) |
 | `js/screens/stubs.js` | Placeholder screens for every unbuilt route |
 
 Open `index.html` directly from the filesystem, or serve the design repo root with `python3 -m http.server 4173` and open `http://127.0.0.1:4173/admin-console/prototype/index.html`.
@@ -96,14 +96,15 @@ store.todayLabel       'Tuesday, September 8, 2026'
 
 ### Record shapes
 
-**puzzle** — `{id:'CW-2264', title, kind:'cw'|'d5', lang:'en'|'uk', difficulty:'Easy'|'Medium'|'Hard', status, validation:'passed'|'failed'|'not_run', validationIssues:[{code, where, message}], version:Number, author, topics:[String], updatedAt, content}`
-`content` for `kind:'cw'` is `{size:5, grid:[[letter × 5] × 5], clues:{across:[{n,clue,answer}], down:[…]}}`; for `kind:'d5'` it is `{answers:[5 strings], hint}`.
+**puzzle** — `{id:'CW-2264' | 'WL-0915', title, kind:'cw'|'wordle', lang:'en'|'uk', difficulty:'Easy'|'Medium'|'Hard', status, validation:'passed'|'failed'|'not_run', validationIssues:[{code, where, message}], version:Number, author, topics:[String], updatedAt, content}`
+`content` for `kind:'cw'` is `{size:5, grid:[[letter × 5] × 5], clues:{across:[{n,clue,answer}], down:[…]}}`; for `kind:'wordle'` it is `{answers:[5 strings], hint}`.
+The kind vocabulary is `cw` and `wordle` everywhere — store field, filters, pickers, validators, library tab key and depth rows. Ids follow the kind: crosswords are `CW-####`, Wordle games are `WL-####`.
 
 **collection** — `{id, name, shelf, blurb, unlockRule, reward, visibility:'published'|'draft'|'hidden', order, members:[puzzleId]}`
 
-**day** — `{index:0…29, iso:'2026-09-11', dayOfMonth, dow:'Fri', label:'Sep 11', longLabel:'Fri Sep 11', today, past, items:[puzzleId], scheduled:Boolean, publishTime:'12:00', publishMode:'utc'|'local', audit:[{time, operator, text}]}`
-A day is exactly one **Daily challenge** with two fixed slots: one crossword and one Daily Five. `items` therefore holds at most one `cw` id and at most one `d5` id — never two of a kind, and there is no ordering to manage.
-Use `Console.deriveDay(day)` for readiness: it returns `{items:[{id,kind,title,status}], slots:{cw:item|null, d5:item|null}, missing:['cw'|'d5'], extra:[String], blocked, live, done, empty, readiness}`. A valid Daily challenge is exactly one crossword and exactly one Daily Five, both approved or later. `slots` is what screens should render; `missing` names the empty slots and `extra` names any duplicate kind (which should never occur) — either one makes the day `blocked`.
+**day** — `{index:0…29, iso:'2026-09-11', dayOfMonth, dow:'Fri', label:'Sep 11', longLabel:'Fri Sep 11', today, past, crosswordId:'CW-2265'|null, wordleId:'WL-0915'|null, scheduled:Boolean, publishTime:'12:00', publishMode:'utc'|'local', audit:[{time, operator, text}]}`
+A day is exactly one **Daily game**: two references, `crosswordId` and `wordleId`. Either may be `null` for an empty slot; neither can hold the wrong kind and there is no ordering to manage. Write a slot by assigning the field, never by pushing into a list.
+Use `Console.deriveDay(day)` for readiness: it returns `{items:[{id,kind,title,status}], slots:{cw:item|null, wordle:item|null}, missing:['cw'|'wordle'], blocked, live, done, empty, readiness}`. A valid Daily game is exactly one crossword and exactly one Wordle, both approved or later. `slots` is what screens should render, `items` is the same two entries with the empty ones dropped, and `missing` names the empty slots — a non-empty `missing`, or a slot that is not approved yet, makes the day `blocked`.
 
 **player** — `{id:'pl_8f2c41', name, signIn, lang, joined, streak, solved, tokens, stars, status:'active'|'suspended', profile:[[label, value, editable]], timeline:[[when, kind, text, amount]], devices:[[name, app, lastSeen]], ads:[[label, detail, tone]], notes:[{id, author, when, text, status:'open'|'closed'}]}`
 `timeline` kinds are `solve`, `session`, `ledger`, `flag`.
@@ -165,7 +166,7 @@ All return DOM nodes. `Console.ui.el(tag, className, text)` is the tiny element 
 | `modal(spec)` | `C.ui.modal({title:'Restore streak', body:node, wide:false, primary:{label:'Confirm', destructive:false, onClick:fn, disabled:function(){return !amount}}, secondary:{label:'Cancel'}})`. Primary is disabled while a contained reason field is empty. Close with `C.ui.closeModal()`; call `C.ui.refreshModal()` after changing something the `disabled()` test depends on. Escape and the backdrop close it. |
 | `results(items)` | `C.ui.results([{label:'Sep 12', outcome:'ok', detail:'Queued 12:00 UTC'}, {label:'Sep 14', outcome:'skipped', detail:'Crossword not approved'}])`. Outcomes: `ok`, `skipped`, `failed`. |
 | `auditLine(entry)` | `C.ui.auditLine(Console.store.audit[0])` |
-| `puzzlePicker(spec)` | `C.ui.puzzlePicker({kind:'d5', lang:'en', onPick:function(p){…}})` — searchable list of Approved games; pass `statuses:['approved','scheduled']` to widen it. |
+| `puzzlePicker(spec)` | `C.ui.puzzlePicker({kind:'wordle', lang:'en', onPick:function(p){…}})` — searchable list of Approved games; pass `statuses:['approved','scheduled']` to widen it. |
 | `tabs(items, active, onChange)` | `C.ui.tabs([{key:'profile',label:'Profile'}], tab, function(k){store.ui.players.tab=k; C.render();})` |
 | `field(spec)` | `C.ui.field({label:'Display name', value:'Dana Whitfield', editable:true, changed:false, editing:false, onEdit:fn})`. Read-only fields render dashed and washed; editable fields sit on paper. |
 | `emptyState(text, mark?)` | `C.ui.emptyState('No flagged solves are waiting.')` |
@@ -233,7 +234,8 @@ For bulk actions the result step is a second modal containing `Console.ui.result
 
 Use these keys with `Console.ui.pill` / `Console.ui.status` so wording and colour stay consistent. Never signal state with colour alone.
 
-- Game and Daily challenge: `draft` Draft · `review` Needs review · `approved` Approved · `scheduled` Scheduled · `published` Published · `live` Live now · `empty` No game
+- Game and Daily game: `draft` Draft · `review` Needs review · `approved` Approved · `scheduled` Scheduled · `published` Published · `live` Live now · `empty` No game
+- Game kind: `cw` Crossword · `wordle` Wordle
 - Validation: `passed` · `failed` · `not_run` Not run
 - Day readiness: `ready` · `blocked` · `queued` · `unplanned` · `done`
 - Signals and jobs: `ok` · `warn` Warning · `failed`
@@ -247,13 +249,13 @@ Add a key only inside `ui.js`'s `STATUS` map — which means asking, since `ui.j
 
 ## 10. Writing rules
 
-- The daily pair of one crossword and one Daily Five is a **Daily challenge** — sentence case, and never `drop` in the interface (`Daily challenge`, `Schedule Daily challenge`, `Schedule 3 Daily challenges`, `Fri Sep 11 Daily challenge`, `Daily challenge generation`). `drop` survives only as a verb where nothing better fits (`drops at 12:00 UTC`; prefer `publishes at 12:00 UTC`) and in player-app labels quoted verbatim. Code identifiers, ids, routes and job names keep the old word — `#/desk`, `sig_drop_gen`, `drop.generate`, `desk.js`.
-- Never write `puzzle` in the interface. The two games are a **crossword** and a **Daily Five**; name the kind when it is known (`Crossword editor`, `Approve crossword`, `Replace Daily Five`, `This day has no crossword yet`) and use **game** / **games** when both kinds are meant (`Import games`, `New game`, `412 games`, `Search the library`). Never write `Wordle`; Daily Five may be introduced once per screen as `Daily Five (one word, six tries)`. Code identifiers, store keys, ids and routes keep the old names — `store.puzzles`, `Console.find.puzzle`, `puzzleId`, `#/library`.
+- The daily pair of one crossword and one Wordle is a **Daily game** — sentence case, and never `Daily challenge` or `drop` in the interface (`Daily game`, `Schedule Daily game`, `Schedule 3 Daily games`, `Fri Sep 11 Daily game`, `Daily game generation`). `drop` survives only as a verb where nothing better fits (`drops at 12:00 UTC`; prefer `publishes at 12:00 UTC`) and in player-app labels quoted verbatim. Routes, ids and job names keep the old word — `#/desk`, `sig_drop_gen`, `drop.generate`, `desk.js`.
+- Never write `puzzle` in the interface. The two games are a **crossword** and a **Wordle**; name the kind when it is known (`Crossword editor`, `Wordle editor`, `Approve crossword`, `Replace Wordle`, `This day has no crossword yet`) and use **game** / **games** when both kinds are meant (`Import games`, `New game`, `412 games`, `Search the library`). Never write `Daily Five`. `Wordle` is the name of the kind, so it takes `game` / `games` where a countable noun is needed (`Search approved Wordle games`, `3 approved Wordle games are unassigned`) and stands alone as a label (`Wordle`, `No Wordle chosen`). Code identifiers, store keys and routes keep the old names — `store.puzzles`, `Console.find.puzzle`, `puzzleId`, `#/library`.
 - The currency shown with the coin glyph is **coins** — never `tokens` — everywhere a person reads it: the Players list column and record stat, `Grant coins` and its review and audit strings, ledger and purchase labels (`+40 coins`, `Coin pack`), the economy currency selector (`Coins` / `Stars`), ads reward strings (`+25 coins`), player timeline amounts and collection reward text. The second currency stays **stars**. Code identifiers, store keys and ids keep the old word — `p.tokens`, `currency:'tokens'`, `grant_tokens` — so map the key to the word at render time rather than printing it. `token` survives in the interface only as the operator credential in Access and audit (`Rotate admin token`, `token_console_admin`) and in Better Auth wording; `css/console.css` keeps design tokens.
 - The stat order for a player is Streak, Solved, Coins, Stars, in the list and on the record.
 - Sentence case for titles, controls and messages. `Confirm schedule`, not `Confirm Schedule`.
-- Concrete labels. `No Daily Five assigned`, not `Issue`. `Retry generation`, not `Manage`.
-- Every metric carries scope and window: `Daily Five · English · 7 days`, and a threshold when one exists.
+- Concrete labels. `No Wordle assigned`, not `Issue`. `Retry generation`, not `Manage`.
+- Every metric carries scope and window: `Wordle · English · 7 days`, and a threshold when one exists.
 - Every alert names the object, the urgency and one recoverable next step.
 - Minimum 14px body and control size. Generous space around destructive controls.
 - Read-only and editable fields must look different — use `Console.ui.field`.

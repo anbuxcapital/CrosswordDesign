@@ -11,9 +11,9 @@ Crosscut has two games, named as the player app names them. The generic noun is 
 | Term | Meaning |
 |---|---|
 | Crossword | The grid game. A Mini is 5 × 5 with par 5:00; a weekend grid is 9 × 9. |
-| Daily Five | The five-letter deduction game, "One word. Six tries." Wordle-style, but that word never appears in the product. |
-| Daily challenge | The daily pair: exactly one crossword and one Daily Five per language per day. The player app shows it as "Today's drop" at the top of the feed. |
-| Drop | The moment a Daily challenge is published, at a UTC or player-local time. |
+| Wordle | The five-letter deduction game, "One word. Six tries." The player app currently labels it "Daily Five"; the console says Wordle. Wordle is a New York Times trademark, so the player-facing name is a separate decision. |
+| Daily game | The daily pair, two references: one crossword id and one Wordle id, per language per day. The player app shows it as "Today's drop" at the top of the feed. |
+| Drop | The moment a Daily game is published, at a UTC or player-local time. |
 | Collection | A themed, sized, setter or archive shelf in Browse, with a lock rule and a reward. |
 | Coins 🪙 | Earned from time left against par and from rewards; spent on hints. Can be bought. The player app's handoff calls them tokens; the console says coins. |
 | Stars ⭐ | Earned only by solving. Never bought or spent. |
@@ -26,9 +26,9 @@ Read from the player prototype (`user-app/Crosscut Prototype.dc.html`) and its h
 | ID | Player use case | Where in the player app |
 |---|---|---|
 | U1 | Onboard: pick level, topics and language; answer the notification prompt; pick a plan (Lite with ads, month, year) | Welcome, Quiz, Plan ready, Notifications, Paywall |
-| U2 | Open the feed and see the Daily challenge (shown as Today's drop) with each game's Start / Continue / Review state | Feed |
+| U2 | Open the feed and see the Daily game (shown as Today's drop) with each game's Start / Continue / Review state | Feed |
 | U3 | Solve a crossword against par with autocheck and the timer | Play |
-| U4 | Play Daily Five in six tries | Daily Five |
+| U4 | Play Wordle in six tries | Wordle |
 | U5 | Use a hint: 50/50, reveal a letter, solve the word; go to Wallet when coins run out | Hint sheet |
 | U6 | Earn stars, coins and the time bonus, and see the celebration | Solved |
 | U7 | Keep the streak: streak-at-risk card, streak strip, reminders | Feed, Solved, Notifications |
@@ -49,8 +49,8 @@ The backend design names only "editors" and a shared admin token. The console ne
 
 | Actor | Owns | Never does |
 |---|---|---|
-| Content editor | Library, crossword and Daily Five editors, validation, preview, approval | Scheduling, player data |
-| Publisher | Daily challenge desk, the two daily slots, publish time, schedule-ahead, collections | Editing game content |
+| Content editor | Library, crossword and Wordle editors, validation, preview, approval | Scheduling, player data |
+| Publisher | Daily game desk, the two daily slots, publish time, schedule-ahead, collections | Editing game content |
 | Support agent | Player lookup, profile fields, streak, session and coin support actions, account safeguards, notes | Leaderboard or ledger decisions |
 | Integrity reviewer | Flagged solves, board eligibility decisions, shadow status | Reward decisions, which stay with economy |
 | Economy admin | Ledger inspection, compensating entries, purchase lookup | Editing balances directly |
@@ -69,9 +69,9 @@ flowchart LR
   subgraph Player["Player use cases"]
     direction TB
     U1(U1 Onboard: level, topics, language, notifications, plan)
-    U2(U2 See the Daily challenge)
+    U2(U2 See the Daily game)
     U3(U3 Solve a crossword)
-    U4(U4 Play Daily Five)
+    U4(U4 Play Wordle)
     U5(U5 Use a hint)
     U6(U6 Earn stars, coins, time bonus)
     U7(U7 Keep the streak)
@@ -93,7 +93,7 @@ flowchart LR
     direction TB
     E1(E1 Import games)
     E2(E2 Create or duplicate a game)
-    E3(E3 Edit a crossword or Daily Five)
+    E3(E3 Edit a crossword or Wordle)
     E4(E4 Validate and fix)
     E5(E5 Preview as a player)
     E6(E6 Approve or send back)
@@ -179,9 +179,9 @@ flowchart LR
 | Player use case | Covered by | Coverage |
 |---|---|---|
 | U1 Onboard | M3 for the chosen plan | Partial. Notification prompts and level or topic defaults have no admin control. |
-| U2 See the Daily challenge | P1–P4 fill and schedule the Daily challenge; O1 retries a failed generation | Full |
+| U2 See the Daily game | P1–P4 fill and schedule the Daily game; O1 retries a failed generation | Full |
 | U3 Solve a crossword | E3–E7 create, validate, preview, approve and correct the crossword | Full |
-| U4 Play Daily Five | E3–E7, with Daily Five validation: answer length, dictionary membership, invalid characters, answer reuse | Full |
+| U4 Play Wordle | E3–E7, with Wordle validation: answer length, dictionary membership, invalid characters, answer reuse | Full |
 | U5 Use a hint | M1 shows hint spend in the ledger | Full for inspection. Hint prices are not editable in the console by design. |
 | U6 Earn rewards | M1 inspects, M2 compensates a missed credit | Full |
 | U7 Keep the streak | S3 restores a lost streak | Partial. Streak reminders are push notifications, deferred past v1. |
@@ -212,9 +212,9 @@ Each path is the single unbroken route from intent to confirmed result. Error br
 
 | ID | Happy path | Screens and dialogs |
 |---|---|---|
-| E1 Import games | Library (Crosswords or Daily Five tab) → Import → pick JSON files → validation summary (accepted / rejected counts) → per-item results → Import → games appear in Library as Draft and in Operations as an import batch | Library, Import dialog (3 steps), Operations |
+| E1 Import games | Library (Crosswords or Wordle tab) → Import → pick JSON files → validation summary (accepted / rejected counts) → per-item results → Import → games appear in Library as Draft and in Operations as an import batch | Library, Import dialog (3 steps), Operations |
 | E2 Create or duplicate a game | Library → active tab sets the kind → New game (language, difficulty) or row menu → Duplicate as draft → editor opens on the new Draft | Library, New-game dialog, Editor |
-| E3 Edit a crossword or Daily Five | Editor → Metadata tab (title, language, difficulty, topics, author) → Content tab (crossword: grid, clues, answers; Daily Five: five answers, hint, dictionary check) → Save → version incremented | Editor (Metadata, Content) |
+| E3 Edit a crossword or Wordle | Editor → Metadata tab (title, language, difficulty, topics, author) → Content tab (crossword: grid, clues, answers; Wordle: five answers, hint, dictionary check) → Save → version incremented | Editor (Metadata, Content) |
 | E4 Validate and fix | Editor → Run validation → Validation panel lists failures with the exact cell or clue → click a failure to focus it in Content → fix → re-run → Passed | Editor (Validation panel) |
 | E5 Preview as a player | Editor → Preview → phone-frame rendering of the feed card and the play screen → close | Editor (Preview) |
 | E6 Approve or send back | Editor (Needs review, validation Passed) → Approve (reason optional) or Send back (reason required) → status updates; the game becomes available to P1 | Editor (Review bar), Library |
@@ -224,9 +224,9 @@ Each path is the single unbroken route from intent to confirmed result. Error br
 
 | ID | Happy path | Screens and dialogs |
 |---|---|---|
-| P1 Fill a missing slot | Daily challenge → blocked day → Choose a crossword or Choose a Daily Five → picker filtered to Approved of that kind and language → pick → day becomes Ready | Daily challenge desk, Day inspector, Picker |
+| P1 Fill a missing slot | Daily game → blocked day → Choose a crossword or Choose a Wordle → picker filtered to Approved of that kind and language → pick → day becomes Ready | Daily game desk, Day inspector, Picker |
 | P2 Schedule a day | Day inspector (Ready) → publish time (UTC or player-local, representative local times shown) → Confirm schedule → Review (items, time, consequence) → Confirm → status Scheduled, audit entry | Day inspector, Publish-time panel, Schedule review |
-| P3 Schedule ahead in bulk | Daily challenge → List → tick ready dates or Select all ready → Schedule N Daily challenges → Review shows count and effective time → Confirm → per-date results (queued, or skipped with reason) | Daily challenge list, Bulk review, Bulk results |
+| P3 Schedule ahead in bulk | Daily game → List → tick ready dates or Select all ready → Schedule N Daily games → Review shows count and effective time → Confirm → per-date results (queued, or skipped with reason) | Daily game list, Bulk review, Bulk results |
 | P4 Replace or unschedule | Day inspector (Scheduled, not yet live) → Replace a slot → picker → or Unschedule → reason → day returns to Ready | Day inspector, Picker, Reason dialog |
 | P5 Manage a collection | Collections → Collections tab → pick a collection → membership (add from library, reorder, remove) → metadata (shelf, emoji, blurb, unlock rule, reward) → visibility → Preview shelf → Save | Collections list, Collection editor, Preview |
 

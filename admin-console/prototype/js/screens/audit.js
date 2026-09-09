@@ -62,7 +62,7 @@
       var d = C.find.day(day[1]);
       return {
         area: 'desk', route: '#/desk',
-        what: (d ? d.longLabel : day[1]) + ' in Daily challenge'
+        what: (d ? d.longLabel : day[1]) + ' in Daily game'
       };
     }
 
@@ -72,10 +72,10 @@
         : { why: id + ' is no longer in this environment.' };
     }
 
-    if (/^(CW|D5)-/.test(id)) {
+    if (/^(CW|WL)-/.test(id)) {
       var puz = C.find.puzzle(id);
       return puz
-        ? { area: 'library', route: '#/library/' + id, what: '“' + puz.title + '” in the ' + (puz.kind === 'cw' ? 'crossword' : 'Daily Five') + ' editor' }
+        ? { area: 'library', route: '#/library/' + id, what: '“' + puz.title + '” in the ' + (puz.kind === 'cw' ? 'crossword' : 'Wordle') + ' editor' }
         : { why: id + ' is not in this library.' };
     }
 

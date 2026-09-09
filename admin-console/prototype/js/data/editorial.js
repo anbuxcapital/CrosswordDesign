@@ -9,7 +9,7 @@
 
    Only editorial-owned fields on editorial-owned records are touched: `content`,
    `topics` and `validationIssues`. No ids, statuses, kinds or languages change,
-   so the drop desk and collections see exactly the same records as before. */
+   so the Daily game desk and collections see exactly the same records as before. */
 (function (C) {
   'use strict';
 
@@ -57,16 +57,16 @@
     ];
   }
 
-  // -- D5-0923 “Hard water” · Ukrainian · Draft · validation failed --------
+  // -- WL-0923 “Hard water” · Ukrainian · Draft · validation failed --------
   // Answer 2 is four letters; answer 1 was used inside the reuse window.
-  var d50923 = puzzle('D5-0923');
-  if (d50923) {
-    detach(d50923);
-    d50923.content.answers = ['ЗЕМЛЯ', 'ВОДА', 'ХМАРА', 'ВІТЕР', 'ПОТІК'];
-    d50923.content.hint = 'П\'ять слів про воду і погоду.';
-    d50923.validationIssues = [
+  var wl0923 = puzzle('WL-0923');
+  if (wl0923) {
+    detach(wl0923);
+    wl0923.content.answers = ['ЗЕМЛЯ', 'ВОДА', 'ХМАРА', 'ВІТЕР', 'ПОТІК'];
+    wl0923.content.hint = 'П\'ять слів про воду і погоду.';
+    wl0923.validationIssues = [
       { code: 'answer_length', where: 'answer 2', message: 'ВОДА is four letters. Answers must be exactly five letters' },
-      { code: 'answer_reuse', where: 'answer 1', message: 'ЗЕМЛЯ was used in D5-0911 within the 90-day reuse window' }
+      { code: 'answer_reuse', where: 'answer 1', message: 'ЗЕМЛЯ was used in WL-0911 within the 90-day reuse window' }
     ];
   }
 
@@ -76,6 +76,6 @@
     notInDictionary: ['ЙЙЙЙЙ', 'ААААА', 'ZZZZZ', 'QQQQQ', 'XXXXX', 'ABCDE'],
     /* Keep this list to answers that no puzzle seeded as “passed” uses, or
        re-running validation on a healthy puzzle would fail it. */
-    recentlyUsed: { 'ЗЕМЛЯ': 'D5-0911' }
+    recentlyUsed: { 'ЗЕМЛЯ': 'WL-0911' }
   };
 })(window.Console);

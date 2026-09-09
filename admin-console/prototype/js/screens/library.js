@@ -21,7 +21,7 @@
   function clone(v) { return JSON.parse(JSON.stringify(v)); }
   ED.clone = clone;
 
-  ED.KIND_LABEL = { cw: 'Crossword', d5: 'Daily Five' };
+  ED.KIND_LABEL = { cw: 'Crossword', wordle: 'Wordle' };
   ED.LANG_LABEL = { en: 'English', uk: 'Ukrainian' };
 
   ED.kindLabel = function (k) { return ED.KIND_LABEL[k] || k; };
@@ -30,7 +30,7 @@
   /* Mint the next free id for a kind. `taken` collects ids minted earlier in
      the same batch but not yet pushed into the store. */
   ED.nextId = function (kind, taken) {
-    var prefix = kind === 'd5' ? 'D5-' : 'CW-';
+    var prefix = kind === 'wordle' ? 'WL-' : 'CW-';
     var max = 0;
     C.store.puzzles.forEach(function (p) {
       if (p.id.indexOf(prefix) !== 0) return;
@@ -46,9 +46,9 @@
   };
 
   /* Empty content for a brand-new puzzle. A crossword gets a blank 5×5 grid
-     and the ten standard clue slots; a Daily Five gets five blank answers. */
+     and the ten standard clue slots; a Wordle gets five blank answers. */
   ED.blankContent = function (kind) {
-    if (kind === 'd5') return { answers: ['', '', '', '', ''], hint: '' };
+    if (kind === 'wordle') return { answers: ['', '', '', '', ''], hint: '' };
     var grid = [];
     for (var r = 0; r < 5; r++) grid.push(['', '', '', '', '']);
     function slots(nums) {
@@ -220,12 +220,12 @@
         if (seen[w] != null) {
           issues.push({
             code: 'answer_duplicate', where: 'answer ' + (i + 1),
-            message: w + ' repeats answer ' + (seen[w] + 1) + ' in this Daily Five'
+            message: w + ' repeats answer ' + (seen[w] + 1) + ' in this Wordle'
           });
         } else seen[w] = i;
       });
       if (!(c.hint || '').trim()) {
-        issues.push({ code: 'hint_missing', where: 'metadata', message: 'The Daily Five hint is empty' });
+        issues.push({ code: 'hint_missing', where: 'metadata', message: 'The Wordle hint is empty' });
       }
     }
 
@@ -278,10 +278,10 @@
 
   var TABS = [
     { key: 'cw', label: 'Crosswords' },
-    { key: 'd5', label: 'Daily Five' }
+    { key: 'wordle', label: 'Wordle' }
   ];
 
-  function activeTab() { return st().tab === 'd5' ? 'd5' : 'cw'; }
+  function activeTab() { return st().tab === 'wordle' ? 'wordle' : 'cw'; }
 
   function ofTab(list) {
     var k = activeTab();
@@ -289,7 +289,7 @@
   }
 
   // ---------------------------------------------------------------------
-  // query hints — #/library?status=approved&kind=d5&lang=en
+  // query hints — #/library?status=approved&kind=wordle&lang=en
   // The shell router splits the hash on "/" and would not match a route with a
   // query string, so the hint is consumed and stripped before the router sees
   // it. This listener is registered while the file loads, which is before
@@ -303,12 +303,12 @@
       var i = pair.indexOf('=');
       var k = decodeURIComponent(i < 0 ? pair : pair.slice(0, i));
       var v = decodeURIComponent(i < 0 ? '' : pair.slice(i + 1));
-      if (k === 'kind' && (v === 'cw' || v === 'd5')) s.tab = v;
+      if (k === 'kind' && (v === 'cw' || v === 'wordle')) s.tab = v;
       else if (k === 'status') s.status = STATUS_KEYS.indexOf(v) >= 0 ? v : null;
       else if (k === 'lang') s.lang = (v === 'en' || v === 'uk') ? v : 'all';
       else if (k === 'q') s.q = v;
       else if (k === 'filter') s.filter = v;
-      else if (k === 'tab' && (v === 'cw' || v === 'd5')) s.tab = v;
+      else if (k === 'tab' && (v === 'cw' || v === 'wordle')) s.tab = v;
     });
     s.selected = [];
   }
@@ -373,16 +373,16 @@
       ]
     },
     {
-      name: '2026-37-dailyfive.json', size: '6 KB', items: [
-        { title: 'Second wind', kind: 'd5', lang: 'en', difficulty: 'Easy', topics: ['Sport'], outcome: 'ok' },
-        { title: 'Loose change', kind: 'd5', lang: 'en', difficulty: 'Medium', topics: ['Everyday'], outcome: 'ok' },
-        { title: 'Deep water', kind: 'd5', lang: 'en', difficulty: 'Hard', topics: ['Nature'], outcome: 'ok' }
+      name: '2026-37-wordle.json', size: '6 KB', items: [
+        { title: 'Second wind', kind: 'wordle', lang: 'en', difficulty: 'Easy', topics: ['Sport'], outcome: 'ok' },
+        { title: 'Loose change', kind: 'wordle', lang: 'en', difficulty: 'Medium', topics: ['Everyday'], outcome: 'ok' },
+        { title: 'Deep water', kind: 'wordle', lang: 'en', difficulty: 'Hard', topics: ['Nature'], outcome: 'ok' }
       ]
     },
     {
       name: 'uk-batch-04.json', size: '9 KB', items: [
         { title: 'Львівська кава', kind: 'cw', lang: 'uk', difficulty: 'Medium', topics: ['City'], outcome: 'ok' },
-        { title: 'Осінній вітер', kind: 'd5', lang: 'uk', difficulty: 'Medium', topics: ['Nature'], outcome: 'failed', detail: 'Answer 3 is four letters, not five' }
+        { title: 'Осінній вітер', kind: 'wordle', lang: 'uk', difficulty: 'Medium', topics: ['Nature'], outcome: 'failed', detail: 'Answer 3 is four letters, not five' }
       ]
     },
     {
@@ -611,7 +611,7 @@
       var r1 = el('div', 'form-row');
       r1.appendChild(el('label', 'label', 'Kind'));
       r1.appendChild(C.ui.segmented(
-        [{ key: 'cw', label: 'Crossword' }, { key: 'd5', label: 'Daily Five' }],
+        [{ key: 'cw', label: 'Crossword' }, { key: 'wordle', label: 'Wordle' }],
         draft.kind, function (k) { draft.kind = k; build(); }
       ));
       body.appendChild(r1);
@@ -672,7 +672,7 @@
               content: ED.blankContent(draft.kind)
             });
             C.commit({
-              action: 'Create a ' + (draft.kind === 'cw' ? 'crossword' : 'Daily Five'),
+              action: 'Create a ' + (draft.kind === 'cw' ? 'crossword' : 'Wordle'),
               object: id,
               reason: '',
               result: 'Draft ' + id + ' “' + p.title + '” created · ' + ED.kindLabel(p.kind) + ' · ' + ED.langLabel(p.lang) + ' · ' + p.difficulty,
@@ -1025,11 +1025,11 @@
      independent and the ✕ chip can clear it. */
   function normalizeState() {
     /* A kind written straight into `filter` by an older hand-off picks the tab. */
-    if (st().filter === 'cw' || st().filter === 'd5') {
+    if (st().filter === 'cw' || st().filter === 'wordle') {
       st().tab = st().filter;
       st().filter = 'all';
     }
-    if (st().tab !== 'cw' && st().tab !== 'd5') st().tab = 'cw';
+    if (st().tab !== 'cw' && st().tab !== 'wordle') st().tab = 'cw';
     if (STATUS_KEYS.indexOf(st().filter) >= 0) {
       st().status = st().filter;
       st().filter = 'all';
@@ -1037,7 +1037,7 @@
     if (CHIP_KEYS.indexOf(st().filter) < 0) st().filter = 'all';
   }
 
-  /* A full re-render, not a repaint: the topbar subline counts the tab. */
+  /* A full re-render, not a repaint: the topbar and the footer count the tab. */
   function tabStrip() {
     return C.ui.tabs(TABS, activeTab(), function (k) {
       st().tab = k;
@@ -1095,8 +1095,7 @@
     title: 'Library',
     subline: function () {
       normalizeState();
-      return ofTab(C.store.puzzles).length +
-        (activeTab() === 'cw' ? ' crosswords' : ' Daily Five games');
+      return 'Crosswords and Wordle · ' + C.store.puzzles.length + ' games';
     },
     actions: function () {
       var row = el('div', 'btn-row');
@@ -1146,12 +1145,12 @@
       '.clue-row input.clue-text{flex:1;min-width:0}',
       '.clue-row input.clue-answer{width:110px;flex:none;text-transform:uppercase;font-family:var(--mono);font-weight:700;letter-spacing:.08em}',
       '.clue-warn{font:600 10px var(--mono);color:var(--pink);width:64px;flex:none;text-align:right}',
-      /* daily five */
-      '.d5-row{display:flex;align-items:center;gap:10px;padding:7px 9px;border:1px solid var(--rule);',
+      /* wordle */
+      '.wordle-row{display:flex;align-items:center;gap:10px;padding:7px 9px;border:1px solid var(--rule);',
       '  border-radius:var(--radius);background:var(--paper)}',
-      '.d5-row.is-flagged{border-color:var(--pink);background:var(--pink-wash)}',
-      '.d5-n{font:700 11px var(--mono);color:var(--ink-55);width:64px;flex:none}',
-      '.d5-row input{width:150px;flex:none;text-transform:uppercase;font-family:var(--mono);font-weight:700;letter-spacing:.12em}',
+      '.wordle-row.is-flagged{border-color:var(--pink);background:var(--pink-wash)}',
+      '.wordle-n{font:700 11px var(--mono);color:var(--ink-55);width:64px;flex:none}',
+      '.wordle-row input{width:150px;flex:none;text-transform:uppercase;font-family:var(--mono);font-weight:700;letter-spacing:.12em}',
       '.dict{display:inline-flex;align-items:center;gap:6px;font:600 11px var(--sans)}',
       '.dict .m{font:700 11px var(--mono)}',
       '.dict.ok{color:var(--green)}.dict.bad{color:var(--pink)}.dict.mute{color:var(--ink-45)}',

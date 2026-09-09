@@ -123,11 +123,11 @@ Console.data = (function () {
     };
   }
 
-  function d5Content(answers, hint) {
+  function wordleContent(answers, hint) {
     return { answers: answers.slice(), hint: hint };
   }
 
-  var D5_SETS = [
+  var WORDLE_SETS = [
     [['CHASE', 'MOTOR', 'PLAID', 'SWIFT', 'TONIC'], 'Five words, one shared vowel pattern.'],
     [['BRINE', 'GLOVE', 'PRISM', 'STOUT', 'WEAVE'], 'All five appear in a kitchen or a workshop.'],
     [['AMBER', 'CRISP', 'DOUSE', 'FLINT', 'SHARD'], 'Each answer has something to do with fire.'],
@@ -138,42 +138,42 @@ Console.data = (function () {
   var puzzleSeed = [
     // id, title, kind, lang, difficulty, status, validation, author, topics, updatedAt
     ['CW-2254', 'First light', 'cw', 'en', 'Easy', 'published', 'passed', 'a.reid', ['Nature'], 'Sep 1 08:00'],
-    ['D5-0905', 'Open door', 'd5', 'en', 'Easy', 'published', 'passed', 'a.reid', ['Everyday'], 'Sep 1 08:00'],
+    ['WL-0905', 'Open door', 'wordle', 'en', 'Easy', 'published', 'passed', 'a.reid', ['Everyday'], 'Sep 1 08:00'],
     ['CW-2255', 'Side street', 'cw', 'en', 'Medium', 'published', 'passed', 'a.reid', ['City'], 'Sep 2 08:00'],
-    ['D5-0906', 'Tall order', 'd5', 'en', 'Medium', 'published', 'passed', 'a.reid', ['Food'], 'Sep 2 08:00'],
+    ['WL-0906', 'Tall order', 'wordle', 'en', 'Medium', 'published', 'passed', 'a.reid', ['Food'], 'Sep 2 08:00'],
     ['CW-2256', 'Quiet hours', 'cw', 'en', 'Medium', 'published', 'passed', 'm.olsen', ['Home'], 'Sep 3 08:00'],
-    ['D5-0907', 'Blue note', 'd5', 'en', 'Easy', 'published', 'passed', 'm.olsen', ['Music'], 'Sep 3 08:00'],
+    ['WL-0907', 'Blue note', 'wordle', 'en', 'Easy', 'published', 'passed', 'm.olsen', ['Music'], 'Sep 3 08:00'],
     ['CW-2257', 'Open book', 'cw', 'en', 'Easy', 'published', 'passed', 'a.reid', ['Literature'], 'Sep 4 08:00'],
-    ['D5-0908', 'Short fuse', 'd5', 'en', 'Hard', 'published', 'passed', 'a.reid', ['Science'], 'Sep 4 08:00'],
+    ['WL-0908', 'Short fuse', 'wordle', 'en', 'Hard', 'published', 'passed', 'a.reid', ['Science'], 'Sep 4 08:00'],
     ['CW-2258', 'Night market', 'cw', 'en', 'Medium', 'published', 'passed', 'm.olsen', ['Travel', 'Food'], 'Sep 5 08:00'],
-    ['D5-0909', 'Fair play', 'd5', 'en', 'Medium', 'published', 'passed', 'm.olsen', ['Sport'], 'Sep 5 08:00'],
+    ['WL-0909', 'Fair play', 'wordle', 'en', 'Medium', 'published', 'passed', 'm.olsen', ['Sport'], 'Sep 5 08:00'],
     ['CW-2259', 'Weekend edition', 'cw', 'en', 'Hard', 'published', 'passed', 'a.reid', ['News'], 'Sep 6 08:00'],
-    ['D5-0910', 'Slow burn', 'd5', 'en', 'Medium', 'published', 'passed', 'a.reid', ['Film'], 'Sep 6 08:00'],
+    ['WL-0910', 'Slow burn', 'wordle', 'en', 'Medium', 'published', 'passed', 'a.reid', ['Film'], 'Sep 6 08:00'],
     ['CW-2261', 'Moon walk', 'cw', 'en', 'Medium', 'published', 'passed', 'm.olsen', ['Science', 'History'], 'Sep 7 08:00'],
-    ['D5-0912', 'Fresh start', 'd5', 'en', 'Easy', 'published', 'passed', 'm.olsen', ['Everyday'], 'Sep 7 08:00'],
+    ['WL-0912', 'Fresh start', 'wordle', 'en', 'Easy', 'published', 'passed', 'm.olsen', ['Everyday'], 'Sep 7 08:00'],
     ['CW-2262', 'Campus life', 'cw', 'en', 'Easy', 'live', 'passed', 'a.reid', ['Education'], 'Sep 8 08:14'],
-    ['D5-0913', 'In the loop', 'd5', 'en', 'Easy', 'live', 'passed', 'a.reid', ['Everyday'], 'Sep 8 08:14'],
+    ['WL-0913', 'In the loop', 'wordle', 'en', 'Easy', 'live', 'passed', 'a.reid', ['Everyday'], 'Sep 8 08:14'],
     ['CW-2269', 'Late edition', 'cw', 'en', 'Hard', 'approved', 'passed', 'm.olsen', ['News'], 'Sep 8 08:14'],
     ['CW-2263', 'Good news', 'cw', 'en', 'Medium', 'scheduled', 'passed', 'a.reid', ['News'], 'Sep 7 09:12'],
-    ['D5-0914', 'Brain boost', 'd5', 'en', 'Medium', 'scheduled', 'passed', 'a.reid', ['Science'], 'Sep 7 09:12'],
+    ['WL-0914', 'Brain boost', 'wordle', 'en', 'Medium', 'scheduled', 'passed', 'a.reid', ['Science'], 'Sep 7 09:12'],
     ['CW-2264', 'On the map', 'cw', 'en', 'Medium', 'review', 'failed', 'm.olsen', ['Travel'], 'Sep 8 07:44'],
-    ['D5-0915', 'True or false', 'd5', 'en', 'Easy', 'review', 'passed', 'm.olsen', ['Trivia'], 'Sep 8 07:44'],
+    ['WL-0915', 'True or false', 'wordle', 'en', 'Easy', 'review', 'passed', 'm.olsen', ['Trivia'], 'Sep 8 07:44'],
     ['CW-2265', 'Back to work', 'cw', 'en', 'Medium', 'approved', 'passed', 'm.olsen', ['Work'], 'Sep 8 08:02'],
     ['CW-2266', 'Weekend vibes', 'cw', 'en', 'Easy', 'scheduled', 'passed', 'a.reid', ['Leisure'], 'Sep 6 15:10'],
     ['CW-2271', 'Long weekend', 'cw', 'en', 'Medium', 'approved', 'passed', 'a.reid', ['Travel'], 'Sep 6 15:10'],
-    ['D5-0916', 'Culture club', 'd5', 'en', 'Medium', 'scheduled', 'passed', 'a.reid', ['Art'], 'Sep 6 15:10'],
-    ['D5-0920', 'Encore', 'd5', 'en', 'Hard', 'approved', 'passed', 'a.reid', ['Music'], 'Sep 6 15:10'],
+    ['WL-0916', 'Culture club', 'wordle', 'en', 'Medium', 'scheduled', 'passed', 'a.reid', ['Art'], 'Sep 6 15:10'],
+    ['WL-0920', 'Encore', 'wordle', 'en', 'Hard', 'approved', 'passed', 'a.reid', ['Music'], 'Sep 6 15:10'],
     ['CW-2267', 'Full circle', 'cw', 'en', 'Medium', 'scheduled', 'passed', 'm.olsen', ['Everyday'], 'Sep 6 15:10'],
-    ['D5-0917', 'End zone', 'd5', 'en', 'Medium', 'scheduled', 'passed', 'm.olsen', ['Sport'], 'Sep 6 15:10'],
+    ['WL-0917', 'End zone', 'wordle', 'en', 'Medium', 'scheduled', 'passed', 'm.olsen', ['Sport'], 'Sep 6 15:10'],
     ['CW-2268', 'Night shift', 'cw', 'en', 'Hard', 'draft', 'not_run', 'a.reid', ['Work'], 'Sep 8 10:20'],
-    ['D5-0918', 'Split ends', 'd5', 'en', 'Medium', 'approved', 'passed', 'a.reid', ['Everyday'], 'Sep 7 16:30'],
-    ['D5-0919', 'Cold snap', 'd5', 'en', 'Medium', 'approved', 'passed', 'm.olsen', ['Weather'], 'Sep 8 09:05'],
-    ['D5-0921', 'Side quest', 'd5', 'en', 'Easy', 'approved', 'passed', 'm.olsen', ['Games'], 'Sep 8 09:05'],
+    ['WL-0918', 'Split ends', 'wordle', 'en', 'Medium', 'approved', 'passed', 'a.reid', ['Everyday'], 'Sep 7 16:30'],
+    ['WL-0919', 'Cold snap', 'wordle', 'en', 'Medium', 'approved', 'passed', 'm.olsen', ['Weather'], 'Sep 8 09:05'],
+    ['WL-0921', 'Side quest', 'wordle', 'en', 'Easy', 'approved', 'passed', 'm.olsen', ['Games'], 'Sep 8 09:05'],
     ['CW-2272', 'Cold open', 'cw', 'en', 'Easy', 'approved', 'passed', 'a.reid', ['Film'], 'Sep 8 09:40'],
     ['CW-2270', 'Paper trail', 'cw', 'uk', 'Medium', 'draft', 'failed', 'i.koval', ['Work'], 'Sep 6 12:00'],
-    ['D5-0923', 'Hard water', 'd5', 'uk', 'Hard', 'draft', 'failed', 'i.koval', ['Nature'], 'Sep 6 12:00'],
+    ['WL-0923', 'Hard water', 'wordle', 'uk', 'Hard', 'draft', 'failed', 'i.koval', ['Nature'], 'Sep 6 12:00'],
     ['CW-2273', 'Winter light', 'cw', 'uk', 'Easy', 'approved', 'passed', 'i.koval', ['Nature'], 'Sep 7 14:20'],
-    ['D5-0924', 'Kyiv morning', 'd5', 'uk', 'Medium', 'approved', 'passed', 'i.koval', ['City'], 'Sep 7 14:20']
+    ['WL-0924', 'Kyiv morning', 'wordle', 'uk', 'Medium', 'approved', 'passed', 'i.koval', ['City'], 'Sep 7 14:20']
   ];
 
   var VALIDATION_ISSUES = {
@@ -185,15 +185,15 @@ Console.data = (function () {
       { code: 'grid_answer_mismatch', where: 'row 3, column 2', message: 'Grid letter V does not match the answer for 3-down' },
       { code: 'invalid_entry', where: '9-across', message: 'ЙЙЙЙЙ is not in the Ukrainian dictionary' }
     ],
-    'D5-0923': [
+    'WL-0923': [
       { code: 'answer_length', where: 'answer 4', message: 'Answer must be exactly five letters' },
-      { code: 'answer_reuse', where: 'answer 2', message: 'ВОДА was used in D5-0911 within the reuse window' }
+      { code: 'answer_reuse', where: 'answer 2', message: 'ВОДА was used in WL-0911 within the reuse window' }
     ]
   };
 
   var puzzles = puzzleSeed.map(function (p, i) {
     var kind = p[2];
-    var d5 = D5_SETS[i % D5_SETS.length];
+    var wordle = WORDLE_SETS[i % WORDLE_SETS.length];
     return {
       id: p[0],
       title: p[1],
@@ -209,7 +209,7 @@ Console.data = (function () {
       updatedAt: p[9],
       content: kind === 'cw'
         ? cwContent(i % 2 ? 'b' : 'a')
-        : d5Content(d5[0], d5[1])
+        : wordleContent(wordle[0], wordle[1])
     };
   });
 
@@ -219,56 +219,57 @@ Console.data = (function () {
       blurb: 'Five gentle minis for a first week.',
       unlockRule: 'Free for everyone', reward: '+50 coins on completion',
       visibility: 'published', order: 1,
-      members: ['CW-2254', 'D5-0905', 'CW-2257', 'D5-0912', 'CW-2262']
+      members: ['CW-2254', 'WL-0905', 'CW-2257', 'WL-0912', 'CW-2262']
     },
     {
       id: 'col_night', name: 'Night shift', shelf: 'Themes', emoji: '🌙',
       blurb: 'Harder games for late solvers.',
       unlockRule: 'Unlocks after a 7-day streak', reward: '+120 coins on completion',
       visibility: 'draft', order: 2,
-      members: ['CW-2259', 'CW-2269', 'D5-0908', 'D5-0920']
+      members: ['CW-2259', 'CW-2269', 'WL-0908', 'WL-0920']
     },
     {
       id: 'col_uk', name: 'Ukrainian starter', shelf: 'Languages', emoji: '🇺🇦',
       blurb: 'The first Ukrainian shelf, still in preparation.',
       unlockRule: 'Free for everyone', reward: 'None',
       visibility: 'hidden', order: 3,
-      members: ['CW-2273', 'D5-0924']
+      members: ['CW-2273', 'WL-0924']
     }
   ];
 
   // ---------------------------------------------------------------------
-  // === SECTION: publishing — days and drops (owner: publishing builder) ===
+  // === SECTION: publishing — days and Daily games (owner: publishing builder) ===
   // ---------------------------------------------------------------------
 
   var DOW = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
   // Sep 1 2026 is a Tuesday, so index 0 sits in the second column of a Monday-first grid.
-  var DAY_ITEMS = {
-    1: ['CW-2254', 'D5-0905'],
-    2: ['CW-2255', 'D5-0906'],
-    3: ['CW-2256', 'D5-0907'],
-    4: ['CW-2257', 'D5-0908'],
-    5: ['CW-2258', 'D5-0909'],
-    6: ['CW-2259', 'D5-0910'],
-    7: ['CW-2261', 'D5-0912'],
-    8: ['CW-2262', 'D5-0913'],
-    9: ['CW-2263', 'D5-0914'],
-    10: ['CW-2264', 'D5-0915'],
-    11: ['CW-2265'],
-    12: ['CW-2266', 'D5-0916'],
-    13: ['CW-2267', 'D5-0917'],
-    14: ['CW-2268', 'D5-0918']
+  // [crosswordId, wordleId] per day of month; a missing entry is an empty slot.
+  var DAY_GAMES = {
+    1: ['CW-2254', 'WL-0905'],
+    2: ['CW-2255', 'WL-0906'],
+    3: ['CW-2256', 'WL-0907'],
+    4: ['CW-2257', 'WL-0908'],
+    5: ['CW-2258', 'WL-0909'],
+    6: ['CW-2259', 'WL-0910'],
+    7: ['CW-2261', 'WL-0912'],
+    8: ['CW-2262', 'WL-0913'],
+    9: ['CW-2263', 'WL-0914'],
+    10: ['CW-2264', 'WL-0915'],
+    11: ['CW-2265', null],
+    12: ['CW-2266', 'WL-0916'],
+    13: ['CW-2267', 'WL-0917'],
+    14: ['CW-2268', 'WL-0918']
   };
 
   var DAY_AUDIT = {
     8: [
-      ['12:00 UTC', 'system', 'Daily challenge published — crossword + Daily Five'],
+      ['12:00 UTC', 'system', 'Daily game published — crossword + Wordle'],
       ['Sep 7 09:12', 'm.olsen', 'Schedule confirmed'],
-      ['Sep 5 16:40', 'a.reid', 'Both items approved']
+      ['Sep 5 16:40', 'a.reid', 'Both games approved']
     ],
     11: [
       ['Sep 8 08:02', 'm.olsen', 'Crossword CW-2265 approved'],
-      ['Sep 6 11:20', 'system', 'Daily Five candidate rejected — answer reuse'],
+      ['Sep 6 11:20', 'system', 'Wordle candidate rejected — answer reuse'],
       ['Sep 4 10:05', 'm.olsen', 'Date opened for scheduling']
     ]
   };
@@ -276,7 +277,7 @@ Console.data = (function () {
   var DAY_AUDIT_DEFAULT = [
     ['Sep 8 07:44', 'm.olsen', 'Pair created'],
     ['Sep 6 15:10', 'system', 'Crossword imported from batch 2026-36'],
-    ['Sep 6 15:10', 'system', 'Daily Five imported from batch 2026-36']
+    ['Sep 6 15:10', 'system', 'Wordle imported from batch 2026-36']
   ];
 
   // 30 materialised days, Sep 1 – Sep 30 2026.
@@ -293,7 +294,8 @@ Console.data = (function () {
       longLabel: DOW[dowIndex] + ' Sep ' + dn,
       today: iso === TODAY_ISO,
       past: dn < 8,
-      items: (DAY_ITEMS[dn] || []).slice(),
+      crosswordId: (DAY_GAMES[dn] || [])[0] || null,
+      wordleId: (DAY_GAMES[dn] || [])[1] || null,
       scheduled: false,
       publishTime: '12:00',
       publishMode: 'utc',
@@ -319,10 +321,10 @@ Console.data = (function () {
         ['Language', 'English', true],
         ['Difficulty', 'Medium', true],
         ['Topics', 'Music, Travel, Science', true],
-        ['Notifications', 'Daily challenge · 12:00 local', true]
+        ['Notifications', 'Daily game · 12:00 local', true]
       ],
       timeline: [
-        ['Today 12:06', 'solve', 'Daily Five "In the loop" solved in 3 guesses', '+40'],
+        ['Today 12:06', 'solve', 'Wordle "In the loop" solved in 3 guesses', '+40'],
         ['Today 12:04', 'session', 'Session opened · iOS 18.2', ''],
         ['Sep 7 12:11', 'ledger', 'Streak reward credited', '+40'],
         ['Sep 6 12:09', 'ledger', 'Hint purchased', '−15'],
@@ -381,11 +383,11 @@ Console.data = (function () {
         ['Language', 'English', true],
         ['Difficulty', 'Hard', true],
         ['Topics', 'Literature, History', true],
-        ['Notifications', 'Daily challenge · 08:00 local', true]
+        ['Notifications', 'Daily game · 08:00 local', true]
       ],
       timeline: [
         ['Today 08:15', 'session', 'Support contact · lost streak after travel', ''],
-        ['Sep 6 23:58', 'solve', 'Daily Five missed — streak reset', ''],
+        ['Sep 6 23:58', 'solve', 'Wordle missed — streak reset', ''],
         ['Sep 4 12:30', 'ledger', 'Star pack purchase', '+500']
       ],
       devices: [
@@ -425,7 +427,7 @@ Console.data = (function () {
         ['Language', p[3] === 'uk' ? 'Ukrainian' : 'English', true],
         ['Difficulty', 'Medium', true],
         ['Topics', 'Everyday', true],
-        ['Notifications', 'Daily challenge · 09:00 local', true]
+        ['Notifications', 'Daily game · 09:00 local', true]
       ],
       timeline: [
         ['Today 07:30', 'session', 'Session opened · app 1.4.2', ''],
@@ -573,32 +575,32 @@ Console.data = (function () {
 
   var signals = [
     {
-      id: 'sig_drop_gen', name: 'Daily challenge generation', level: 'failed',
-      detail: 'Failed for Sep 11 — no Daily Five assigned', lastRun: '08:00 UTC',
+      id: 'sig_drop_gen', name: 'Daily game generation', level: 'failed',
+      detail: 'Failed for Sep 11 — no Wordle assigned', lastRun: '08:00 UTC',
       job: 'drop.generate', object: 'day 2026-09-11',
-      error: 'DropInvalid: a Daily challenge needs exactly one crossword and one Daily Five',
+      error: 'DropInvalid: a Daily game needs exactly one crossword and one Wordle',
       runs: [['08:00 UTC', 'failed'], ['Sep 7 08:00 UTC', 'failed'], ['Sep 6 08:00 UTC', 'ok']],
       items: [
         { label: 'Sep 11 crossword CW-2265', outcome: 'ok', detail: 'Ready' },
-        { label: 'Sep 11 Daily Five', outcome: 'failed', detail: 'No Daily Five assigned' }
+        { label: 'Sep 11 Wordle', outcome: 'failed', detail: 'No Wordle assigned' }
       ]
     },
     {
       id: 'sig_pool_depth', name: 'Content pool depth', level: 'ok',
-      detail: 'Crossword 21 days · Daily Five 6 days', lastRun: '08:00 UTC',
+      detail: 'Crossword 21 days · Wordle 6 days', lastRun: '08:00 UTC',
       job: 'pool.measure', object: 'pool', error: '',
       runs: [['08:00 UTC', 'ok']],
       depth: [
         { lang: 'en', kind: 'cw', days: 21, floor: 10 },
-        { lang: 'en', kind: 'd5', days: 6, floor: 10 },
+        { lang: 'en', kind: 'wordle', days: 6, floor: 10 },
         { lang: 'uk', kind: 'cw', days: 2, floor: 10 },
-        { lang: 'uk', kind: 'd5', days: 1, floor: 10 }
+        { lang: 'uk', kind: 'wordle', days: 1, floor: 10 }
       ]
     },
     {
-      id: 'sig_pool_warn', name: 'Daily Five pool warning', level: 'warn',
+      id: 'sig_pool_warn', name: 'Wordle pool warning', level: 'warn',
       detail: 'Below the 10-day floor for English', lastRun: '08:00 UTC',
-      job: 'pool.measure', object: 'pool en/d5', error: '',
+      job: 'pool.measure', object: 'pool en/wordle', error: '',
       runs: [['08:00 UTC', 'warn']], items: []
     },
     {
@@ -623,7 +625,7 @@ Console.data = (function () {
         { label: 'CW-2266 Weekend vibes', outcome: 'ok', detail: 'Draft created' },
         { label: 'CW-2267 Full circle', outcome: 'ok', detail: 'Draft created' },
         { label: 'CW-2270 Paper trail', outcome: 'failed', detail: 'Grid letter does not match 3-down' },
-        { label: 'D5-0923 Hard water', outcome: 'failed', detail: 'Answer 4 is not five letters' }
+        { label: 'WL-0923 Hard water', outcome: 'failed', detail: 'Answer 4 is not five letters' }
       ]
     },
     {
@@ -642,10 +644,10 @@ Console.data = (function () {
   var audit = [
     { time: 'Sep 8 09:41', operator: 's.novak', action: 'Hold solve reward', object: 'pl_2a90bd', reason: 'Flag fl_1001 open, reward held pending review', result: 'Held' },
     { time: 'Sep 8 08:02', operator: 'm.olsen', action: 'Approve crossword', object: 'CW-2265', reason: '', result: 'Approved' },
-    { time: 'Sep 7 16:30', operator: 'a.reid', action: 'Approve Daily Five', object: 'D5-0918', reason: '', result: 'Approved' },
-    { time: 'Sep 7 09:12', operator: 'm.olsen', action: 'Confirm schedule', object: 'day 2026-09-09', reason: 'Standard weekday Daily challenge', result: 'Scheduled at 12:00 UTC' },
+    { time: 'Sep 7 16:30', operator: 'a.reid', action: 'Approve Wordle', object: 'WL-0918', reason: '', result: 'Approved' },
+    { time: 'Sep 7 09:12', operator: 'm.olsen', action: 'Confirm schedule', object: 'day 2026-09-09', reason: 'Standard weekday Daily game', result: 'Scheduled at 12:00 UTC' },
     { time: 'Sep 6 15:10', operator: 'a.reid', action: 'Import batch', object: 'batch_2026_36', reason: 'Weekly batch from the editorial pipeline', result: '34 accepted, 2 rejected' },
-    { time: 'Sep 6 11:20', operator: 'system', action: 'Reject import item', object: 'D5-0923', reason: 'Answer reuse inside the window', result: 'Rejected' },
+    { time: 'Sep 6 11:20', operator: 'system', action: 'Reject import item', object: 'WL-0923', reason: 'Answer reuse inside the window', result: 'Rejected' },
     { time: 'Sep 5 16:40', operator: 'a.reid', action: 'Approve crossword', object: 'CW-2262', reason: '', result: 'Approved' },
     { time: 'Aug 30 16:44', operator: 'm.olsen', action: 'Append compensating entry', object: 'pl_8f2c41', reason: 'Outage on Aug 30 lost a streak reward', result: '+300 coins, balance 1,375' }
   ];

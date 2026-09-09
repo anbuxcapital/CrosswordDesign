@@ -122,7 +122,7 @@
     return bar;
   }
 
-  function noun(p) { return p.kind === 'cw' ? 'crossword' : 'Daily Five'; }
+  function noun(p) { return p.kind === 'cw' ? 'crossword' : 'Wordle'; }
 
   // =====================================================================
   // actions
@@ -176,7 +176,7 @@
       title: 'Approve ' + p.id,
       before: [['Status', C.ui.pill(p.status)], ['Validation', C.ui.status(p.validation)], ['Version', 'v' + p.version]],
       after: [['Status', C.ui.pill('approved')], ['Validation', C.ui.status('passed')], ['Version', 'v' + p.version]],
-      consequence: 'It becomes available for a Daily challenge. Nothing is scheduled yet.'
+      consequence: 'It becomes available for a Daily game. Nothing is scheduled yet.'
     }));
     var reason = C.ui.reasonField({
       required: false,
@@ -212,8 +212,8 @@
     var body = el('div');
     body.appendChild(C.ui.reviewPanel({
       title: 'Send ' + p.id + ' back',
-      before: [['Status', C.ui.pill(p.status)], ['Available for a Daily challenge', p.status === 'approved' ? 'Yes' : 'No']],
-      after: [['Status', C.ui.pill('draft')], ['Available for a Daily challenge', 'No']],
+      before: [['Status', C.ui.pill(p.status)], ['Available for a Daily game', p.status === 'approved' ? 'Yes' : 'No']],
+      after: [['Status', C.ui.pill('draft')], ['Available for a Daily game', 'No']],
       consequence: 'It leaves the approved pool. The author sees this reason.'
     }));
     var reason = C.ui.reasonField({
@@ -430,7 +430,7 @@
     var d = st().draft;
     var wrap = el('div', 'ed-body');
     if (d.kind === 'cw') wrap.appendChild(crosswordEditor(p, d));
-    else wrap.appendChild(dailyFiveEditor(p, d));
+    else wrap.appendChild(wordleEditor(p, d));
     if (focusTarget) {
       var node = focusTarget;
       setTimeout(function () {
@@ -535,13 +535,13 @@
     return wrap;
   }
 
-  function dailyFiveEditor(p, d) {
+  function wordleEditor(p, d) {
     var wrap = el('div');
     var list = el('div', 'clues');
     d.content.answers.forEach(function (a, i) {
       var flagged = focusIs('answer', i);
-      var row = el('div', 'd5-row' + (flagged ? ' is-flagged' : ''));
-      row.appendChild(el('span', 'd5-n', 'Answer ' + (i + 1)));
+      var row = el('div', 'wordle-row' + (flagged ? ' is-flagged' : ''));
+      row.appendChild(el('span', 'wordle-n', 'Answer ' + (i + 1)));
 
       var input = el('input', 'input');
       input.type = 'text';
@@ -582,10 +582,10 @@
     hint.style.marginTop = '16px';
     hint.style.maxWidth = '620px';
     var lab = el('label', 'label', 'Hint');
-    lab.setAttribute('for', 'ed_d5_hint');
+    lab.setAttribute('for', 'ed_wordle_hint');
     hint.appendChild(lab);
     var ta = el('textarea', 'textarea');
-    ta.id = 'ed_d5_hint';
+    ta.id = 'ed_wordle_hint';
     ta.value = d.content.hint || '';
     ta.placeholder = 'One sentence the five answers have in common.';
     ta.addEventListener('input', function () { d.content.hint = ta.value; markDirty(p); });
@@ -765,7 +765,7 @@
     { key: 'preview', label: 'Preview' }
   ];
 
-  /* The library is split into a Crosswords and a Daily Five tab: come back to
+  /* The library is split into a Crosswords and a Wordle tab: come back to
      the one this game lives on. */
   function backToLibrary(id) {
     var p = C.find.puzzle(id);

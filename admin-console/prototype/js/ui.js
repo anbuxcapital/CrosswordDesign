@@ -21,7 +21,7 @@ window.Console = window.Console || {};
   // status vocabulary — text AND colour, never colour alone
   // ---------------------------------------------------------------------
   var STATUS = {
-    // puzzle / drop states
+    // game / Daily game states
     draft: { label: 'Draft', tone: 'mute' },
     review: { label: 'Needs review', tone: 'warn' },
     approved: { label: 'Approved', tone: 'ok' },
@@ -325,13 +325,13 @@ window.Console = window.Console || {};
     return n;
   };
 
-  /* ui.puzzlePicker({kind:'cw'|'d5', lang:'en', onPick(puzzle), statuses}) */
+  /* ui.puzzlePicker({kind:'cw'|'wordle', lang:'en', onPick(puzzle), statuses}) */
   ui.puzzlePicker = function (spec) {
     var statuses = spec.statuses || ['approved'];
     var wrap = el('div');
     var search = el('input', 'input picker-search');
     search.type = 'search';
-    var pickNoun = spec.kind === 'd5' ? 'Daily Five' : spec.kind === 'cw' ? 'crosswords' : 'games';
+    var pickNoun = spec.kind === 'wordle' ? 'Wordle games' : spec.kind === 'cw' ? 'crosswords' : 'games';
     search.placeholder = 'Search approved ' + pickNoun + ' by title or ID';
     search.setAttribute('aria-label', 'Search approved ' + pickNoun);
     wrap.appendChild(search);
@@ -350,7 +350,7 @@ window.Console = window.Console || {};
         return (p.title + ' ' + p.id).toLowerCase().indexOf(q) >= 0;
       });
       if (!rows.length) {
-        list.appendChild(ui.emptyState('No approved ' + (spec.kind === 'd5' ? 'Daily Five' : 'crossword') + ' matches that search.'));
+        list.appendChild(ui.emptyState('No approved ' + (spec.kind === 'wordle' ? 'Wordle game' : 'crossword') + ' matches that search.'));
         return;
       }
       rows.forEach(function (p) {

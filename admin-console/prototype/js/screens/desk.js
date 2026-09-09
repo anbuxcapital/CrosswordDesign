@@ -1,4 +1,4 @@
-/* Daily challenge desk — the publisher's default screen.
+/* Daily game desk — the publisher's default screen.
    OWNER: publishing builder.
    P1 fill an empty slot · P2 schedule a day · P3 schedule ahead in bulk ·
    P4 replace a slot or unschedule the day. Collections (P5) live in collections.js. */
@@ -45,22 +45,20 @@
   // small vocabulary helpers
   // ------------------------------------------------------------------
 
-  function kindWord(kind) { return kind === 'cw' ? 'crossword' : 'Daily Five'; }
-  function kindLabel(kind) { return kind === 'cw' ? 'Crossword' : 'Daily Five'; }
+  function kindWord(kind) { return kind === 'cw' ? 'crossword' : 'Wordle'; }
+  function kindLabel(kind) { return kind === 'cw' ? 'Crossword' : 'Wordle'; }
   function modeWord(mode) { return mode === 'local' ? 'player-local time' : 'UTC'; }
 
-  /* Index inside day.items of the game filling one slot, or -1. */
-  function slotIndex(day, kind) {
-    for (var i = 0; i < day.items.length; i++) {
-      var p = C.find.puzzle(day.items[i]);
-      if (p && p.kind === kind) return i;
-    }
-    return -1;
-  }
+  /* The day record holds one reference per slot. */
+  function slotKey(kind) { return kind === 'cw' ? 'crosswordId' : 'wordleId'; }
+  function slotId(day, kind) { return day[slotKey(kind)] || null; }
+  function isPlanned(day) { return !!(day.crosswordId || day.wordleId); }
+  function holds(day, id) { return day.crosswordId === id || day.wordleId === id; }
 
   function dayLang(day) {
-    for (var i = 0; i < day.items.length; i++) {
-      var p = C.find.puzzle(day.items[i]);
+    var ids = [day.crosswordId, day.wordleId];
+    for (var i = 0; i < ids.length; i++) {
+      var p = ids[i] ? C.find.puzzle(ids[i]) : null;
       if (p) return p.lang;
     }
     return 'en';
@@ -73,12 +71,11 @@
     if (day.scheduled) return 'Already queued at ' + day.publishTime + ' ' + modeWord(day.publishMode);
     if (dd.empty) return 'No games planned';
     if (dd.missing.length) return 'No ' + kindWord(dd.missing[0]) + ' assigned';
-    if (dd.extra.length) return 'This day has ' + dd.extra[0];
     if (dd.blocked) return 'One or both games are not approved yet';
     return '';
   }
 
-  /* The two fixed slots of a drop, used inside review dialogs. */
+  /* The two fixed slots of a Daily game, used inside review dialogs. */
   function slotSummary(item) {
     return item ? item.id + ' ' + item.title : 'Empty';
   }
@@ -105,13 +102,15 @@
   }
 
   function assignPuzzle(day, kind, puzzle) {
-    if (day.items.indexOf(puzzle.id) >= 0) {
-      C.toast(puzzle.id + ' is already in this Daily challenge.');
+    if (holds(day, puzzle.id)) {
+      C.toast(puzzle.id + ' is already in this Daily game.');
       return;
     }
-    day.items.push(puzzle.id);
+    var key = slotKey(kind);
+    var was = day[key];
+    day[key] = puzzle.id;
     var after = C.deriveDay(day);
-    day.items.pop();
+    day[key] = was;
     var readyText = after.blocked
       ? 'Day is still blocked: ' + (after.missing.length ? 'no ' + kindWord(after.missing[0]) + ' assigned' : 'one or both games are not approved yet')
       : 'Day is ready to schedule';
@@ -122,7 +121,7 @@
       object: 'day ' + day.iso,
       reason: '',
       result: puzzle.id + ' ' + puzzle.title + ' → ' + kindLabel(kind) + ' slot. ' + readyText + '.',
-      apply: function () { day.items.push(puzzle.id); }
+      apply: function () { day[key] = puzzle.id; }
     });
     C.toast(puzzle.id + ' fills the ' + kindWord(kind) + ' slot on ' + day.longLabel + '.');
   }
@@ -139,18 +138,18 @@
 
     var body = el('div');
     body.appendChild(C.ui.reviewPanel({
-      title: 'Review the ' + day.longLabel + ' Daily challenge',
+      title: 'Review the ' + day.longLabel + ' Daily game',
       before: [
         ['Status', 'Ready'],
         ['Publish time', 'Not scheduled'],
         ['Crossword', slotSummary(dd.slots.cw)],
-        ['Daily Five', slotSummary(dd.slots.d5)]
+        ['Wordle', slotSummary(dd.slots.wordle)]
       ],
       after: [
         ['Status', 'Queued'],
         ['Publish time', time + ' ' + modeWord(mode)],
         ['Crossword', slotSummary(dd.slots.cw)],
-        ['Daily Five', slotSummary(dd.slots.d5)]
+        ['Wordle', slotSummary(dd.slots.wordle)]
       ],
       consequence: timeLine(time, mode)
     }));
@@ -173,10 +172,10 @@
         onClick: function () {
           C.ui.closeModal();
           C.commit({
-            action: 'Schedule Daily challenge',
+            action: 'Schedule Daily game',
             object: 'day ' + day.iso,
             reason: reason.value(),
-            result: 'Queued for ' + day.longLabel + ' at ' + time + ' ' + modeWord(mode) + ' · crossword + Daily Five',
+            result: 'Queued for ' + day.longLabel + ' at ' + time + ' ' + modeWord(mode) + ' · crossword + Wordle',
             apply: function () {
               day.scheduled = true;
               day.publishTime = time;
@@ -197,18 +196,18 @@
     var dd = C.deriveDay(day);
     var body = el('div');
     body.appendChild(C.ui.reviewPanel({
-      title: 'Unschedule the ' + day.longLabel + ' Daily challenge',
+      title: 'Unschedule the ' + day.longLabel + ' Daily game',
       before: [
         ['Status', 'Queued'],
         ['Publish time', day.publishTime + ' ' + modeWord(day.publishMode)],
         ['Crossword', slotSummary(dd.slots.cw)],
-        ['Daily Five', slotSummary(dd.slots.d5)]
+        ['Wordle', slotSummary(dd.slots.wordle)]
       ],
       after: [
         ['Status', 'Ready'],
         ['Publish time', 'Not scheduled'],
         ['Crossword', slotSummary(dd.slots.cw)],
-        ['Daily Five', slotSummary(dd.slots.d5)]
+        ['Wordle', slotSummary(dd.slots.wordle)]
       ],
       consequence: 'Both slots are kept; nothing has reached players.'
     }));
@@ -220,17 +219,17 @@
     body.appendChild(reason);
 
     C.ui.modal({
-      title: 'Unschedule Daily challenge',
+      title: 'Unschedule Daily game',
       wide: true,
       body: body,
       secondary: { label: 'Keep it queued' },
       primary: {
-        label: 'Unschedule Daily challenge',
+        label: 'Unschedule Daily game',
         destructive: true,
         onClick: function () {
           C.ui.closeModal();
           C.commit({
-            action: 'Unschedule Daily challenge',
+            action: 'Unschedule Daily game',
             object: 'day ' + day.iso,
             reason: reason.value(),
             result: day.longLabel + ' returned to Ready · both slots kept',
@@ -243,17 +242,17 @@
   }
 
   function openReplace(day, kind) {
-    var index = slotIndex(day, kind);
-    var current = index < 0 ? null : C.find.puzzle(day.items[index]);
+    var id = slotId(day, kind);
+    var current = id ? C.find.puzzle(id) : null;
     if (!current) return;
     var body = el('div');
     body.appendChild(C.ui.puzzlePicker({
       kind: current.kind, lang: current.lang,
       onPick: function (p) {
         if (p.id === current.id) { C.toast(p.id + ' is already in this slot.'); return; }
-        if (day.items.indexOf(p.id) >= 0) { C.toast(p.id + ' is already in this Daily challenge.'); return; }
-        if (day.scheduled) confirmReplace(day, index, current, p);
-        else commitReplace(day, index, current, p, '');
+        if (holds(day, p.id)) { C.toast(p.id + ' is already in this Daily game.'); return; }
+        if (day.scheduled) confirmReplace(day, kind, current, p);
+        else commitReplace(day, kind, current, p, '');
       }
     }));
 
@@ -265,7 +264,7 @@
     });
   }
 
-  function confirmReplace(day, index, current, next) {
+  function confirmReplace(day, kind, current, next) {
     var body = el('div');
     body.appendChild(C.ui.reviewPanel({
       title: 'Replace a queued ' + kindWord(current.kind),
@@ -295,22 +294,22 @@
       secondary: { label: 'Cancel' },
       primary: {
         label: 'Replace ' + kindWord(current.kind),
-        onClick: function () { commitReplace(day, index, current, next, reason.value()); }
+        onClick: function () { commitReplace(day, kind, current, next, reason.value()); }
       }
     });
   }
 
-  function commitReplace(day, index, current, next, reason) {
+  function commitReplace(day, kind, current, next, reason) {
     var wasScheduled = day.scheduled;
     C.ui.closeModal();
     C.commit({
-      action: 'Replace ' + kindWord(current.kind) + ' in Daily challenge',
+      action: 'Replace ' + kindWord(current.kind) + ' in Daily game',
       object: 'day ' + day.iso,
       reason: reason,
       result: current.id + ' replaced with ' + next.id + ' ' + next.title +
         (wasScheduled ? '. Day returned to Ready.' : '. Day stays Ready.'),
       apply: function () {
-        day.items[index] = next.id;
+        day[slotKey(kind)] = next.id;
         day.scheduled = false;
       }
     });
@@ -329,7 +328,7 @@
       return {
         day: d, date: d.longLabel, why: why, ok: !why,
         cw: dd.slots.cw ? dd.slots.cw.id : '—',
-        d5: dd.slots.d5 ? dd.slots.d5.id : '—'
+        wordle: dd.slots.wordle ? dd.slots.wordle.id : '—'
       };
     });
   }
@@ -352,7 +351,7 @@
       cols: [
         { key: 'date', label: 'Date', cls: 'cell-title' },
         { key: 'cw', label: 'Crossword', cls: 'cell-id' },
-        { key: 'd5', label: 'Daily Five', cls: 'cell-id' },
+        { key: 'wordle', label: 'Wordle', cls: 'cell-id' },
         { key: 'time', label: 'Publish time', render: function () { return time + ' ' + modeWord(mode); } },
         {
           key: 'why', label: 'Outcome', align: 'right',
@@ -377,12 +376,12 @@
     body.appendChild(reason);
 
     C.ui.modal({
-      title: 'Schedule ' + rows.length + ' Daily challenges',
+      title: 'Schedule ' + rows.length + ' Daily games',
       wide: true,
       body: body,
       secondary: { label: 'Cancel' },
       primary: {
-        label: ready.length ? 'Schedule ' + ready.length + ' Daily challenges' : 'Nothing can be queued',
+        label: ready.length ? 'Schedule ' + ready.length + ' Daily games' : 'Nothing can be queued',
         disabled: function () { return !ready.length; },
         onClick: function () { runBulk(rows, time, mode, reason.value()); }
       }
@@ -394,10 +393,10 @@
     rows.forEach(function (r) {
       if (r.ok) {
         C.commit({
-          action: 'Schedule Daily challenge',
+          action: 'Schedule Daily game',
           object: 'day ' + r.day.iso,
           reason: reason,
-          result: 'Queued for ' + r.day.longLabel + ' at ' + time + ' ' + modeWord(mode) + ' · crossword + Daily Five',
+          result: 'Queued for ' + r.day.longLabel + ' at ' + time + ' ' + modeWord(mode) + ' · crossword + Wordle',
           silent: true,
           apply: function () {
             r.day.scheduled = true;
@@ -408,7 +407,7 @@
         results.push({ label: r.day.longLabel, outcome: 'ok', detail: 'Queued ' + time + ' ' + modeWord(mode) });
       } else {
         C.commit({
-          action: 'Schedule Daily challenge',
+          action: 'Schedule Daily game',
           object: 'day ' + r.day.iso,
           reason: reason,
           result: 'Skipped — ' + r.why,
@@ -435,7 +434,7 @@
       body: body,
       primary: { label: 'Done', onClick: function () { C.ui.closeModal(); } }
     });
-    C.toast(queued + ' Daily challenges queued.');
+    C.toast(queued + ' Daily games queued.');
   }
 
   // ------------------------------------------------------------------
@@ -444,19 +443,21 @@
 
   function gapBanner(mount) {
     var gap = days().filter(function (d) {
-      return !d.past && !d.scheduled && d.items.length && C.deriveDay(d).missing.length;
+      return !d.past && !d.scheduled && isPlanned(d) && C.deriveDay(d).missing.length;
     })[0];
     if (!gap) return null;
     var derived = C.deriveDay(gap);
-    var out = derived.missing.indexOf('d5') >= 0 ? 'Daily Five' : 'crossword';
+    var missingKind = derived.missing[0];
+    var out = kindWord(missingKind);
     var away = gap.index - TODAY_INDEX;
     var b = el('div', 'banner attention');
     b.appendChild(el('span', 'banner-dot'));
     b.appendChild(el('div', 'banner-text', gap.longLabel + ' has no ' + out + '. ' + away + ' days out.'));
     var spare = C.store.puzzles.filter(function (p) {
-      return p.status === 'approved' && p.kind === (out === 'Daily Five' ? 'd5' : 'cw') && p.lang === 'en';
+      return p.status === 'approved' && p.kind === missingKind && p.lang === 'en';
     }).length;
-    b.appendChild(el('div', 'banner-detail', spare + ' approved ' + (out === 'crossword' ? 'crosswords' : 'Daily Five') + ' are unassigned.'));
+    b.appendChild(el('div', 'banner-detail', spare + ' approved ' +
+      (missingKind === 'cw' ? 'crosswords' : 'Wordle games') + ' are unassigned.'));
     b.appendChild(el('div', 'spacer'));
     b.appendChild(C.ui.button('Fill slot', {
       small: true,
@@ -468,7 +469,7 @@
   function toolbar(mount) {
     var bar = el('div', 'desk-toolbar');
 
-    var planned = days().filter(function (d) { return d.items.length; }).slice(-1)[0];
+    var planned = days().filter(isPlanned).slice(-1)[0];
     var m = el('div', 'desk-metric');
     m.appendChild(el('span', 'eyebrow', 'Planned through'));
     m.appendChild(el('span', 'desk-metric-value', planned.label + ' · ' + (planned.index - TODAY_INDEX) + ' days out'));
@@ -500,7 +501,7 @@
         repaint(mount);
       }
     }));
-    bar.appendChild(C.ui.button(marked.length ? 'Schedule ' + marked.length + ' Daily challenges' : 'Nothing selected', {
+    bar.appendChild(C.ui.button(marked.length ? 'Schedule ' + marked.length + ' Daily games' : 'Nothing selected', {
       variant: 'pink', small: true, disabled: !marked.length,
       onClick: function () { openBulkReview(); }   // P3 bulk review + per-item results
     }));
@@ -553,16 +554,16 @@
     if (tag) top.appendChild(el('span', 'cal-tag ' + tag.toLowerCase(), tag));
     cell.appendChild(top);
 
-    // Two fixed slots, in order: crossword then Daily Five.
+    // Two fixed slots, in order: crossword then Wordle.
     var chips = el('div', 'cal-chips');
-    ['cw', 'd5'].forEach(function (kind) {
+    ['cw', 'wordle'].forEach(function (kind) {
       var it = dd.slots[kind];
       if (it) {
         var chip = el('div', 'cal-chip');
         var dot = el('span', 'c-dot');
         dot.style.background = toneColor(it.status);
         chip.appendChild(dot);
-        chip.appendChild(el('span', 'c-tag', kind === 'cw' ? 'CW' : 'D5'));
+        chip.appendChild(el('span', 'c-tag', kind === 'cw' ? 'CW' : 'WL'));
         chip.appendChild(el('span', 'c-title', it.title));
         chips.appendChild(chip);
       } else if (!day.past && !dd.empty) {
@@ -570,8 +571,8 @@
         var md = el('span', 'c-dot');
         md.style.background = 'var(--pink)';
         miss.appendChild(md);
-        miss.appendChild(el('span', 'c-tag', kind === 'cw' ? 'CW' : 'D5'));
-        miss.appendChild(el('span', 'c-title', kind === 'cw' ? 'No crossword' : 'No Daily Five'));
+        miss.appendChild(el('span', 'c-tag', kind === 'cw' ? 'CW' : 'WL'));
+        miss.appendChild(el('span', 'c-title', kind === 'cw' ? 'No crossword' : 'No Wordle'));
         chips.appendChild(miss);
       }
     });
@@ -642,14 +643,14 @@
         un.appendChild(t0);
         lines.appendChild(un);
       } else {
-        ['cw', 'd5'].forEach(function (kind) {
+        ['cw', 'wordle'].forEach(function (kind) {
           var it = dd.slots[kind];
           var line = el('div', 'daylist-line');
           var dot = el('span', 'l-dot');
           dot.style.background = it ? toneColor(it.status) : 'var(--pink)';
           line.appendChild(dot);
-          line.appendChild(el('span', 'l-tag', kind === 'cw' ? 'CW' : 'D5'));
-          var title = el('span', 'l-title', it ? it.title : (kind === 'cw' ? 'No crossword' : 'No Daily Five'));
+          line.appendChild(el('span', 'l-tag', kind === 'cw' ? 'CW' : 'WL'));
+          var title = el('span', 'l-title', it ? it.title : (kind === 'cw' ? 'No crossword' : 'No Wordle'));
           if (!it) title.style.color = 'var(--pink)';
           line.appendChild(title);
           if (it) line.appendChild(el('span', 'l-status', (C.ui.STATUS[it.status] || {}).label || it.status));
@@ -678,7 +679,7 @@
     var head = el('div', 'inspector-head');
     var titles = el('div');
     titles.style.minWidth = '0';
-    titles.appendChild(el('div', 'inspector-title', day.longLabel + ' Daily challenge'));
+    titles.appendChild(el('div', 'inspector-title', day.longLabel + ' Daily game'));
     head.appendChild(titles);
     head.appendChild(el('div', 'spacer'));
     var readyKey = day.scheduled ? 'queued' : dd.empty ? 'unplanned' : dd.blocked ? 'blocked' : dd.live ? 'live' : 'ready';
@@ -688,7 +689,7 @@
     var body = el('div', 'inspector-body');
 
     // Two fixed slots, always in the same order, filled or empty.
-    ['cw', 'd5'].forEach(function (kind) {
+    ['cw', 'wordle'].forEach(function (kind) {
       var it = dd.slots[kind];
       body.appendChild(it ? slotPanel(kind, it, day) : emptySlotPanel(kind, day));
     });
@@ -728,7 +729,7 @@
   function emptySlotPanel(kind, day) {
     var panel = el('div', 'panel');
     var head = el('div', 'panel-head');
-    head.appendChild(el('span', 'panel-kind', kind === 'cw' ? 'Crossword' : 'Daily Five'));
+    head.appendChild(el('span', 'panel-kind', kind === 'cw' ? 'Crossword' : 'Wordle'));
     var t = el('span', 'panel-title', 'No ' + kindWord(kind) + ' chosen');
     t.style.color = 'var(--pink)';
     head.appendChild(t);
@@ -829,11 +830,11 @@
   }
 
   C.registerScreen('#/desk', {
-    title: 'Daily challenge',
+    title: 'Daily game',
     subline: function () { return C.store.todayLabel; },
     actions: function () {
       var row = el('div', 'btn-row');
-      row.appendChild(C.ui.button('Schedule Daily challenge', {
+      row.appendChild(C.ui.button('Schedule Daily game', {
         variant: 'pink',
         onClick: function () {
           var day = days()[st().day];

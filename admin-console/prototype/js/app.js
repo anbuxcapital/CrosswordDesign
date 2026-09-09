@@ -134,7 +134,7 @@ window.Console = window.Console || {};
   // ---------------------------------------------------------------------
 
   C.nav = [
-    { area: 'desk', route: '#/desk', label: 'Daily challenge', roles: ['publisher'], badge: function () { return blockedDays(); } },
+    { area: 'desk', route: '#/desk', label: 'Daily game', roles: ['publisher'], badge: function () { return blockedDays(); } },
     { area: 'library', route: '#/library', label: 'Library', roles: ['content_editor'], badge: function () { return C.store.puzzles.length; } },
     { area: 'collections', route: '#/collections', label: 'Collections', roles: ['publisher', 'integrity'], badge: function () { return mergedBadge(); } },
     { area: 'players', route: '#/players', label: 'Players', roles: ['support'], badge: function () { return C.store.players.length; } },
@@ -147,8 +147,9 @@ window.Console = window.Console || {};
 
   function blockedDays() {
     var n = C.store.days.filter(function (d) {
-      if (d.past || d.scheduled || !d.items.length) return false;
-      return C.deriveDay(d).blocked;
+      if (d.past || d.scheduled) return false;
+      var dd = C.deriveDay(d);
+      return !dd.empty && dd.blocked;
     }).length;
     return n || '';
   }
@@ -184,31 +185,30 @@ window.Console = window.Console || {};
   };
 
   // Derived readiness for a day. Shared by the desk and by publishing screens.
-  // A drop is exactly one crossword and one Daily Five — never more, never fewer.
+  // A Daily game is exactly two references: one crossword and one Wordle.
   C.deriveDay = function (day) {
-    var items = day.items.map(function (id) {
-      var p = C.find.puzzle(id);
-      return p ? { id: p.id, kind: p.kind, title: p.title, status: day.scheduled && p.status === 'approved' ? 'scheduled' : p.status } : null;
-    }).filter(Boolean);
-    var cw = items.filter(function (i) { return i.kind === 'cw'; });
-    var d5 = items.filter(function (i) { return i.kind === 'd5'; });
-    var slots = { cw: cw[0] || null, d5: d5[0] || null };
+    function slot(id) {
+      var p = id ? C.find.puzzle(id) : null;
+      if (!p) return null;
+      return {
+        id: p.id, kind: p.kind, title: p.title,
+        status: day.scheduled && p.status === 'approved' ? 'scheduled' : p.status
+      };
+    }
+    var slots = { cw: slot(day.crosswordId), wordle: slot(day.wordleId) };
+    var items = [slots.cw, slots.wordle].filter(Boolean);
     var missing = [];
-    if (!cw.length) missing.push('cw');
-    if (!d5.length) missing.push('d5');
-    // Should never happen: the day model holds one game per kind.
-    var extra = [];
-    if (cw.length > 1) extra.push('more than one crossword');
-    if (d5.length > 1) extra.push('more than one Daily Five');
+    if (!slots.cw) missing.push('cw');
+    if (!slots.wordle) missing.push('wordle');
     var okStates = ['published', 'live', 'scheduled', 'approved'];
     function slotOk(it) { return !!it && okStates.indexOf(it.status) >= 0; }
-    var okCount = (slotOk(slots.cw) ? 1 : 0) + (slotOk(slots.d5) ? 1 : 0);
+    var okCount = (slotOk(slots.cw) ? 1 : 0) + (slotOk(slots.wordle) ? 1 : 0);
     var live = items.some(function (i) { return i.status === 'live'; });
     var done = items.length > 0 && items.every(function (i) { return i.status === 'published'; });
     var empty = items.length === 0;
-    var blocked = missing.length > 0 || extra.length > 0 || okCount < items.length;
+    var blocked = missing.length > 0 || okCount < items.length;
     return {
-      items: items, slots: slots, missing: missing, extra: extra,
+      items: items, slots: slots, missing: missing,
       blocked: blocked, live: live, done: done, empty: empty,
       readiness: day.scheduled ? 'Queued' : live ? 'Live' : done ? 'Done' : empty ? 'Unplanned'
         : okCount + ' / 2'

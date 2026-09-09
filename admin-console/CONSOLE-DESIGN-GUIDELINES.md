@@ -5,7 +5,7 @@ These rules define how to extend the selected admin-console direction without tu
 ## Product structure
 
 1. Lead with work, not reporting. The default screen should answer what needs attention today and provide the shortest safe path to resolve it.
-2. Keep the Daily challenge as the publishing unit. A Daily challenge is exactly one crossword and one Daily Five per language per day; there is nothing else to order.
+2. Keep the Daily game as the publishing unit. A Daily game is exactly one crossword and one Wordle per language per day; there is nothing else to order.
 3. Separate editorial, support, commercial, and operational concerns in navigation, while keeping operator identity and audit behavior global. Navigation labels are one word where possible; Collections holds the Leaderboards tab.
 4. Players is a list of every player with a live search filter; the player record shows only what the current support task needs.
 5. Keep third-party campaign management and revenue reporting in the ad network. The Crosscut console owns app placement rules, caps, rewards, consent visibility, and grant health.
@@ -13,7 +13,7 @@ These rules define how to extend the selected admin-console direction without tu
 ## Metrics
 
 - Put a metric next to the decision it changes. Coverage belongs beside scheduling; content-pool depth belongs in Operations; fill rate belongs beside ad placements.
-- Always include scope and time window: `Daily Five · English · 7 days`, not simply `6 days`.
+- Always include scope and time window: `Wordle · English · 7 days`, not simply `6 days`.
 - Show thresholds and direction when they matter. Pair `6 days remaining` with the `10-day floor` and the action that restores coverage.
 - Prefer counts and rates that operators can reconcile. Avoid composite health scores unless the calculation and drill-down are available.
 - Use trends only with a comparable prior period. Do not add decorative sparklines.
@@ -43,7 +43,7 @@ These rules define how to extend the selected admin-console direction without tu
 
 ## Content language
 
-- Prefer concrete labels: `No Daily Five assigned`, `Retry generation`, `6 days of Daily Five remaining`. The two games are `crossword` and `Daily Five`; the generic noun is `game`, never `puzzle`. The daily pair is the `Daily challenge`. The spendable currency is `coins`, never `tokens`; `stars` are earned only.
+- Prefer concrete labels: `No Wordle assigned`, `Retry generation`, `6 days of Wordle remaining`. The two games are `crossword` and `Wordle`; the generic noun is `game`, never `puzzle`. The daily pair is the `Daily game`. The spendable currency is `coins`, never `tokens`; `stars` are earned only.
 - Avoid vague labels such as `Issue`, `Error`, or `Manage` when a specific action is known.
 - Label demo data and simulation boundaries clearly.
 - Use sentence case for screen titles, controls, and status messages.
